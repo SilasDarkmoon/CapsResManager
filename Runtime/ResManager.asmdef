@@ -1,0 +1,17 @@
+{
+    "name": "ResManager",
+    "references": [
+        "Unity.Collections.Concurrent",
+        "Unity.IO.Compression",
+        "JsonObject",
+        "ResManagerEntry"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
