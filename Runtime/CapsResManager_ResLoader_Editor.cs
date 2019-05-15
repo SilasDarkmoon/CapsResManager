@@ -10,6 +10,8 @@ namespace Capstones.UnityEngineEx
 #if UNITY_EDITOR
     public static partial class EditorToClientUtils
     {
+        public static bool Ready = false;
+
         public static Func<string[]> GetAllModsFunc;
         public static Func<string, bool> CheckModOptionalFunc;
         public static Func<string, string> ModNameToPackageName;

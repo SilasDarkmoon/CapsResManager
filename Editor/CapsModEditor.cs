@@ -27,6 +27,8 @@ namespace Capstones.UnityEditorEx
         private static readonly HashSet<string> _ShouldTreatAsModPackages = new HashSet<string>();
         private static void CheckPackages()
         {
+            EditorToClientUtils.Ready = true;
+
             _PackageName2ModName.Clear();
             _ModName2PackageName.Clear();
             _PackageName2PackagePath.Clear();

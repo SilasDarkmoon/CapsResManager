@@ -11,12 +11,13 @@ namespace Capstones.UnityEngineEx
     {
         public static class LifetimeOrders
         {
-            public const int CrossEvent             = 50;  // Cross Event.
-            public const int ABLoader               = 100; // Check Obb State.
-            public const int EntrySceneBgLoad       = 200; // Load EntrySceneBg (The loaded maybe old)
-            public const int EntrySceneBgUnload     = 300; // Unload All
-            public const int ResLoader              = 400; // Reinit resloader, after this, the res loaded should be updated.
-            public const int PreEntrySceneDone      = 900; // Nearly Done. Before change to the next scene.
+            public const int Zero                   = 0;    // 0
+            public const int CrossEvent             = 50;   // Cross Event.
+            public const int ABLoader               = 100;  // Check Obb State.
+            public const int EntrySceneBgLoad       = 200;  // Load EntrySceneBg (The loaded maybe old)
+            public const int EntrySceneBgUnload     = 300;  // Unload All
+            public const int ResLoader              = 400;  // Reinit resloader, after this, the res loaded should be updated.
+            public const int PreEntrySceneDone      = 900;  // Nearly Done. Before change to the next scene.
             public const int EntrySceneDone         = 1000; // Change to the next scene.
         }
         public interface ILifetime
