@@ -9,6 +9,34 @@ namespace Capstones.UnityEngineEx
 {
     public class ThreadLocalObj
     {
+        public interface INativeThreadLocal
+        {
+            bool Ready { get; }
+            void SetContainer(object obj);
+            T GetContainer<T>() where T : class;
+            ulong GetThreadID();
+        }
+        public static INativeThreadLocal NativeThreadLocalWrapper;
+
+        #region ThreadId
+        private static long _LastThreadId = 0;
+        [ThreadStatic] private static long _ThreadId;
+        public static ulong GetThreadId()
+        {
+#if MOD_NATIVETHREADLOCAL
+            if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
+            {
+                return NativeThreadLocalWrapper.GetThreadID();
+            }
+#endif
+            if (_ThreadId == 0)
+            {
+                _ThreadId = System.Threading.Interlocked.Increment(ref _LastThreadId);
+            }
+            return (ulong)_ThreadId;
+        }
+        #endregion
+
         private class ThreadLocalObjectContainer
         {
             public object Target;
@@ -21,13 +49,13 @@ namespace Capstones.UnityEngineEx
         private static ThreadInfo GetThreadInfo()
         {
 #if MOD_NATIVETHREADLOCAL
-            if (Native.NativeThreadLocal.Ready)
+            if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
             {
-                var info = Native.NativeThreadLocal.GetContainer<ThreadInfo>();
+                var info = NativeThreadLocalWrapper.GetContainer<ThreadInfo>();
                 if (info == null)
                 {
                     info = new ThreadInfo();
-                    Native.NativeThreadLocal.SetContainer(info);
+                    NativeThreadLocalWrapper.SetContainer(info);
                 }
                 return info;
             }

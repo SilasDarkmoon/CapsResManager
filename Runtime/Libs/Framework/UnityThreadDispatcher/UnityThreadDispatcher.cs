@@ -9,6 +9,14 @@ namespace Capstones.UnityEngineEx
 {
     public static class UnityThreadDispatcher
     {
+        public interface INativeUnityThreadDispatcher
+        {
+            bool Ready { get; }
+            event Action HandleEventsInUnityThread;
+            void TrigEventInUnityThread();
+        }
+        public static INativeUnityThreadDispatcher NativeUnityThreadDispatcherWrapper;
+
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
 #endif
@@ -25,7 +33,7 @@ namespace Capstones.UnityEngineEx
         {
             if (act != null)
             {
-                if (PlatDependant.GetThreadId() == ThreadSafeValues.UnityThreadID)
+                if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
                 {
                     act();
                 }
@@ -46,7 +54,7 @@ namespace Capstones.UnityEngineEx
         {
             if (func != null)
             {
-                if (PlatDependant.GetThreadId() == ThreadSafeValues.UnityThreadID)
+                if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
                 {
                     return func();
                 }
@@ -85,12 +93,12 @@ namespace Capstones.UnityEngineEx
             return;
 #else
 #if MOD_NATIVEUNITYTHREADDISPATCHER
-            if (Native.NativeUnityThreadDispatcher.Ready)
+            if (NativeUnityThreadDispatcherWrapper != null && NativeUnityThreadDispatcherWrapper.Ready)
             {
                 if (!_Inited)
                 {
                     _Inited = true;
-                    Native.NativeUnityThreadDispatcher.HandleEventsInUnityThread += HandleEvents;
+                    NativeUnityThreadDispatcherWrapper.HandleEventsInUnityThread += HandleEvents;
                 }
                 return;
             }
@@ -108,7 +116,7 @@ namespace Capstones.UnityEngineEx
         private static void AddEvent(Action act)
         {
             ActionQueue.Enqueue(act);
-            if (PlatDependant.GetThreadId() == ThreadSafeValues.UnityThreadID)
+            if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
             {
                 HandleEvents();
                 return;
@@ -117,7 +125,7 @@ namespace Capstones.UnityEngineEx
 #if MOD_NATIVEUNITYTHREADDISPATCHER
             if (_Inited && !_UsingObjRunner)
             {
-                Native.NativeUnityThreadDispatcher.TrigEventInUnityThread();
+                NativeUnityThreadDispatcherWrapper.TrigEventInUnityThread();
             }
 #endif
 #endif

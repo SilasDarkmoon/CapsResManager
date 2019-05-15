@@ -19,7 +19,7 @@ namespace Capstones.UnityEngineEx
             _cached_Application_persistentDataPath = Application.persistentDataPath;
             _cached_Application_dataPath = Application.dataPath;
             _cached_Capid = IsolatedPrefs.IsolatedID;
-            _UnityThreadID = PlatDependant.GetThreadId();
+            _UnityThreadID = ThreadLocalObj.GetThreadId();
         }
 
         private static string _UpdatePath;

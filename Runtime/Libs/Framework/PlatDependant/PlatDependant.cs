@@ -288,25 +288,6 @@
             }
         }
 
-        #region ThreadId
-        private static long _LastThreadId = 0;
-        [ThreadStatic] private static long _ThreadId;
-        public static ulong GetThreadId()
-        {
-#if MOD_NATIVETHREADLOCAL
-            if (Native.NativeThreadLocal.Ready)
-            {
-                return Native.NativeThreadLocal.GetThreadID();
-            }
-#endif
-            if (_ThreadId == 0)
-            {
-                _ThreadId = System.Threading.Interlocked.Increment(ref _LastThreadId);
-            }
-            return (ulong)_ThreadId;
-        }
-        #endregion
-
         public static bool IsValueType(this Type type)
         {
 #if NETFX_CORE
