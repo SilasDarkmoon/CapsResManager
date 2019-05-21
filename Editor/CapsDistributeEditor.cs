@@ -281,7 +281,7 @@ namespace Capstones.UnityEditorEx
                 var path = CapsDistributeEditor.GetDistributeFlagsFilePath();
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
                 System.IO.File.WriteAllText(path, sbflags.ToString());
-                AssetDatabase.ImportAsset(path);
+                AssetDatabase.ImportAsset(CapsModEditor.GetAssetNameFromPath(path));
 
                 ResManager.PreRuntimeDFlags = new List<string>(DistributeFlagOrder);
                 CapsDistributeEditor.FireOnDistributeFlagsChanged();
