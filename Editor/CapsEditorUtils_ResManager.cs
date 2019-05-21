@@ -165,29 +165,7 @@ namespace Capstones.UnityEditorEx
             {
                 var file = new System.Diagnostics.StackTrace(1, true).GetFrame(0).GetFileName();
 
-                var package = CapsModEditor.GetPackageNameFromPath(file);
-                if (string.IsNullOrEmpty(package))
-                {
-                    var rootdir = System.Environment.CurrentDirectory;
-                    if (file.StartsWith(rootdir, System.StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        file = file.Substring(rootdir.Length).TrimStart('/', '\\');
-                    }
-                    //var iassets = file.IndexOf("Assets/");
-                    //if (iassets > 0)
-                    //{
-                    //    file = file.Substring(iassets);
-                    //}
-                    file = file.Replace('\\', '/');
-                }
-                else
-                {
-                    var rootdir = CapsModEditor.GetPackageRoot(package);
-                    file = file.Substring(rootdir.Length).TrimStart('/', '\\');
-                    file = file.Replace('\\', '/');
-                    file = "Packages/" + package + "/" + file;
-                }
-                return file;
+                return GetAssetNameFromPath(file) ?? file;
             }
         }
         public static string __MOD__
@@ -195,6 +173,8 @@ namespace Capstones.UnityEditorEx
             get
             {
                 var file = new System.Diagnostics.StackTrace(1, true).GetFrame(0).GetFileName();
+
+                //return CapsModEditor.GetAssetModName(GetAssetNameFromPath(file));
 
                 var package = CapsModEditor.GetPackageNameFromPath(file);
                 if (string.IsNullOrEmpty(package))
@@ -216,6 +196,39 @@ namespace Capstones.UnityEditorEx
                 {
                     return CapsModEditor.GetPackageModName(package);
                 }
+            }
+        }
+
+        public static string GetAssetNameFromPath(string path)
+        {
+            var file = path;
+            var package = CapsModEditor.GetPackageNameFromPath(file);
+            if (string.IsNullOrEmpty(package))
+            {
+                var rootdir = System.Environment.CurrentDirectory;
+                if (file.StartsWith(rootdir, System.StringComparison.InvariantCultureIgnoreCase))
+                {
+                    file = file.Substring(rootdir.Length).TrimStart('/', '\\');
+                }
+                else
+                {
+                    return null;
+                }
+                //var iassets = file.IndexOf("Assets/");
+                //if (iassets > 0)
+                //{
+                //    file = file.Substring(iassets);
+                //}
+                file = file.Replace('\\', '/');
+                return file;
+            }
+            else
+            {
+                var rootdir = CapsModEditor.GetPackageRoot(package);
+                file = file.Substring(rootdir.Length).TrimStart('/', '\\');
+                file = file.Replace('\\', '/');
+                file = "Packages/" + package + "/" + file;
+                return file;
             }
         }
 

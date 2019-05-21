@@ -64,7 +64,7 @@ namespace Capstones.UnityEngineEx
                     if (im > 0)
                     {
                         path = path.Substring(0, im);
-                        _Mod = EditorToClientUtils.PackageNameToModName(path);
+                        _Mod = EditorToClientUtils.GetModNameFromPackageName(path);
                     }
                 }
             }

@@ -9,6 +9,11 @@ namespace Capstones.UnityEngineEx
 {
     public static class ThreadSafeValues
     {
+        static ThreadSafeValues()
+        {
+            Init();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void Init()
         {

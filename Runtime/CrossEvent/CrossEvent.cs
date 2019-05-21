@@ -778,7 +778,7 @@ namespace Capstones.UnityEngineEx
         internal static readonly Del_GetValListTo Func_GetValListTo = new Del_GetValListTo(GetValListTo);
         internal static readonly Del_SetValList Func_SetValList = new Del_SetValList(SetValList);
 
-        internal interface ICEventHandler : IDisposable
+        public interface ICEventHandler : IDisposable
         {
             void Call(string cate);
         }
@@ -816,7 +816,7 @@ namespace Capstones.UnityEngineEx
         private static bool _Inited = false;
         internal static Dictionary<string, List<EventHandlerRegEntry>> EventHandlers = new Dictionary<string, List<EventHandlerRegEntry>>();
 
-        internal static int RegHandler(string cate, ICEventHandler handler)
+        public static int RegHandler(string cate, ICEventHandler handler)
         {
             if (cate == null)
             {
@@ -1628,8 +1628,8 @@ namespace Capstones.UnityEngineEx
         }
         public class EventContext
         {
-            internal object _O;
-            internal List<List<EventParam>> _P = new List<List<EventParam>>();
+            public object _O;
+            public List<List<EventParam>> _P = new List<List<EventParam>>();
         }
         public class IndexedStack<T>
         {

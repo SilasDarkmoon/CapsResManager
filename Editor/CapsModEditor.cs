@@ -10,12 +10,16 @@ namespace Capstones.UnityEditorEx
 {
     public static class CapsModEditor
     {
+        public static void ShouldAlreadyInit() { }
+
         static CapsModEditor()
         {
             EditorToClientUtils.GetAllModsFunc = GetAllModsOrPackages;
             EditorToClientUtils.CheckModOptionalFunc = IsModOptional;
             EditorToClientUtils.PackageNameToModName = GetPackageModName;
             EditorToClientUtils.ModNameToPackageName = GetPackageName;
+            EditorToClientUtils.AssetNameToPath = GetAssetPath;
+            EditorToClientUtils.PathToAssetName = GetAssetNameFromPath;
 
             CapsPackageEditor.OnPackagesChanged += CheckPackages;
         }
@@ -394,6 +398,58 @@ namespace Capstones.UnityEditorEx
                         part = part.Substring(0, iend);
                     }
                     return part;
+                }
+            }
+            return null;
+        }
+        public static string GetAssetPath(string asset)
+        {
+            if (!string.IsNullOrEmpty(asset))
+            {
+                if (asset.StartsWith("Packages/"))
+                {
+                    var part = asset.Substring("Packages/".Length);
+                    var iend = part.IndexOf('/');
+                    if (iend >= 0)
+                    {
+                        var package = part.Substring(0, iend);
+                        var root = GetPackageRoot(package);
+                        if (!string.IsNullOrEmpty(root))
+                        {
+                            return root + part.Substring(iend);
+                        }
+                    }
+                }
+                else
+                {
+                    return asset;
+                }
+            }
+            return null;
+        }
+        public static string GetAssetNameFromPath(string path)
+        {
+            if (!string.IsNullOrEmpty(path))
+            {
+                if (path.StartsWith("Assets/"))
+                {
+                    return path;
+                }
+                else
+                {
+                    path = System.IO.Path.GetFullPath(path).Replace('\\', '/');
+                    foreach (var kvp in _PackagePath2PackageName)
+                    {
+                        if (path.StartsWith(kvp.Key, System.StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            var package = kvp.Value;
+                            return "Packages/" + package + path.Substring(kvp.Key.Length);
+                        }
+                    }
+                    if (path.StartsWith(System.Environment.CurrentDirectory, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return path.Substring(System.Environment.CurrentDirectory.Length).TrimStart('/');
+                    }
                 }
             }
             return null;

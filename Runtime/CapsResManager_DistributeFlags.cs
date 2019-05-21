@@ -431,7 +431,7 @@ namespace Capstones.UnityEngineEx
                         norm = sub.Substring(index + 1);
                     }
 #if UNITY_EDITOR
-                    mod = EditorToClientUtils.PackageNameToModName(mod);
+                    mod = EditorToClientUtils.GetModNameFromPackageName(mod);
 #endif
                     if (index < 0)
                     {

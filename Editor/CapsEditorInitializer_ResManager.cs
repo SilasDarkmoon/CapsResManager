@@ -8,16 +8,27 @@ namespace Capstones.UnityEditorEx
     [InitializeOnLoad]
     public static partial class CapsEditorInitializer
     {
+        public static void ShouldAlreadyInit() { }
+
         private class CapsEditorInitializer_ResManager
         {
             public CapsEditorInitializer_ResManager()
             {
-                CapsPackageEditor.OnPackagesChanged += () =>
-                {
-                    CapsDistributeEditor.CheckDefaultSelectedDistributeFlags();
-                    CapsModEditor.CheckModsAndMakeLink();
-                };
-                CapsDistributeEditor.OnDistributeFlagsChanged += CapsModEditor.CheckModsVisibility;
+                ResManagerEditorEntry.ShouldAlreadyInit();
+                CapsModEditor.ShouldAlreadyInit();
+
+                CapsPackageEditor.OnPackagesChanged += OnPackagesChanged;
+                CapsDistributeEditor.OnDistributeFlagsChanged += OnDistributeFlagsChanged;
+            }
+
+            private static void OnPackagesChanged()
+            {
+                CapsDistributeEditor.CheckDefaultSelectedDistributeFlags();
+                CapsModEditor.CheckModsAndMakeLink();
+            }
+            private static void OnDistributeFlagsChanged()
+            {
+                CapsModEditor.CheckModsVisibility();
             }
         }
 #pragma warning disable 0414
@@ -29,12 +40,6 @@ namespace Capstones.UnityEditorEx
         {
             var work = CapsResBuilder.BuildResAsync(null, null);
             while (work.MoveNext()) ;
-        }
-        [MenuItem("Test/Build Scripts")]
-        public static void BuildSptCommand()
-        {
-            //var work = CapsSptBuilder.BuildSptAsync(null, null, new[] { new CapsSptBuilder.SptBuilderEx_RawCopy() });
-            //while (work.MoveNext()) ;
         }
         [MenuItem("Test/Check Build")]
         public static void CheckBuildCommand()
@@ -69,7 +74,22 @@ namespace Capstones.UnityEditorEx
             //    }
             //}
 
-            Debug.Log(AssetDatabase.GUIDToAssetPath(AssetDatabase.AssetPathToGUID("packages/cn.capstones.resmanager/CapsRes/dist/testdist/new Material.mat")));
+            //Debug.Log(AssetDatabase.GUIDToAssetPath(AssetDatabase.AssetPathToGUID("packages/cn.capstones.resmanager/CapsRes/dist/testdist/new Material.mat")));
+
+            var asms = UnityEditor.Compilation.CompilationPipeline.GetAssemblies();
+            foreach (var asm in asms)
+            {
+                Debug.Log(asm.name);
+            }
+
+            Debug.Log("--------------------------------------");
+
+            var rasms = System.AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var asm in rasms)
+            {
+                Debug.Log(asm.GetName().Name);
+                Debug.Log(asm.Location);
+            }
         }
     }
 }

@@ -194,7 +194,7 @@ public class CapsUnityMainBehav : MonoBehaviour
 #if UNITY_EDITOR
     private class WaitForReadyToStart : ResManager.ILifetime, ResManager.IInitAsync, ResManager.IInitProgressReporter
     {
-        public int Order { get { return ResManager.LifetimeOrders.Zero + 11; } }
+        public int Order { get { return ResManager.LifetimeOrders.EditorPrepare; } }
 
         public event ResManager.ProgressReportDelegate ReportProgress;
 

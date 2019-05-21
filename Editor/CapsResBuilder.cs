@@ -390,10 +390,10 @@ namespace Capstones.UnityEditorEx
             var logger = new EditorWorkProgressLogger() { Shower = winprog };
             if (zips != null)
             {
-                System.Threading.AutoResetEvent waithandle = null;
+                System.Threading.EventWaitHandle waithandle = null;
                 if (winprog == null)
                 {
-                    waithandle = new System.Threading.AutoResetEvent(true);
+                    waithandle = new System.Threading.ManualResetEvent(true);
                 }
                 int next = 0;
                 int done = 0;
@@ -409,6 +409,10 @@ namespace Capstones.UnityEditorEx
                             if (next < zips.Count)
                             {
                                 var zip = zips[next++];
+                                if (winprog == null)
+                                {
+                                    waithandle.Reset();
+                                }
                                 working[i] = new Pack<string, TaskProgress>(zip.t1, MakeZipBackground(zip.t1, zip.t2, zip.t3, waithandle));
                             }
                             else

@@ -12,6 +12,7 @@ namespace Capstones.UnityEngineEx
         public static class LifetimeOrders
         {
             public const int Zero                   = 0;    // 0
+            public const int EditorPrepare          = 20;   // Editor do startup check.
             public const int CrossEvent             = 50;   // Cross Event.
             public const int ABLoader               = 100;  // Check Obb State.
             public const int EntrySceneBgLoad       = 200;  // Load EntrySceneBg (The loaded maybe old)

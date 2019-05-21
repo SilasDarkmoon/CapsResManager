@@ -428,7 +428,7 @@ namespace Unity.IO.Compression
         }
 
 
-        internal void ThrowIfDisposed()
+        public void ThrowIfDisposed()
         {
             if (_isDisposed)
                 throw new ObjectDisposedException(this.GetType().ToString());

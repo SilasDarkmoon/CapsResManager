@@ -12,25 +12,63 @@ namespace Capstones.UnityEngineEx
     {
         public static bool Ready = false;
 
-        public static Func<string[]> GetAllModsFunc;
-        public static Func<string, bool> CheckModOptionalFunc;
-        public static Func<string, string> ModNameToPackageName;
-        public static Func<string, string> PackageNameToModName;
+        public static Func<string[]> GetAllModsFunc { set; private get; }
+        public static Func<string, bool> CheckModOptionalFunc { set; private get; }
+        public static Func<string, string> ModNameToPackageName { set; private get; }
+        public static Func<string, string> PackageNameToModName { set; private get; }
+        public static Func<string, string> AssetNameToPath { set; private get; }
+        public static Func<string, string> PathToAssetName { set; private get; }
 
         public static string[] GetCriticalMods()
         {
             List<string> mods = new List<string>();
-            var allmods = GetAllModsFunc();
-            for (int i = 0; i < allmods.Length; ++i)
+            if (GetAllModsFunc != null && CheckModOptionalFunc != null)
             {
-                var mod = allmods[i];
-                if (!CheckModOptionalFunc(mod))
+                var allmods = GetAllModsFunc();
+                for (int i = 0; i < allmods.Length; ++i)
                 {
-                    mods.Add(mod);
+                    var mod = allmods[i];
+                    if (!CheckModOptionalFunc(mod))
+                    {
+                        mods.Add(mod);
+                    }
                 }
+                mods.Sort();
             }
-            mods.Sort();
             return mods.ToArray();
+        }
+
+        public static string GetModNameFromPackageName(string package)
+        {
+            if (PackageNameToModName != null)
+            {
+                return PackageNameToModName(package);
+            }
+            return null;
+        }
+        public static string GetPackageNameFromModName(string mod)
+        {
+            if (ModNameToPackageName != null)
+            {
+                return ModNameToPackageName(mod);
+            }
+            return null;
+        }
+        public static string GetAssetNameFromPath(string path)
+        {
+            if (PathToAssetName != null)
+            {
+                return PathToAssetName(path);
+            }
+            return path;
+        }
+        public static string GetPathFromAssetName(string asset)
+        {
+            if (AssetNameToPath != null)
+            {
+                return AssetNameToPath(asset);
+            }
+            return asset;
         }
     }
 #endif
@@ -52,7 +90,20 @@ namespace Capstones.UnityEngineEx
                 string found = null;
                 Func<string, bool> checkFile = file =>
                 {
-                    if (PlatDependant.IsFileExist(file))
+                    bool exist = false;
+                    if (file.StartsWith("Packages/"))
+                    {
+                        string guid = UnityEditor.AssetDatabase.AssetPathToGUID(file);
+                        if (!string.IsNullOrEmpty(guid))
+                        {
+                            exist = true;
+                        }
+                    }
+                    else
+                    {
+                        exist = PlatDependant.IsFileExist(file);
+                    }
+                    if (exist)
                     {
 #if EDITOR_LOADER_NO_CHECK
                         found = file;
@@ -74,7 +125,7 @@ namespace Capstones.UnityEngineEx
                 for (int i = dflags.Length - 1; i >= 0; --i)
                 {
                     var dflag = dflags[i];
-                    var package = EditorToClientUtils.ModNameToPackageName(dflag);
+                    var package = EditorToClientUtils.GetPackageNameFromModName(dflag);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
@@ -131,7 +182,7 @@ namespace Capstones.UnityEngineEx
                 for (int i = cflags.Length - 1; i >= 0; --i)
                 {
                     var dflag = cflags[i];
-                    var package = EditorToClientUtils.ModNameToPackageName(dflag);
+                    var package = EditorToClientUtils.GetPackageNameFromModName(dflag);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
@@ -213,6 +264,10 @@ namespace Capstones.UnityEngineEx
             private static string[] _DistributeFolderNames = new[] { "CapsRes/", "CapsSpt/", "Resources/" };
             public static string CheckDistributePath(string path)
             {
+                return CheckDistributePath(path, false);
+            }
+            public static string CheckDistributePath(string path, bool noWarningWhenNotFound)
+            {
                 string found = null;
                 string distFolderName = null;
                 for (int i = 0; i < _DistributeFolderNames.Length; ++i)
@@ -271,7 +326,10 @@ namespace Capstones.UnityEngineEx
 #endif
                 if (found == null)
                 {
-                    Debug.LogWarning("Not found: " + path);
+                    if (!noWarningWhenNotFound)
+                    {
+                        Debug.LogWarning("Not found: " + path);
+                    }
                 }
                 else
                 {
