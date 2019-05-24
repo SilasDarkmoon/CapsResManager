@@ -237,6 +237,7 @@ public class CapsUnityMainBehav : MonoBehaviour
 #endif
         ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgLoad, LoadEntrySceneBg);
         ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgUnload, UnloadEntrySceneBg);
+        ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
         ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
     }
 }

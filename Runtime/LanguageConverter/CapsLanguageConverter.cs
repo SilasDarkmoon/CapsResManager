@@ -165,7 +165,7 @@ namespace Capstones.UnityEngineEx
         [RuntimeInitializeOnLoadMethod]
         private static void OnUnityStart()
         {
-            ResManager.AddInitItem(ResManager.LifetimeOrders.PreEntrySceneDone - 5, Init);
+            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
         }
     }
 }
