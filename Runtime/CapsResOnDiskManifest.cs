@@ -9,13 +9,14 @@ namespace Capstones.UnityEngineEx
 {
     public enum CapsResManifestItemType
     {
-        Normal = 0,
-        Prefab = 1,
-        Scene = 2,
-        Redirect = 3,
-        //PackedTex = 4,
-        //DynTex = 5,
-        //DynSprite = 6,
+        None = 0,
+        Normal = 1,
+        Prefab = 2,
+        Scene = 3,
+        Redirect = 4,
+        //PackedTex = 5,
+        //DynTex = 6,
+        //DynSprite = 7,
     }
     [Serializable]
     public sealed class CapsResOnDiskManifestItem

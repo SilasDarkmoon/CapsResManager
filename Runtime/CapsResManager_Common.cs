@@ -18,6 +18,7 @@ namespace Capstones.UnityEngineEx
             public const int EntrySceneBgLoad       = 200;  // Load EntrySceneBg (The loaded maybe old)
             public const int EntrySceneBgUnload     = 300;  // Unload All
             public const int ResLoader              = 400;  // Reinit resloader, after this, the res loaded should be updated.
+            public const int PostResLoader          = 500;  // In Update, we only init part of the init items between [ResLoader, PostResLoader]
             public const int PreEntrySceneDone      = 900;  // Nearly Done. Before change to the next scene.
             public const int EntrySceneDone         = 1000; // Change to the next scene.
         }

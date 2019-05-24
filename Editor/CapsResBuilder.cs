@@ -92,6 +92,11 @@ namespace Capstones.UnityEditorEx
                         logger.Log("Folder.");
                         continue;
                     }
+                    if (CapsResInfoEditor.IsAssetScript(asset))
+                    {
+                        logger.Log("Script.");
+                        continue;
+                    }
 
                     string mod = null;
                     string opmod = null;

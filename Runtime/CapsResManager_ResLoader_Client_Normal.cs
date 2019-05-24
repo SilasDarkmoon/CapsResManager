@@ -469,9 +469,9 @@ namespace Capstones.UnityEngineEx
 
                     System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
                     sbbundle.Append("m-");
-                    sbbundle.Append(mod ?? "");
+                    sbbundle.Append((mod ?? "").ToLower());
                     sbbundle.Append("-d-");
-                    sbbundle.Append(dist ?? "");
+                    sbbundle.Append((dist ?? "").ToLower());
                     sbbundle.Append("-");
                     for (int i = rootdepth; i < depth - 1; ++i)
                     {

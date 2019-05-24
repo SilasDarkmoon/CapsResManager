@@ -196,7 +196,7 @@ public class CapsUnityMainBehav : MonoBehaviour
     {
         public int Order { get { return ResManager.LifetimeOrders.EditorPrepare; } }
 
-        public event ResManager.ProgressReportDelegate ReportProgress;
+        public event ResManager.ProgressReportDelegate ReportProgress = (key, attached, val) => { };
 
         public void Cleanup()
         {

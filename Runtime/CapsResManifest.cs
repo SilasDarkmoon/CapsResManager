@@ -61,6 +61,21 @@ namespace Capstones.UnityEngineEx
             }
             return depth;
         }
+        public string GetFullPath()
+        {
+            System.Text.StringBuilder path = new System.Text.StringBuilder();
+            var node = this;
+            while (node.Parent != null)
+            {
+                if (path.Length != 0)
+                {
+                    path.Insert(0, "/");
+                }
+                path.Insert(0, node.PPath);
+                node = node.Parent;
+            }
+            return path.ToString();
+        }
         public bool TryGetItem(string path, int pathStartIndex, out CapsResManifestNode node)
         {
             if (Children == null)
@@ -669,7 +684,7 @@ namespace Capstones.UnityEngineEx
                         mychild = kvpChild.Value;
                         mychild.Parent = mynode;
                         mynode.Children[kvpChild.Key] = mychild;
-                        return;
+                        continue;
                     }
                     if (kvpChild.Value.Item != null)
                     {
