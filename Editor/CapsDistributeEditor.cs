@@ -12,19 +12,20 @@ namespace Capstones.UnityEditorEx
     {
         internal static string GetDistributeFlagsFilePath()
         {
-            var mod = CapsEditorUtils.__MOD__;
-            string path = CapsModEditor.GetPackageOrModRoot(mod);
-            if (!string.IsNullOrEmpty(path))
-            {
-                path += "/Resources";
-                System.IO.Directory.CreateDirectory(path);
-                path += "/DistributeFlags.txt";
-            }
-            else
-            {
-                path = "Assets/Resources/DistributeFlags.txt";
-            }
-            return path;
+            //var mod = CapsEditorUtils.__MOD__;
+            //string path = CapsModEditor.GetPackageOrModRoot(mod);
+            //if (!string.IsNullOrEmpty(path))
+            //{
+            //    path += "/Resources";
+            //    System.IO.Directory.CreateDirectory(path);
+            //    path += "/DistributeFlags.txt";
+            //}
+            //else
+            //{
+            //    path = "Assets/Resources/DistributeFlags.txt";
+            //}
+            //return path;
+            return "Assets/Resources/DistributeFlags.txt";
         }
 
         public static void CheckDefaultSelectedDistributeFlags()
