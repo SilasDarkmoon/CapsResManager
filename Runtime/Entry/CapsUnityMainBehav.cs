@@ -166,8 +166,11 @@ public class CapsUnityMainBehav : MonoBehaviour
     private static GameObject _EntrySceneBg;
     public static void LoadEntrySceneBg()
     {
-        ResManager.ResLoader.Init();
-        LanguageConverter.Init();
+        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+        for (int i = 0; i < inititems.Length; ++i)
+        {
+            inititems[i].Init();
+        }
         var bg = ResManager.LoadResDeep(EntrySceneBgPath) as GameObject;
         if (bg)
         {
@@ -181,7 +184,11 @@ public class CapsUnityMainBehav : MonoBehaviour
             Destroy(_EntrySceneBg);
             _EntrySceneBg = null;
         }
-        ResManager.ResLoader.Cleanup();
+        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+        for (int i = inititems.Length - 1; i >= 0; --i)
+        {
+            inititems[i].Cleanup();
+        }
     }
     public static void EntrySceneDone()
     {
@@ -235,8 +242,8 @@ public class CapsUnityMainBehav : MonoBehaviour
 #if UNITY_EDITOR
         ResManager.AddInitItem(new WaitForReadyToStart());
 #endif
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgLoad, LoadEntrySceneBg);
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgUnload, UnloadEntrySceneBg);
+        //ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgLoad, LoadEntrySceneBg);
+        //ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgUnload, UnloadEntrySceneBg); // these seem to be useless. In the update mod, we should call LoadEntrySceneBg() and UnloadEntrySceneBg() directly.
         ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
         ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
     }

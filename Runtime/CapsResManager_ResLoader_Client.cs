@@ -17,6 +17,19 @@ namespace Capstones.UnityEngineEx
                 ResLoader = this;
 #endif
             }
+            public void OnEnable() { }
+            public void BeforeLoadFirstScene() { }
+            public void AfterLoadFirstScene()
+            {
+                if (CapsUnityMainBehav.MainBehavInstance == null)
+                {
+                    var inititems = GetInitItems(int.MinValue, int.MaxValue);
+                    for (int i = 0; i < inititems.Length; ++i)
+                    {
+                        inititems[i].Init();
+                    }
+                }
+            }
 
             public static Dictionary<string, AssetBundleManifest> UnityManifests = new Dictionary<string, AssetBundleManifest>();
             public static void DiscardUnityManifests()

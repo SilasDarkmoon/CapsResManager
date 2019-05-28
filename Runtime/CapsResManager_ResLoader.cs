@@ -13,6 +13,10 @@ namespace Capstones.UnityEngineEx
     {
         public interface IResLoader : ILifetime
         {
+            void OnEnable();
+            void BeforeLoadFirstScene();
+            void AfterLoadFirstScene();
+
             Object LoadRes(string asset, Type type);
             void LoadScene(string name, bool additive);
 
@@ -389,5 +393,16 @@ namespace Capstones.UnityEngineEx
             return asset;
         }
 #endif
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void BeforeLoadFirstScene()
+        {
+            ResLoader.BeforeLoadFirstScene();
+        }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        public static void AfterLoadFirstScene()
+        {
+            ResLoader.AfterLoadFirstScene();
+        }
     }
 }

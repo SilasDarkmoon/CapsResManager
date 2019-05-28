@@ -557,6 +557,7 @@ namespace Capstones.UnityEditorEx
             Application.LogCallback LogToFile = (message, stack, logtype) =>
             {
                 swlog.WriteLine(message);
+                swlog.Flush();
             };
             if (swlog != null)
             {
@@ -635,7 +636,7 @@ namespace Capstones.UnityEditorEx
 
                 logger.Log("(Phase) Write Manifest.");
                 var managermod = CapsEditorUtils.__MOD__;
-                var manidir = CapsModEditor.GetAssetRoot(managermod) + "/Build/";
+                var manidir = "Assets/Mods/" + managermod + "/Build/";
                 System.IO.Directory.CreateDirectory(manidir);
                 List<AssetBundleBuild> listManiBuilds = new List<AssetBundleBuild>();
                 HashSet<string> maniFileNames = new HashSet<string>();

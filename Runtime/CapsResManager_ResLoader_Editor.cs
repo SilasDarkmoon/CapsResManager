@@ -84,6 +84,9 @@ namespace Capstones.UnityEngineEx
                 ResLoader = this;
 #endif
             }
+            public void OnEnable() { }
+            public void BeforeLoadFirstScene() { }
+            public void AfterLoadFirstScene() { }
 
             public static string CheckModPath(string path)
             {
