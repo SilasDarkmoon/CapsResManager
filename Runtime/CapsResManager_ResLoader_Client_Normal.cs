@@ -303,6 +303,7 @@ namespace Capstones.UnityEngineEx
                 {
                     return new AssetInfo_Normal() { ManiItem = item };
                 }
+
                 public override IAssetInfo PreloadRes(CapsResManifestItem item)
                 {
                     var ai = item.Attached as IAssetInfo;
@@ -318,14 +319,14 @@ namespace Capstones.UnityEngineEx
                         string bundle = item.BRef;
                         if (string.IsNullOrEmpty(bundle))
                         {
-                            bundle = FormatBundleName(item);
+                            bundle = FormatBundleNameFor(item);
                         }
 
                         AssetInfo_Base ain = CreateAssetInfo(item);
                         item.Attached = ain;
                         ai = ain;
 
-                        var cabi = LoadAssetBundle(mod, bundle);
+                        var cabi = LoadAssetBundleEx(mod, bundle);
                         if (cabi != null)
                         {
                             AssetBundleManifest umani;
@@ -342,7 +343,7 @@ namespace Capstones.UnityEngineEx
                                             // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
                                             continue;
                                         }
-                                        var bi = LoadAssetBundle(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
@@ -371,14 +372,14 @@ namespace Capstones.UnityEngineEx
                     string bundle = item.BRef;
                     if (string.IsNullOrEmpty(bundle))
                     {
-                        bundle = FormatBundleName(item);
+                        bundle = FormatBundleNameFor(item);
                     }
 
                     AssetBundleInfo cabi = null;
                     List<AssetBundleInfo> bundles = new List<AssetBundleInfo>();
                     try
                     {
-                        cabi = LoadAssetBundle(mod, bundle);
+                        cabi = LoadAssetBundleEx(mod, bundle);
                         if (cabi != null)
                         {
                             cabi.AddRef();
@@ -399,7 +400,7 @@ namespace Capstones.UnityEngineEx
                                             // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
                                             continue;
                                         }
-                                        var bi = LoadAssetBundle(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
@@ -440,6 +441,10 @@ namespace Capstones.UnityEngineEx
                     }
                 }
 
+                public virtual string FormatBundleNameFor(CapsResManifestItem item)
+                {
+                    return FormatBundleName(item);
+                }
                 public static string FormatBundleName(CapsResManifestItem item)
                 {
                     var node = item.Node;

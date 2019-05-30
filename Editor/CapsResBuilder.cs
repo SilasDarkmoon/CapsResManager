@@ -32,6 +32,7 @@ namespace Capstones.UnityEditorEx
             string FormatBundleName(string asset, string mod, string dist, string norm);
             bool CreateItem(CapsResManifestNode node);
             void ModifyItem(CapsResManifestItem item);
+            bool GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild work);
             void Cleanup();
         }
         public static readonly List<IResBuilderEx> ResBuilderEx = new List<IResBuilderEx>();
@@ -311,9 +312,18 @@ namespace Capstones.UnityEditorEx
                     int index = 0;
                     foreach (var kvpbundle in builds)
                     {
+                        var bundleName = kvpbundle.Key;
+                        var bundleAssets = kvpbundle.Value;
                         AssetBundleBuild build = new AssetBundleBuild();
                         build.assetBundleName = kvpbundle.Key;
                         build.assetNames = kvpbundle.Value.ToArray();
+                        for (int j = 0; j < allExBuilders.Count; ++j)
+                        {
+                            if (allExBuilders[j].GenerateBuildWork(bundleName, bundleAssets, ref build))
+                            {
+                                break;
+                            }
+                        }
                         work.ABs[index++] = build;
                     }
 

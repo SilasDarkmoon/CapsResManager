@@ -58,6 +58,7 @@ namespace Capstones.UnityEngineEx
         public class AssetBundleInfo
         {
             public AssetBundle Bundle = null;
+            public string RealName;
             public int RefCnt = 0;
             public bool Permanent = false;
 
@@ -89,27 +90,55 @@ namespace Capstones.UnityEngineEx
         }
         public static Dictionary<string, AssetBundleInfo> LoadedAssetBundles = new Dictionary<string, AssetBundleInfo>();
 
+        public static string GetLoadedBundleRealName(string bundle)
+        {
+            if (LoadedAssetBundles.ContainsKey(bundle))
+            {
+                var abi = LoadedAssetBundles[bundle];
+                if (abi != null && abi.RealName != null)
+                {
+                    return abi.RealName;
+                }
+                return bundle;
+            }
+            return null;
+        }
+
         public static bool SkipPending = true;
         public static bool SkipUpdate = false;
         public static bool SkipObb = false;
         public static bool SkipPackage = false;
         public static AssetBundleInfo LoadAssetBundle(string name, bool ignoreError)
         {
+            return LoadAssetBundle(name, null, ignoreError);
+        }
+        public static AssetBundleInfo LoadAssetBundle(string name, string norm, bool ignoreError)
+        {
+            norm = norm ?? name;
             if (string.IsNullOrEmpty(name))
             {
                 if (!ignoreError) PlatDependant.LogError("Loading an ab with empty name.");
                 return null;
             }
             AssetBundleInfo abi = null;
-            if (LoadedAssetBundles.TryGetValue(name, out abi))
+            if (LoadedAssetBundles.TryGetValue(norm, out abi))
             {
                 if (abi == null || abi.Bundle != null)
                 {
-                    if (abi == null)
+                    if (abi != null && abi.RealName != null && abi.RealName != name)
                     {
-                        if (!ignoreError) PlatDependant.LogError("Cannot find (cached)ab: " + name);
+                        //abi.Bundle.Unload(true);
+                        //abi.Bundle = null;
+                        if (!ignoreError) PlatDependant.LogWarning("Try load duplicated " + norm + ". Current: " + abi.RealName + ". Try: " + name);
                     }
-                    return abi;
+                    //else
+                    {
+                        if (abi == null)
+                        {
+                            if (!ignoreError) PlatDependant.LogError("Cannot find (cached)ab: " + norm);
+                        }
+                        return abi;
+                    }
                 }
             }
             abi = null;
@@ -246,9 +275,9 @@ namespace Capstones.UnityEngineEx
 
             if (bundle != null)
             {
-                abi = new AssetBundleInfo(bundle);
+                abi = new AssetBundleInfo(bundle) { RealName = name };
             }
-            LoadedAssetBundles[name] = abi;
+            LoadedAssetBundles[norm] = abi;
             return abi;
         }
         public static AssetBundleInfo LoadAssetBundle(string name)
@@ -257,14 +286,36 @@ namespace Capstones.UnityEngineEx
         }
         public static AssetBundleInfo LoadAssetBundle(string mod, string name)
         {
+            return LoadAssetBundle(mod, name, null);
+        }
+        public static AssetBundleInfo LoadAssetBundle(string mod, string name, string norm)
+        {
             if (string.IsNullOrEmpty(mod))
             {
-                return LoadAssetBundle(name);
+                return LoadAssetBundle(name, norm, false);
             }
             else
             {
-                return LoadAssetBundle("mod/" + mod + "/" + name);
+                return LoadAssetBundle("mod/" + mod + "/" + name, norm, false);
             }
+        }
+
+        public interface IAssetBundleLoaderEx
+        {
+            bool LoadAssetBundle(string mod, string name, out AssetBundleInfo bi);
+        }
+        public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
+        public static AssetBundleInfo LoadAssetBundleEx(string mod, string name)
+        {
+            for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
+            {
+                AssetBundleInfo bi;
+                if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, out bi))
+                {
+                    return bi;
+                }
+            }
+            return LoadAssetBundle(mod, name);
         }
         public static string[] GetAllBundleNames(string pre)
         {
@@ -704,7 +755,7 @@ namespace Capstones.UnityEngineEx
 
             return found.ToArray();
         }
-
+        
         public static void UnloadUnusedBundle()
         {
             foreach (var kvpb in LoadedAssetBundles)
