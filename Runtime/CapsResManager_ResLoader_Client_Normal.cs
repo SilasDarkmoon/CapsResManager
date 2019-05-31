@@ -326,7 +326,7 @@ namespace Capstones.UnityEngineEx
                         item.Attached = ain;
                         ai = ain;
 
-                        var cabi = LoadAssetBundleEx(mod, bundle);
+                        var cabi = LoadAssetBundleEx(mod, bundle, true);
                         if (cabi != null)
                         {
                             AssetBundleManifest umani;
@@ -338,12 +338,7 @@ namespace Capstones.UnityEngineEx
                                     for (int i = 0; i < deps.Length; ++i)
                                     {
                                         var dep = deps[i];
-                                        if (dep.EndsWith(".=.ab"))
-                                        {
-                                            // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
-                                            continue;
-                                        }
-                                        var bi = LoadAssetBundleEx(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep, false);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
@@ -379,7 +374,7 @@ namespace Capstones.UnityEngineEx
                     List<AssetBundleInfo> bundles = new List<AssetBundleInfo>();
                     try
                     {
-                        cabi = LoadAssetBundleEx(mod, bundle);
+                        cabi = LoadAssetBundleEx(mod, bundle, true);
                         if (cabi != null)
                         {
                             cabi.AddRef();
@@ -395,12 +390,7 @@ namespace Capstones.UnityEngineEx
                                     for (int i = 0; i < deps.Length; ++i)
                                     {
                                         var dep = deps[i];
-                                        if (dep.EndsWith(".=.ab"))
-                                        {
-                                            // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
-                                            continue;
-                                        }
-                                        var bi = LoadAssetBundleEx(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep, false);
                                         if (bi != null)
                                         {
                                             bi.AddRef();

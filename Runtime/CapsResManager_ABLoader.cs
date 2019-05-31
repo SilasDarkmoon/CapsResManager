@@ -302,15 +302,15 @@ namespace Capstones.UnityEngineEx
 
         public interface IAssetBundleLoaderEx
         {
-            bool LoadAssetBundle(string mod, string name, out AssetBundleInfo bi);
+            bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out AssetBundleInfo bi);
         }
         public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
-        public static AssetBundleInfo LoadAssetBundleEx(string mod, string name)
+        public static AssetBundleInfo LoadAssetBundleEx(string mod, string name, bool isContainingBundle)
         {
             for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
             {
                 AssetBundleInfo bi;
-                if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, out bi))
+                if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, isContainingBundle, out bi))
                 {
                     return bi;
                 }
