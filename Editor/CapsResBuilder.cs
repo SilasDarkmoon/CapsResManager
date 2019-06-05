@@ -28,12 +28,13 @@ namespace Capstones.UnityEditorEx
         public interface IResBuilderEx
         {
             //IEnumerator CustomBuild();
-            void Prepare();
+            void Prepare(string output);
             string FormatBundleName(string asset, string mod, string dist, string norm);
             bool CreateItem(CapsResManifestNode node);
             void ModifyItem(CapsResManifestItem item);
-            bool GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild work);
+            void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuildWork modwork, int abindex);
             void Cleanup();
+            void OnSuccess();
         }
         public static readonly List<IResBuilderEx> ResBuilderEx = new List<IResBuilderEx>();
 
@@ -41,6 +42,7 @@ namespace Capstones.UnityEditorEx
         {
             public AssetBundleBuild[] ABs;
             public CapsResManifest[] Manifests;
+            public HashSet<int> ForceRefreshABs = new HashSet<int>(); // Stores the index in ABs array, which should be deleted before this build (in order to force it to update).
         }
 
         public static IEnumerator GenerateBuildWorkAsync(Dictionary<string, CapsResBuildWork> result, IList<string> assets, IEditorWorkProgressShower winprog)
@@ -319,10 +321,7 @@ namespace Capstones.UnityEditorEx
                         build.assetNames = kvpbundle.Value.ToArray();
                         for (int j = 0; j < allExBuilders.Count; ++j)
                         {
-                            if (allExBuilders[j].GenerateBuildWork(bundleName, bundleAssets, ref build))
-                            {
-                                break;
-                            }
+                            allExBuilders[j].GenerateBuildWork(bundleName, bundleAssets, ref build, work, index);
                         }
                         work.ABs[index++] = build;
                     }
@@ -575,7 +574,7 @@ namespace Capstones.UnityEditorEx
             }
             for (int i = 0; i < allExBuilders.Count; ++i)
             {
-                allExBuilders[i].Prepare();
+                allExBuilders[i].Prepare(outputDir);
             }
             bool cleanupDone = false;
             Action BuilderCleanup = () =>
@@ -713,13 +712,40 @@ namespace Capstones.UnityEditorEx
                     HashSet<string> buildFiles = new HashSet<string>();
                     for (int i = 0; i < abs.Length; ++i)
                     {
-                        buildFiles.Add(abs[i].assetBundleName.ToLower());
+                        if (!kvp.Value.ForceRefreshABs.Contains(i))
+                        {
+                            if (string.IsNullOrEmpty(abs[i].assetBundleVariant))
+                            {
+                                buildFiles.Add(abs[i].assetBundleName.ToLower());
+                            }
+                            else
+                            {
+                                buildFiles.Add(abs[i].assetBundleName.ToLower() + "." + abs[i].assetBundleVariant.ToLower());
+                            }
+                        }
                     }
                     var files = System.IO.Directory.GetFiles(dest);
                     for (int i = 0; i < files.Length; ++i)
                     {
                         var file = files[i];
-                        if (file.EndsWith(".ab"))
+                        if (!file.EndsWith(".ab"))
+                        {
+                            var sub = System.IO.Path.GetFileName(file);
+                            var split = sub.LastIndexOf(".ab.");
+                            if (split < 0)
+                            {
+                                continue;
+                            }
+                            var ext = sub.Substring(split + ".ab.".Length);
+                            if (ext.Contains("."))
+                            {
+                                continue;
+                            }
+                            if (ext == "manifest")
+                            {
+                                continue;
+                            }
+                        }
                         {
                             var fileName = System.IO.Path.GetFileName(file);
                             if (!buildFiles.Contains(fileName))
@@ -914,6 +940,11 @@ namespace Capstones.UnityEditorEx
                             }
                         }
                     }
+                }
+
+                for (int i = 0; i < allExBuilders.Count; ++i)
+                {
+                    allExBuilders[i].OnSuccess();
                 }
             }
             finally
