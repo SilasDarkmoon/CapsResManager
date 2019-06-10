@@ -250,8 +250,6 @@ public class CapsUnityMainBehav : MonoBehaviour
 #if UNITY_EDITOR
         ResManager.AddInitItem(new WaitForReadyToStart());
 #endif
-        //ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgLoad, LoadEntrySceneBg);
-        //ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgUnload, UnloadEntrySceneBg); // these seem to be useless. In the update mod, we should call LoadEntrySceneBg() and UnloadEntrySceneBg() directly.
         ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
         ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
     }
