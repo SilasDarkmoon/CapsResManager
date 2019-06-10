@@ -27,6 +27,14 @@ public class CapsUnityMainBehav : MonoBehaviour
     {
         StartCoroutine(ResManager.InitAsync(LoadingReport));
     }
+    //private void OnDestroy()
+    //{
+    //    if (_EntrySceneBg)
+    //    {
+    //        Destroy(_EntrySceneBg);
+    //        _EntrySceneBg = null;
+    //    }
+    //}
 
     private Dictionary<string, string> DefaultFormatMessageDict = new Dictionary<string, string>()
     {
