@@ -82,6 +82,7 @@ namespace Capstones.UnityEditorEx
         }
         private int _CurWork = 0;
         private bool _Initialized = false;
+        private bool _Disposed = false;
 
         public void StartWork()
         {
@@ -115,9 +116,13 @@ namespace Capstones.UnityEditorEx
                     if (_CurWork >= _Works.Count)
                     {
                         Message = "Done";
+                        OnDestroy();
+                    }
+                    else
+                    {
+                        EditorApplication.QueuePlayerLoopUpdate();
                     }
                 }
-                Repaint();
             }
         }
 
@@ -128,11 +133,15 @@ namespace Capstones.UnityEditorEx
 
         void OnDestroy()
         {
-            if (_Initialized)
+            if (!_Disposed)
             {
-                EditorApplication.UnlockReloadAssemblies();
+                _Disposed = true;
+                if (_Initialized)
+                {
+                    EditorApplication.UnlockReloadAssemblies();
+                }
+                OnQuit();
             }
-            OnQuit();
         }
     }
 
@@ -353,6 +362,7 @@ namespace Capstones.UnityEditorEx
             {
                 if (!_Quited)
                 {
+                    _Quited = true;
                     OnQuit();
                 }
                 return false;
@@ -383,6 +393,7 @@ namespace Capstones.UnityEditorEx
                         _MessageReady.Set();
                         if (!_Quited)
                         {
+                            _Quited = true;
                             OnQuit();
                         }
                         return false;
@@ -392,6 +403,7 @@ namespace Capstones.UnityEditorEx
             }
             if (!_Quited)
             {
+                _Quited = true;
                 OnQuit();
             }
             return false;

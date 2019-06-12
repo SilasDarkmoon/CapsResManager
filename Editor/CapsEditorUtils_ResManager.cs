@@ -284,12 +284,12 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public static string GetFileMD5(string path)
+        public static string GetStreamMD5(System.IO.Stream stream)
         {
             try
             {
                 byte[] hash = null;
-                using (var stream = System.IO.File.OpenRead(path))
+                if (stream != null)
                 {
                     using (var md5 = System.Security.Cryptography.MD5.Create())
                     {
@@ -303,6 +303,21 @@ namespace Capstones.UnityEditorEx
                     sb.Append(hash[i].ToString("X2"));
                 }
                 return sb.ToString();
+            }
+            catch { }
+            return "";
+        }
+        public static string GetFileMD5(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path))
+                {
+                    using (var stream = System.IO.File.OpenRead(path))
+                    {
+                        return GetStreamMD5(stream);
+                    }
+                }
             }
             catch { }
             return "";
