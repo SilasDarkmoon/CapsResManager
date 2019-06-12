@@ -209,7 +209,7 @@ namespace Capstones.UnityEditorEx
             List<string> deps = new List<string>();
             LinkedList<string> parsingList = new LinkedList<string>();
             HashSet<string> parsingSet = new HashSet<string>();
-            if (!string.IsNullOrEmpty(asset))
+            if (!string.IsNullOrEmpty(asset) && !CapsResInfoEditor.IsAssetScript(asset))
             {
                 parsingSet.Add(asset);
                 parsingList.AddLast(asset);
@@ -225,7 +225,7 @@ namespace Capstones.UnityEditorEx
                             for (int i = 0; i < directdeps.Length; ++i)
                             {
                                 var dep = directdeps[i];
-                                if (!(AssetDatabase.LoadMainAssetAtPath(dep) is MonoScript))
+                                if (!CapsResInfoEditor.IsAssetScript(dep))
                                 {
                                     if (parsingSet.Add(dep))
                                     {
