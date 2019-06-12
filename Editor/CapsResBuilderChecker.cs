@@ -13,13 +13,23 @@ namespace Capstones.UnityEditorEx
         public static void CheckRes(string output)
         {
             // generate build work
+            List<CapsResBuilder.IResBuilderEx> allExBuilders = CapsResBuilder.ResBuilderEx;
+            for (int i = 0; i < allExBuilders.Count; ++i)
+            {
+                allExBuilders[i].Prepare(null);
+            }
             Dictionary<string, CapsResBuilder.CapsResBuildWork> buildwork = new Dictionary<string, CapsResBuilder.CapsResBuildWork>();
             var gwork = CapsResBuilder.GenerateBuildWorkAsync(buildwork, null, null);
-            while (gwork.MoveNext()) { }
+            while (gwork.MoveNext()) ;
+            for (int i = 0; i < allExBuilders.Count; ++i)
+            {
+                allExBuilders[i].Cleanup();
+            }
 
             // parse asset list in each reskey (m-XXX-d-YYY)
             Dictionary<string, List<string>> reskey2assetlist = new Dictionary<string, List<string>>();
             Dictionary<string, string> asset2reskey = new Dictionary<string, string>();
+            HashSet<string> nodepassets = new HashSet<string>();
             foreach (var buildmodwork in buildwork)
             {
                 var mod = buildmodwork.Key;
@@ -43,7 +53,21 @@ namespace Capstones.UnityEditorEx
                     for (int j = 0; j < work.ABs.Length; ++j)
                     {
                         var abinfo = work.ABs[j];
-                        if (CapsResBuilder.IsBundleInModAndDist(abinfo.assetBundleName, opmod, dist))
+                        var abname = abinfo.assetBundleName;
+                        if (abname.EndsWith(".=.ab"))
+                        {
+                            for (int k = 0; k < abinfo.assetNames.Length; ++k)
+                            {
+                                var asset = abinfo.assetNames[k];
+                                nodepassets.Add(asset);
+                            }
+                            continue;
+                        }
+                        if (!string.IsNullOrEmpty(abinfo.assetBundleVariant))
+                        {
+                            abname += "." + abinfo.assetBundleVariant;
+                        }
+                        if (CapsResBuilder.IsBundleInModAndDist(abname, opmod, dist))
                         {
                             list.AddRange(abinfo.assetNames);
                             for (int k = 0; k < abinfo.assetNames.Length; ++k)
@@ -71,14 +95,10 @@ namespace Capstones.UnityEditorEx
                     resdep[asset] = deplist;
                 }
 
-                var deps = AssetDatabase.GetDependencies(new[] { asset });
+                var deps = GetDependencies(asset);
                 for (int i = 0; i < deps.Length; ++i)
                 {
                     var dep = deps[i];
-                    if (dep == asset)
-                    {
-                        continue;
-                    }
                     deplist.Add(dep);
 
                     HashSet<string> reflist;
@@ -149,6 +169,7 @@ namespace Capstones.UnityEditorEx
                 }
 
                 // check non build dep
+                sw.WriteLine();
                 bool nonbuilddepfound = false;
                 foreach (var kvpdep in resdep)
                 {
@@ -157,22 +178,19 @@ namespace Capstones.UnityEditorEx
 
                     foreach (var dep in deps)
                     {
-                        if (!asset2reskey.ContainsKey(dep))
+                        if (!asset2reskey.ContainsKey(dep) && !nodepassets.Contains(dep))
                         {
                             if (dep.StartsWith("Assets/") || dep.StartsWith("Packages/") && !string.IsNullOrEmpty(CapsModEditor.GetAssetModName(dep)))
                             {
-                                if (!(AssetDatabase.LoadMainAssetAtPath(dep) is MonoScript))
+                                if (!nonbuilddepfound)
                                 {
-                                    if (!nonbuilddepfound)
-                                    {
-                                        nonbuilddepfound = true;
-                                        sw.WriteLine("Non build dependency found! See below:");
-                                    }
-                                    sw.Write(asset);
-                                    sw.Write(" -> ");
-                                    sw.Write(dep);
-                                    sw.WriteLine();
+                                    nonbuilddepfound = true;
+                                    sw.WriteLine("Non build dependency found! See below:");
                                 }
+                                sw.Write(asset);
+                                sw.Write(" -> ");
+                                sw.Write(dep);
+                                sw.WriteLine();
                             }
                         }
                     }
@@ -184,6 +202,45 @@ namespace Capstones.UnityEditorEx
             }
 
             EditorUtility.OpenWithDefaultApp(output);
+        }
+
+        public static string[] GetDependencies(string asset)
+        {
+            List<string> deps = new List<string>();
+            LinkedList<string> parsingList = new LinkedList<string>();
+            HashSet<string> parsingSet = new HashSet<string>();
+            if (!string.IsNullOrEmpty(asset))
+            {
+                parsingSet.Add(asset);
+                parsingList.AddLast(asset);
+                var node = parsingList.First;
+                while (node != null)
+                {
+                    var cur = node.Value;
+                    try
+                    {
+                        var directdeps = AssetDatabase.GetDependencies(cur, false);
+                        if (directdeps != null)
+                        {
+                            for (int i = 0; i < directdeps.Length; ++i)
+                            {
+                                var dep = directdeps[i];
+                                if (!(AssetDatabase.LoadMainAssetAtPath(dep) is MonoScript))
+                                {
+                                    if (parsingSet.Add(dep))
+                                    {
+                                        parsingList.AddLast(dep);
+                                        deps.Add(dep);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                    node = node.Next;
+                }
+            }
+            return deps.ToArray();
         }
     }
 }

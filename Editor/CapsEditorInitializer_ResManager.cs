@@ -35,7 +35,13 @@ namespace Capstones.UnityEditorEx
         private static CapsEditorInitializer_ResManager i_CapsEditorInitializer_ResManager = new CapsEditorInitializer_ResManager();
 #pragma warning restore
 
-        [MenuItem("Res/Build Res (No Update)", priority = 200100)]
+        [MenuItem("Res/Check Build", priority = 200105)]
+        public static void CheckBuildCommand()
+        {
+            CapsResBuilderChecker.CheckRes("EditorOutput/Intermediate/ResBuildCheckResult.txt");
+        }
+
+        [MenuItem("Res/Build Res (No Update)", priority = 200110)]
         public static void BuildResCommand()
         {
             CapsResBuilder.BuildingParams = CapsResBuilder.ResBuilderParams.Create();
