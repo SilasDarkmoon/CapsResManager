@@ -13,7 +13,7 @@ namespace Capstones.UnityEngineEx
     {
         public interface IResLoader : ILifetime
         {
-            void OnEnable();
+            //void OnEnable();
             void BeforeLoadFirstScene();
             void AfterLoadFirstScene();
 
@@ -402,6 +402,14 @@ namespace Capstones.UnityEngineEx
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void AfterLoadFirstScene()
         {
+            if (CapsUnityMainBehav.MainBehavInstance == null)
+            {
+                var inititems = GetInitItems(int.MinValue, int.MaxValue);
+                for (int i = 0; i < inititems.Length; ++i)
+                {
+                    inititems[i].Init();
+                }
+            }
             ResLoader.AfterLoadFirstScene();
         }
     }

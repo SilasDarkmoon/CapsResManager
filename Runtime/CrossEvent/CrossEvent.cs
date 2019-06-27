@@ -1745,7 +1745,7 @@ namespace Capstones.UnityEngineEx
             public T Data;
         }
 
-        [UnityEngine.RuntimeInitializeOnLoadMethod]
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnUnityStart()
         {
             ResManager.AddInitItem(new ResManager.ActionInitItem(ResManager.LifetimeOrders.CrossEvent, InitCrossEvent, null, ResetCrossEvent));

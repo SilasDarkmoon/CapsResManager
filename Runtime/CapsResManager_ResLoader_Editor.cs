@@ -84,7 +84,7 @@ namespace Capstones.UnityEngineEx
                 ResLoader = this;
 #endif
             }
-            public void OnEnable() { }
+            //public void OnEnable() { }
             public void BeforeLoadFirstScene() { }
             public void AfterLoadFirstScene() { }
 

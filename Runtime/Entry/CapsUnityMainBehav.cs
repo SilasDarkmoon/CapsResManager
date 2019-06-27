@@ -244,13 +244,17 @@ public class CapsUnityMainBehav : MonoBehaviour
         }
     }
 #endif
-    [RuntimeInitializeOnLoadMethod]
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void OnUnityStart()
     {
 #if UNITY_EDITOR
         ResManager.AddInitItem(new WaitForReadyToStart());
 #endif
-        ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
+        if (MainBehavInstance != null)
+        {
+            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
+            ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
+        }
     }
 }

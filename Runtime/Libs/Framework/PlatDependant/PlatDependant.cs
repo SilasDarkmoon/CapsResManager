@@ -7,6 +7,9 @@
     using System.Text;
     using System.IO;
 
+//#if UNITY_EDITOR
+//    [UnityEditor.InitializeOnLoad]
+//#endif
     public static class PlatDependant
     {
         private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
