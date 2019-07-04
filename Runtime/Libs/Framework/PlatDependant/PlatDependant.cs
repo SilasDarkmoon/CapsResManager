@@ -12,6 +12,22 @@
 //#endif
     public static class PlatDependant
     {
+        public static event Action PreQuitting = () => { };
+        public static event Action Quitting = () => { };
+        private static void FastQuit()
+        {
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
+        }
+        private static bool _FastQuitEnabled = false;
+        public static void EnableFastQuit()
+        {
+            _FastQuitEnabled = true;
+        }
+        public static void DisableFastQuit()
+        {
+            _FastQuitEnabled = false;
+        }
+
         private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
         private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
         private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
@@ -45,6 +61,18 @@
 
         static PlatDependant()
         {
+#if UNITY_ENGINE
+            UnityEngine.Application.quitting += () =>
+            {
+                PreQuitting();
+                Quitting();
+                if (_FastQuitEnabled)
+                {
+                    FastQuit();
+                }
+            };
+#endif
+
 #if DISABLE_LOG_ALL
             LogEnabled = false;
 #endif

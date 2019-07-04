@@ -87,9 +87,11 @@ namespace Capstones.UnityEngineEx
                 {
                     _IsolatedIDMutex.ReleaseMutex();
                 }
+
+                PlatDependant.PreQuitting += Close;
             }
 
-            ~IsolatedIDFileHolder()
+            private void Close()
             {
                 _IsolatedIDMutex.WaitOne();
                 try
@@ -227,9 +229,11 @@ namespace Capstones.UnityEngineEx
                 {
                     sfile.Dispose();
                 }
+
+                PlatDependant.PreQuitting += Close;
             }
 
-            ~IsolatedIDFileHolder()
+            private void Close()
             {
                 var file = Application.persistentDataPath + "/iid.data";
                 System.IO.FileStream sfile = null;
