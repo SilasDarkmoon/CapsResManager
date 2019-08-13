@@ -51,6 +51,10 @@ namespace Capstones.UnityEditorEx
                         var pname = package.name;
                         var ppath = package.resolvedPath;
                         var mname = System.IO.Path.GetFileName(ppath);
+                        if (mname.Contains("@"))
+                        {
+                            mname = mname.Substring(0, mname.IndexOf('@'));
+                        }
                         var fpath = System.IO.Path.GetFullPath(ppath).Replace('\\', '/').ToLower();
 
                         _PackageName2ModName[pname] = mname;
