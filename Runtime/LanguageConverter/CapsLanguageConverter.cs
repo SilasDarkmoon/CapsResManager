@@ -76,7 +76,7 @@ namespace Capstones.UnityEngineEx
             public static readonly CapsLangFormatter Instance = new CapsLangFormatter();
         }
 
-        public const string JSONPATH = "config/language.json";
+        public static string JSONPATH = "config/language.json";
         private static Dictionary<string, string> _LangDict;
 
         public static void Init()
