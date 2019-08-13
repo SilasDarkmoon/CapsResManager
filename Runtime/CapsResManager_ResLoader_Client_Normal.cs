@@ -303,6 +303,7 @@ namespace Capstones.UnityEngineEx
                 {
                     return new AssetInfo_Normal() { ManiItem = item };
                 }
+
                 public override IAssetInfo PreloadRes(CapsResManifestItem item)
                 {
                     var ai = item.Attached as IAssetInfo;
@@ -318,14 +319,14 @@ namespace Capstones.UnityEngineEx
                         string bundle = item.BRef;
                         if (string.IsNullOrEmpty(bundle))
                         {
-                            bundle = FormatBundleName(item);
+                            bundle = FormatBundleNameFor(item);
                         }
 
                         AssetInfo_Base ain = CreateAssetInfo(item);
                         item.Attached = ain;
                         ai = ain;
 
-                        var cabi = LoadAssetBundle(mod, bundle);
+                        var cabi = LoadAssetBundleEx(mod, bundle, true);
                         if (cabi != null)
                         {
                             AssetBundleManifest umani;
@@ -337,12 +338,7 @@ namespace Capstones.UnityEngineEx
                                     for (int i = 0; i < deps.Length; ++i)
                                     {
                                         var dep = deps[i];
-                                        if (dep.EndsWith(".=.ab"))
-                                        {
-                                            // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
-                                            continue;
-                                        }
-                                        var bi = LoadAssetBundle(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep, false);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
@@ -371,14 +367,14 @@ namespace Capstones.UnityEngineEx
                     string bundle = item.BRef;
                     if (string.IsNullOrEmpty(bundle))
                     {
-                        bundle = FormatBundleName(item);
+                        bundle = FormatBundleNameFor(item);
                     }
 
                     AssetBundleInfo cabi = null;
                     List<AssetBundleInfo> bundles = new List<AssetBundleInfo>();
                     try
                     {
-                        cabi = LoadAssetBundle(mod, bundle);
+                        cabi = LoadAssetBundleEx(mod, bundle, true);
                         if (cabi != null)
                         {
                             cabi.AddRef();
@@ -394,12 +390,7 @@ namespace Capstones.UnityEngineEx
                                     for (int i = 0; i < deps.Length; ++i)
                                     {
                                         var dep = deps[i];
-                                        if (dep.EndsWith(".=.ab"))
-                                        {
-                                            // this special name means the assetbundle should not be dep of other bundle. for example, replaceable font.
-                                            continue;
-                                        }
-                                        var bi = LoadAssetBundle(mod, dep);
+                                        var bi = LoadAssetBundleEx(mod, dep, false);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
@@ -440,6 +431,10 @@ namespace Capstones.UnityEngineEx
                     }
                 }
 
+                public virtual string FormatBundleNameFor(CapsResManifestItem item)
+                {
+                    return FormatBundleName(item);
+                }
                 public static string FormatBundleName(CapsResManifestItem item)
                 {
                     var node = item.Node;
@@ -469,9 +464,9 @@ namespace Capstones.UnityEngineEx
 
                     System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
                     sbbundle.Append("m-");
-                    sbbundle.Append(mod ?? "");
+                    sbbundle.Append((mod ?? "").ToLower());
                     sbbundle.Append("-d-");
-                    sbbundle.Append(dist ?? "");
+                    sbbundle.Append((dist ?? "").ToLower());
                     sbbundle.Append("-");
                     for (int i = rootdepth; i < depth - 1; ++i)
                     {

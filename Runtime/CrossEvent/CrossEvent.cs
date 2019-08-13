@@ -1726,7 +1726,26 @@ namespace Capstones.UnityEngineEx
         }
         private static readonly Dictionary<string, object> GlobalValues = new Dictionary<string, object>();
 
-        [UnityEngine.RuntimeInitializeOnLoadMethod]
+        public class RawEventData
+        {
+            public RawEventData() { }
+            public RawEventData(object data)
+            {
+                Data = data;
+            }
+            public object Data;
+        }
+        public class RawEventData<T>
+        {
+            public RawEventData() { }
+            public RawEventData(T data)
+            {
+                Data = data;
+            }
+            public T Data;
+        }
+
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnUnityStart()
         {
             ResManager.AddInitItem(new ResManager.ActionInitItem(ResManager.LifetimeOrders.CrossEvent, InitCrossEvent, null, ResetCrossEvent));

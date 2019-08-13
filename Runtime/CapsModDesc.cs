@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Capstones.UnityEngineEx
 {
-    [CreateAssetMenu(fileName = "resdesc.asset", menuName = "Module Desc", order = 1000)]
+    [CreateAssetMenu(fileName = "resdesc.asset", menuName = "Module Desc", order = 2000)]
     public class CapsModDesc : ScriptableObject
 #if UNITY_EDITOR
         , ISerializationCallbackReceiver

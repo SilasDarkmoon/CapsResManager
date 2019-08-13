@@ -1027,6 +1027,28 @@ public class JSONObject {
 		Debug.LogWarning("Tried to turn non-Object JSONObject into a dictionary");
 		return null;
 	}
+    public Dictionary<string, object> ToDictionaryOfObj()
+    {
+        if (type == Type.OBJECT)
+        {
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                JSONObject val = list[i];
+                switch (val.type)
+                {
+                    case Type.STRING: result.Add(keys[i], val.str); break;
+                    case Type.NUMBER: result.Add(keys[i], val.n); break;
+                    case Type.BOOL: result.Add(keys[i], val.b); break;
+                    case Type.NULL: result.Add(keys[i], null); break;
+                    default: if (GLog.IsLogWarningEnabled) GLog.LogWarning("Omitting object: " + keys[i] + " in dictionary conversion"); break;
+                }
+            }
+            return result;
+        }
+        Debug.LogWarning("Tried to turn non-Object JSONObject into a dictionary");
+        return null;
+    }
     public object ToObject()
     {
         if (type == Type.OBJECT)

@@ -88,13 +88,13 @@ namespace Capstones.UnityEditorEx
             return real;
         }
 
-        //public static readonly HashSet<string> ScriptAssetExts = new HashSet<string>() { ".cs", ".js", ".boo" };
-        //public static bool IsAssetScript(string path)
-        //{
-        //    if (string.IsNullOrEmpty(path)) return false;
-        //    if (path.Contains("/CapsSpt/")) return true;
-        //    var ext = System.IO.Path.GetExtension(path);
-        //    return ScriptAssetExts.Contains(ext);
-        //}
+        public static readonly HashSet<string> ScriptAssetExts = new HashSet<string>() { ".cs", ".js", ".boo" };
+        public static bool IsAssetScript(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            //if (path.Contains("/CapsSpt/")) return true;
+            var ext = System.IO.Path.GetExtension(path);
+            return ScriptAssetExts.Contains(ext);
+        }
     }
 }

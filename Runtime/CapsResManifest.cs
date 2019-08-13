@@ -61,6 +61,21 @@ namespace Capstones.UnityEngineEx
             }
             return depth;
         }
+        public string GetFullPath()
+        {
+            System.Text.StringBuilder path = new System.Text.StringBuilder();
+            var node = this;
+            while (node.Parent != null)
+            {
+                if (path.Length != 0)
+                {
+                    path.Insert(0, "/");
+                }
+                path.Insert(0, node.PPath);
+                node = node.Parent;
+            }
+            return path.ToString();
+        }
         public bool TryGetItem(string path, int pathStartIndex, out CapsResManifestNode node)
         {
             if (Children == null)
@@ -487,7 +502,7 @@ namespace Capstones.UnityEngineEx
             rv.InMain = inmem.InMain;
 
             Dictionary<CapsResManifestItem, int> itemlines = new Dictionary<CapsResManifestItem, int>();
-            Dictionary<CapsResManifestItem, CapsResOnDiskManifestItem> unknownRefItem = new Dictionary<CapsResManifestItem, CapsResOnDiskManifestItem>();
+            Dictionary<CapsResOnDiskManifestItem, CapsResManifestItem> unknownRefItem = new Dictionary<CapsResOnDiskManifestItem, CapsResManifestItem>();
             Dictionary<string, int> bundlelines = new Dictionary<string, int>();
             List<string> bundles = new List<string>();
             bundles.Add("");
@@ -528,7 +543,7 @@ namespace Capstones.UnityEngineEx
                         }
                         else
                         {
-                            unknownRefItem[node.Item] = item;
+                            unknownRefItem[item] = aref;
                         }
                     }
                     if (node.Item.ExInfo != null)
@@ -554,9 +569,9 @@ namespace Capstones.UnityEngineEx
             foreach (var kvpu in unknownRefItem)
             {
                 int aref;
-                if (itemlines.TryGetValue(kvpu.Key, out aref))
+                if (itemlines.TryGetValue(kvpu.Value, out aref))
                 {
-                    kvpu.Value.Ref = aref;
+                    kvpu.Key.Ref = aref;
                 }
             }
 
@@ -669,7 +684,7 @@ namespace Capstones.UnityEngineEx
                         mychild = kvpChild.Value;
                         mychild.Parent = mynode;
                         mynode.Children[kvpChild.Key] = mychild;
-                        return;
+                        continue;
                     }
                     if (kvpChild.Value.Item != null)
                     {

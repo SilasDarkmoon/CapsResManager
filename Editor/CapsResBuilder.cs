@@ -14,6 +14,7 @@ namespace Capstones.UnityEditorEx
         {
             public string timetoken;
             public int version = 0;
+            public bool makezip = true;
 
             private ResBuilderParams() { }
             public static ResBuilderParams Create()
@@ -28,11 +29,13 @@ namespace Capstones.UnityEditorEx
         public interface IResBuilderEx
         {
             //IEnumerator CustomBuild();
-            void Prepare();
+            void Prepare(string output);
             string FormatBundleName(string asset, string mod, string dist, string norm);
             bool CreateItem(CapsResManifestNode node);
             void ModifyItem(CapsResManifestItem item);
+            void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuildWork modwork, int abindex);
             void Cleanup();
+            void OnSuccess();
         }
         public static readonly List<IResBuilderEx> ResBuilderEx = new List<IResBuilderEx>();
 
@@ -40,6 +43,7 @@ namespace Capstones.UnityEditorEx
         {
             public AssetBundleBuild[] ABs;
             public CapsResManifest[] Manifests;
+            public HashSet<int> ForceRefreshABs = new HashSet<int>(); // Stores the index in ABs array, which should be deleted before this build (in order to force it to update).
         }
 
         public static IEnumerator GenerateBuildWorkAsync(Dictionary<string, CapsResBuildWork> result, IList<string> assets, IEditorWorkProgressShower winprog)
@@ -90,6 +94,11 @@ namespace Capstones.UnityEditorEx
                     if (System.IO.Directory.Exists(asset))
                     {
                         logger.Log("Folder.");
+                        continue;
+                    }
+                    if (CapsResInfoEditor.IsAssetScript(asset))
+                    {
+                        logger.Log("Script.");
                         continue;
                     }
 
@@ -306,9 +315,15 @@ namespace Capstones.UnityEditorEx
                     int index = 0;
                     foreach (var kvpbundle in builds)
                     {
+                        var bundleName = kvpbundle.Key;
+                        var bundleAssets = kvpbundle.Value;
                         AssetBundleBuild build = new AssetBundleBuild();
                         build.assetBundleName = kvpbundle.Key;
                         build.assetNames = kvpbundle.Value.ToArray();
+                        for (int j = 0; j < allExBuilders.Count; ++j)
+                        {
+                            allExBuilders[j].GenerateBuildWork(bundleName, bundleAssets, ref build, work, index);
+                        }
                         work.ABs[index++] = build;
                     }
 
@@ -415,10 +430,6 @@ namespace Capstones.UnityEditorEx
                                 }
                                 working[i] = new Pack<string, TaskProgress>(zip.t1, MakeZipBackground(zip.t1, zip.t2, zip.t3, waithandle));
                             }
-                            else
-                            {
-                                break;
-                            }
                         }
                         else
                         {
@@ -426,7 +437,7 @@ namespace Capstones.UnityEditorEx
                             {
                                 ++done;
                                 logger.Log("Zip file DONE! " + info.t1);
-                                info.t2 = null;
+                                working[i].t2 = null;
                             }
                         }
                     }
@@ -525,6 +536,7 @@ namespace Capstones.UnityEditorEx
             bool shouldCreateBuildingParams = BuildingParams == null;
             BuildingParams = BuildingParams ?? ResBuilderParams.Create();
             var timetoken = BuildingParams.timetoken;
+            var makezip = BuildingParams.makezip;
             string outputDir = "Latest";
             if (!isDefaultBuild)
             {
@@ -552,6 +564,7 @@ namespace Capstones.UnityEditorEx
             Application.LogCallback LogToFile = (message, stack, logtype) =>
             {
                 swlog.WriteLine(message);
+                swlog.Flush();
             };
             if (swlog != null)
             {
@@ -559,7 +572,7 @@ namespace Capstones.UnityEditorEx
             }
             for (int i = 0; i < allExBuilders.Count; ++i)
             {
-                allExBuilders[i].Prepare();
+                allExBuilders[i].Prepare(outputDir);
             }
             bool cleanupDone = false;
             Action BuilderCleanup = () =>
@@ -630,7 +643,7 @@ namespace Capstones.UnityEditorEx
 
                 logger.Log("(Phase) Write Manifest.");
                 var managermod = CapsEditorUtils.__MOD__;
-                var manidir = CapsModEditor.GetAssetRoot(managermod) + "/Build/";
+                var manidir = "Assets/Mods/" + managermod + "/Build/";
                 System.IO.Directory.CreateDirectory(manidir);
                 List<AssetBundleBuild> listManiBuilds = new List<AssetBundleBuild>();
                 HashSet<string> maniFileNames = new HashSet<string>();
@@ -697,13 +710,40 @@ namespace Capstones.UnityEditorEx
                     HashSet<string> buildFiles = new HashSet<string>();
                     for (int i = 0; i < abs.Length; ++i)
                     {
-                        buildFiles.Add(abs[i].assetBundleName.ToLower());
+                        if (!kvp.Value.ForceRefreshABs.Contains(i))
+                        {
+                            if (string.IsNullOrEmpty(abs[i].assetBundleVariant))
+                            {
+                                buildFiles.Add(abs[i].assetBundleName.ToLower());
+                            }
+                            else
+                            {
+                                buildFiles.Add(abs[i].assetBundleName.ToLower() + "." + abs[i].assetBundleVariant.ToLower());
+                            }
+                        }
                     }
                     var files = System.IO.Directory.GetFiles(dest);
                     for (int i = 0; i < files.Length; ++i)
                     {
                         var file = files[i];
-                        if (file.EndsWith(".ab"))
+                        if (!file.EndsWith(".ab"))
+                        {
+                            var sub = System.IO.Path.GetFileName(file);
+                            var split = sub.LastIndexOf(".ab.");
+                            if (split < 0)
+                            {
+                                continue;
+                            }
+                            var ext = sub.Substring(split + ".ab.".Length);
+                            if (ext.Contains("."))
+                            {
+                                continue;
+                            }
+                            if (ext == "manifest")
+                            {
+                                continue;
+                            }
+                        }
                         {
                             var fileName = System.IO.Path.GetFileName(file);
                             if (!buildFiles.Contains(fileName))
@@ -806,7 +846,7 @@ namespace Capstones.UnityEditorEx
                     }
                 }
 
-                if (isDefaultBuild)
+                if (isDefaultBuild && makezip)
                 {
                     logger.Log("(Phase) Zip.");
                     List<Pack<string, string, IList<string>>> zips = new List<Pack<string, string, IList<string>>>();
@@ -839,7 +879,24 @@ namespace Capstones.UnityEditorEx
                                     for (int j = 0; j < files.Length; ++j)
                                     {
                                         var file = files[j];
-                                        if (file.EndsWith(".ab"))
+                                        if (!file.EndsWith(".ab"))
+                                        {
+                                            var sub = System.IO.Path.GetFileName(file);
+                                            var split = sub.LastIndexOf(".ab.");
+                                            if (split < 0)
+                                            {
+                                                continue;
+                                            }
+                                            var ext = sub.Substring(split + ".ab.".Length);
+                                            if (ext.Contains("."))
+                                            {
+                                                continue;
+                                            }
+                                            if (ext == "manifest")
+                                            {
+                                                continue;
+                                            }
+                                        }
                                         {
                                             var bundle = file.Substring(abdir.Length + 1);
                                             if (IsBundleInModAndDist(bundle, opmod, dist))
@@ -898,6 +955,11 @@ namespace Capstones.UnityEditorEx
                             }
                         }
                     }
+                }
+
+                for (int i = 0; i < allExBuilders.Count; ++i)
+                {
+                    allExBuilders[i].OnSuccess();
                 }
             }
             finally
@@ -980,9 +1042,11 @@ namespace Capstones.UnityEditorEx
 
         public static bool IsBundleInModAndDist(string bundle, string mod, string dist)
         {
-            var key = "m-" + (mod ?? "") + "-d-" + (dist ?? "") + "-";
+            var mdstr = "m-" + (mod ?? "") + "-d-" + (dist ?? "");
+            var keypre = mdstr + "-";
+            var keypost = ".ab." + mdstr;
             bundle = bundle ?? "";
-            return bundle.StartsWith(key, StringComparison.InvariantCultureIgnoreCase);
+            return bundle.StartsWith(keypre, StringComparison.InvariantCultureIgnoreCase) || bundle.EndsWith(keypost, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private class CapsResBuilderPreExport : UnityEditor.Build.IPreprocessBuild

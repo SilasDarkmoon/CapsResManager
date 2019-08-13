@@ -17,6 +17,9 @@ namespace Capstones.UnityEngineEx
                 ResLoader = this;
 #endif
             }
+            //public void OnEnable() { }
+            public void BeforeLoadFirstScene() { }
+            public void AfterLoadFirstScene() { }
 
             public static Dictionary<string, AssetBundleManifest> UnityManifests = new Dictionary<string, AssetBundleManifest>();
             public static void DiscardUnityManifests()

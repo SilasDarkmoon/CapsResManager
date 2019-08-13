@@ -27,6 +27,14 @@ public class CapsUnityMainBehav : MonoBehaviour
     {
         StartCoroutine(ResManager.InitAsync(LoadingReport));
     }
+    //private void OnDestroy()
+    //{
+    //    if (_EntrySceneBg)
+    //    {
+    //        Destroy(_EntrySceneBg);
+    //        _EntrySceneBg = null;
+    //    }
+    //}
 
     private Dictionary<string, string> DefaultFormatMessageDict = new Dictionary<string, string>()
     {
@@ -166,8 +174,11 @@ public class CapsUnityMainBehav : MonoBehaviour
     private static GameObject _EntrySceneBg;
     public static void LoadEntrySceneBg()
     {
-        ResManager.ResLoader.Init();
-        LanguageConverter.Init();
+        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+        for (int i = 0; i < inititems.Length; ++i)
+        {
+            inititems[i].Init();
+        }
         var bg = ResManager.LoadResDeep(EntrySceneBgPath) as GameObject;
         if (bg)
         {
@@ -181,7 +192,11 @@ public class CapsUnityMainBehav : MonoBehaviour
             Destroy(_EntrySceneBg);
             _EntrySceneBg = null;
         }
-        ResManager.ResLoader.Cleanup();
+        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+        for (int i = inititems.Length - 1; i >= 0; --i)
+        {
+            inititems[i].Cleanup();
+        }
     }
     public static void EntrySceneDone()
     {
@@ -196,7 +211,7 @@ public class CapsUnityMainBehav : MonoBehaviour
     {
         public int Order { get { return ResManager.LifetimeOrders.EditorPrepare; } }
 
-        public event ResManager.ProgressReportDelegate ReportProgress;
+        public event ResManager.ProgressReportDelegate ReportProgress = (key, attached, val) => { };
 
         public void Cleanup()
         {
@@ -229,14 +244,17 @@ public class CapsUnityMainBehav : MonoBehaviour
         }
     }
 #endif
-    [RuntimeInitializeOnLoadMethod]
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void OnUnityStart()
     {
 #if UNITY_EDITOR
         ResManager.AddInitItem(new WaitForReadyToStart());
 #endif
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgLoad, LoadEntrySceneBg);
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneBgUnload, UnloadEntrySceneBg);
-        ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
+        if (MainBehavInstance != null)
+        {
+            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
+            ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
+        }
     }
 }

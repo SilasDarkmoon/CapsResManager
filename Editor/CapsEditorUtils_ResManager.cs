@@ -284,12 +284,96 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public static string GetFileMD5(string path)
+        public static void AddGitIgnore(string gitignorepath, params string[] items)
         {
+            List<string> lines = new List<string>();
+            HashSet<string> lineset = new HashSet<string>();
+            if (UnityEngineEx.PlatDependant.IsFileExist(gitignorepath))
+            {
+                try
+                {
+                    using (var sr = UnityEngineEx.PlatDependant.OpenReadText(gitignorepath))
+                    {
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            lines.Add(line);
+                            lineset.Add(line);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            if (items != null)
+            {
+                for (int i = 0; i < items.Length; ++i)
+                {
+                    var item = items[i];
+                    if (lineset.Add(item))
+                    {
+                        lines.Add(item);
+                    }
+                }
+            }
+
+            using (var sw = UnityEngineEx.PlatDependant.OpenWriteText(gitignorepath))
+            {
+                for (int i = 0; i < lines.Count; ++i)
+                {
+                    sw.WriteLine(lines[i]);
+                }
+            }
+        }
+
+        public static void RemoveGitIgnore(string gitignorepath, params string[] items)
+        {
+            List<string> lines = new List<string>();
+            HashSet<string> removes = new HashSet<string>();
+            if (items != null)
+            {
+                removes.UnionWith(items);
+            }
+            if (UnityEngineEx.PlatDependant.IsFileExist(gitignorepath))
+            {
+                try
+                {
+                    using (var sr = UnityEngineEx.PlatDependant.OpenReadText(gitignorepath))
+                    {
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            if (!removes.Contains(line))
+                            {
+                                lines.Add(line);
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+            if (lines.Count == 0)
+            {
+                UnityEngineEx.PlatDependant.DeleteFile(gitignorepath);
+            }
+            else
+            {
+                using (var sw = UnityEngineEx.PlatDependant.OpenWriteText(gitignorepath))
+                {
+                    for (int i = 0; i < lines.Count; ++i)
+                    {
+                        sw.WriteLine(lines[i]);
+                    }
+                }
+            }
+        }
+
+        public static string GetStreamMD5(System.IO.Stream stream)
+        { // TODO: test and move to runtime.
             try
             {
                 byte[] hash = null;
-                using (var stream = System.IO.File.OpenRead(path))
+                if (stream != null)
                 {
                     using (var md5 = System.Security.Cryptography.MD5.Create())
                     {
@@ -303,6 +387,21 @@ namespace Capstones.UnityEditorEx
                     sb.Append(hash[i].ToString("X2"));
                 }
                 return sb.ToString();
+            }
+            catch { }
+            return "";
+        }
+        public static string GetFileMD5(string path)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path))
+                {
+                    using (var stream = System.IO.File.OpenRead(path))
+                    {
+                        return GetStreamMD5(stream);
+                    }
+                }
             }
             catch { }
             return "";
