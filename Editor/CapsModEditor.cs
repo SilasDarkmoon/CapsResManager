@@ -162,7 +162,12 @@ namespace Capstones.UnityEditorEx
                     if (!string.IsNullOrEmpty(pdir))
                     {
                         defpath = pdir + "/mcs.rsp";
-                        if (!(defPathExists = System.IO.File.Exists(defpath)))
+                        if (defPathExists = System.IO.File.Exists(defpath))
+                        {
+                            var pname = GetPackageName(mod);
+                            compilerOpLines.Add("-define:MOD_" + pname.ToUpper().Replace(".", "_"));
+                        }
+                        else
                         {
                             defpath = "Assets/Mods/" + mod + "/Link/mcs.rsp";
                         }
@@ -173,7 +178,7 @@ namespace Capstones.UnityEditorEx
                     }
                     if (defPathExists || System.IO.File.Exists(defpath))
                     {
-                        compilerOpLines.Add("-define:MOD_" + mod.ToUpper());
+                        compilerOpLines.Add("-define:MOD_" + mod.ToUpper().Replace(".", "_"));
                         try
                         {
                             compilerOpLines.UnionWith(System.IO.File.ReadAllLines(defpath));
