@@ -267,6 +267,13 @@ namespace Capstones.UnityEditorEx
                 System.IO.File.WriteAllLines("Assets/mcs.rsp", lines);
                 System.IO.File.WriteAllLines("Assets/csc.rsp", lines);
                 AssetDatabase.ImportAsset(CapsEditorUtils.__ASSET__, ImportAssetOptions.ForceUpdate);
+                AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<CapsModDesc>())), ImportAssetOptions.ForceUpdate);
+                // Update all package...
+                foreach (var kvp in _PackageName2ModName)
+                {
+                    var pname = kvp.Key;
+                    AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate);
+                }
             }
             AssetDatabase.Refresh();
         }
