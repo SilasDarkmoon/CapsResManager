@@ -25,10 +25,12 @@ namespace Capstones.UnityEditorEx
             {
                 CapsDistributeEditor.CheckDefaultSelectedDistributeFlags();
                 CapsModEditor.CheckModsAndMakeLink();
+                UnityEngineEx.ResManager.RebuildRuntimeResCache();
             }
             private static void OnDistributeFlagsChanged()
             {
                 CapsModEditor.CheckModsVisibility();
+                UnityEngineEx.ResManager.RebuildRuntimeResCache();
             }
         }
 #pragma warning disable 0414

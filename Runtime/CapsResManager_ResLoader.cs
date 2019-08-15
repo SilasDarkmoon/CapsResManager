@@ -135,6 +135,11 @@ namespace Capstones.UnityEngineEx
         {
             LoadScene(name, false);
         }
+        public static void RebuildRuntimeResCache()
+        {
+            OnRebuildRuntimeResCache();
+        }
+        public static event Action OnRebuildRuntimeResCache = () => { };
 
         private static IEnumerator LoadFromResourceWork(CoroutineWork req, string name, Type type)
         {

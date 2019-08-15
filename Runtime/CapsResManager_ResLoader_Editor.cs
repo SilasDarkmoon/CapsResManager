@@ -83,11 +83,36 @@ namespace Capstones.UnityEngineEx
 #if !FORCE_USE_CLIENT_RESLOADER
                 ResLoader = this;
 #endif
+                OnRebuildRuntimeResCache += RebuildRuntimeResCache;
             }
             //public void OnEnable() { }
             public void BeforeLoadFirstScene() { }
             public void AfterLoadFirstScene() { }
 
+            public class RuntimeCache
+            {
+                public Dictionary<string, string> Mapping = new Dictionary<string, string>();
+                public Dictionary<string, string> ModToPackage = new Dictionary<string, string>();
+                public List<string> CriticalMods = new List<string>();
+                public List<string> DFlags = new List<string>();
+
+                public RuntimeCache()
+                {
+                    DFlags.AddRange(GetValidDistributeFlags());
+                    CriticalMods.AddRange(EditorToClientUtils.GetCriticalMods());
+                    for (int i = 0; i < DFlags.Count; ++i)
+                    {
+                        var flag = DFlags[i];
+                        ModToPackage[flag] = EditorToClientUtils.GetPackageNameFromModName(flag);
+                    }
+                }
+            }
+            private static RuntimeCache _RuntimeCache;
+            public static RuntimeCache ResRuntimeCache { get { return _RuntimeCache; } }
+            public static void RebuildRuntimeResCache()
+            {
+                _RuntimeCache = new RuntimeCache();
+            }
             public static string CheckModPath(string path)
             {
                 string found = null;
@@ -272,6 +297,10 @@ namespace Capstones.UnityEngineEx
             public static string CheckDistributePath(string path, bool noWarningWhenNotFound)
             {
                 string found = null;
+                if (_RuntimeCache.Mapping.TryGetValue(path, out found))
+                {
+                    return found;
+                }
                 string distFolderName = null;
                 for (int i = 0; i < _DistributeFolderNames.Length; ++i)
                 {
@@ -294,6 +323,7 @@ namespace Capstones.UnityEngineEx
                         if (dfound != null)
                         {
 #if EDITOR_LOADER_NO_CHECK
+                            _RuntimeCache.Mapping[path] = dfound;
                             return dfound;
 #endif
                             if (found == null)
@@ -312,6 +342,7 @@ namespace Capstones.UnityEngineEx
                     if (dfound != null)
                     {
 #if EDITOR_LOADER_NO_CHECK
+                        _RuntimeCache.Mapping[path] = dfound;
                         return dfound;
 #endif
                         if (found == null)
@@ -325,6 +356,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
 #if EDITOR_LOADER_NO_CHECK
+                _RuntimeCache.Mapping[path] = null;
                 return null;
 #endif
                 if (found == null)
@@ -347,7 +379,159 @@ namespace Capstones.UnityEngineEx
                         Debug.LogError("File name case error. Loading: " + found + "\nOnDisk: " + (ondisk ?? "??"));
                     }
                 }
+                _RuntimeCache.Mapping[path] = found;
                 return found;
+            }
+            public static string CheckModPathSafe(string path)
+            {
+                string found = null;
+                Func<string, bool> checkFile = file =>
+                {
+                    bool exist = PlatDependant.IsFileExist(file);
+                    if (exist)
+                    {
+                        found = file;
+                        return true;
+                    }
+                    return false;
+                };
+
+                var dflags = _RuntimeCache.DFlags;
+                for (int i = dflags.Count - 1; i >= 0; --i)
+                {
+                    var dflag = dflags[i];
+                    var package = _RuntimeCache.ModToPackage[dflag];
+                    if (!string.IsNullOrEmpty(package))
+                    {
+#if EDITOR_LOAD_RAW_RES
+                        {
+                            var realpath = "Packages/" + package + "/Raw/" + path;
+                            if (checkFile(realpath))
+                            {
+                                return found;
+                            }
+                        }
+#endif
+                        {
+                            var realpath = "Packages/" + package + "/" + path;
+                            if (checkFile(realpath))
+                            {
+                                return found;
+                            }
+                        }
+                    }
+#if EDITOR_LOAD_RAW_RES
+                    {
+                        var realpath = "Assets/Mods/" + dflag + "/Raw/" + path;
+                        if (checkFile(realpath))
+                        {
+                            return found;
+                        }
+                    }
+#endif
+                    {
+                        var realpath = "Assets/Mods/" + dflag + "/" + path;
+                        if (checkFile(realpath))
+                        {
+                            return found;
+                        }
+                    }
+                }
+                var cflags = _RuntimeCache.CriticalMods;
+                for (int i = cflags.Count - 1; i >= 0; --i)
+                {
+                    var dflag = cflags[i];
+                    var package = _RuntimeCache.ModToPackage[dflag];
+                    if (!string.IsNullOrEmpty(package))
+                    {
+#if EDITOR_LOAD_RAW_RES
+                        {
+                            var realpath = "Packages/" + package + "/Raw/" + path;
+                            if (checkFile(realpath))
+                            {
+                                return found;
+                            }
+                        }
+#endif
+                        {
+                            var realpath = "Packages/" + package + "/" + path;
+                            if (checkFile(realpath))
+                            {
+                                return found;
+                            }
+                        }
+                    }
+#if EDITOR_LOAD_RAW_RES
+                    {
+                        var realpath = "Assets/Mods/" + dflag + "/Raw/" + path;
+                        if (checkFile(realpath))
+                        {
+                            return found;
+                        }
+                    }
+#endif
+                    {
+                        var realpath = "Assets/Mods/" + dflag + "/" + path;
+                        if (checkFile(realpath))
+                        {
+                            return found;
+                        }
+                    }
+                }
+#if EDITOR_LOAD_RAW_RES
+                {
+                    var realpath = "Assets/Raw/" + path;
+                    if (checkFile(realpath))
+                    {
+                        return found;
+                    }
+                }
+#endif
+                {
+                    var realpath = "Assets/" + path;
+                    if (checkFile(realpath))
+                    {
+                        return found;
+                    }
+                }
+                return found;
+            }
+            public static string CheckDistributePathSafe(string path)
+            {
+                string found = null;
+                string distFolderName = null;
+                for (int i = 0; i < _DistributeFolderNames.Length; ++i)
+                {
+                    var folder = _DistributeFolderNames[i];
+                    if (path.StartsWith(folder))
+                    {
+                        distFolderName = folder;
+                        break;
+                    }
+                }
+
+                if (distFolderName != null)
+                {
+                    var dflags = _RuntimeCache.DFlags;
+                    for (int i = dflags.Count - 1; i >= 0; --i)
+                    {
+                        var dflag = dflags[i];
+                        var realpath = distFolderName + "dist/" + dflag + path.Substring(distFolderName.Length - 1);
+                        var dfound = CheckModPathSafe(realpath);
+                        if (dfound != null)
+                        {
+                            return dfound;
+                        }
+                    }
+                }
+                {
+                    var dfound = CheckModPathSafe(path);
+                    if (dfound != null)
+                    {
+                        return dfound;
+                    }
+                }
+                return null;
             }
 
             public static Object LoadMainAsset(string name)

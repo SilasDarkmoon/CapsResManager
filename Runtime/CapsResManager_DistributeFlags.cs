@@ -233,6 +233,7 @@ namespace Capstones.UnityEngineEx
                     break;
                 }
             }
+            RebuildRuntimeResCache();
         }
         public static void AddDistributeFlag(string flag)
         {
@@ -286,6 +287,85 @@ namespace Capstones.UnityEngineEx
             }
 #endif
             _RuntimeCachedDFlags = null;
+            RebuildRuntimeResCache();
+        }
+        public static void SetDistributeFlags(IEnumerable<string> toRemove, IEnumerable<string> toAdd)
+        {
+            var pflags = PreRuntimeDFlags;
+            var fflags = RuntimeForbiddenDFlags;
+            bool fflagsChanged = false;
+            var exflags = RuntimeExDFlags;
+            bool exflagsChanged = false;
+
+            if (toRemove != null)
+            {
+                foreach (var flag in toRemove)
+                {
+                    for (int i = 0; i < exflags.Count; ++i)
+                    {
+                        if (exflags[i] == flag)
+                        {
+                            exflagsChanged = true;
+                            exflags.RemoveAt(i--);
+                        }
+                    }
+                    for (int i = 0; i < pflags.Count; ++i)
+                    {
+                        if (pflags[i] == flag)
+                        {
+                            fflagsChanged |= fflags.Add(flag);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (toAdd != null)
+            {
+                foreach (var flag in toAdd)
+                {
+                    fflagsChanged |= fflags.Remove(flag);
+
+                    for (int i = 0; i < exflags.Count; ++i)
+                    {
+                        if (exflags[i] == flag)
+                        {
+                            exflags.RemoveAt(i--);
+                        }
+                    }
+                    exflags.Add(flag);
+                    exflagsChanged = true;
+                }
+            }
+#if !UNITY_EDITOR
+            if (exflagsChanged)
+            {
+                var sb = new System.Text.StringBuilder();
+                for (int i = 0; i < exflags.Count; ++i)
+                {
+                    sb.Append('<');
+                    sb.Append(exflags[i]);
+                }
+                PlayerPrefs.SetString("___Pref__OptionalDistributeFlags", sb.ToString());
+            }
+            if (fflagsChanged)
+            {
+                var sb = new System.Text.StringBuilder();
+                foreach (var nflag in fflags)
+                {
+                    sb.Append('<');
+                    sb.Append(nflag);
+                }
+                PlayerPrefs.SetString("___Pref__ForbiddenDistributeFlags", sb.ToString());
+            }
+#endif
+            if (exflagsChanged || fflagsChanged)
+            {
+#if !UNITY_EDITOR
+                PlayerPrefs.Save();
+#endif
+                _RuntimeCachedDFlags = null;
+                RebuildRuntimeResCache();
+            }
         }
         public static void ReloadDistributeFlags()
         {
