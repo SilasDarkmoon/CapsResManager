@@ -266,6 +266,8 @@ namespace Capstones.UnityEditorEx
                 Array.Sort(lines);
                 System.IO.File.WriteAllLines("Assets/mcs.rsp", lines);
                 System.IO.File.WriteAllLines("Assets/csc.rsp", lines);
+                AssetDatabase.ImportAsset("Assets/mcs.rsp");
+                AssetDatabase.ImportAsset("Assets/csc.rsp");
                 EditorApplication.LockReloadAssemblies();
                 try
                 {
@@ -277,11 +279,24 @@ namespace Capstones.UnityEditorEx
                 foreach (var kvp in _PackageName2ModName)
                 {
                     var pname = kvp.Key;
-                    AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate);
+                    AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ImportRecursive);
                 }
                 EditorApplication.UnlockReloadAssemblies();
             }
             AssetDatabase.Refresh();
+        }
+
+        [MenuItem("Mods/Client Update Fix - Code", priority = 100000)]
+        public static void UpdateFix()
+        {
+            EditorApplication.LockReloadAssemblies();
+            // Update all package...
+            foreach (var mod in CapsModEditor.GetAllModsInPackage())
+            {
+                var pname = CapsModEditor.GetPackageName(mod);
+                AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ImportRecursive);
+            }
+            EditorApplication.UnlockReloadAssemblies();
         }
 
         /// <summary>
