@@ -118,19 +118,7 @@ namespace Capstones.UnityEngineEx
                 string found = null;
                 Func<string, bool> checkFile = file =>
                 {
-                    bool exist = false;
-                    if (file.StartsWith("Packages/"))
-                    {
-                        string guid = UnityEditor.AssetDatabase.AssetPathToGUID(file);
-                        if (!string.IsNullOrEmpty(guid))
-                        {
-                            exist = true;
-                        }
-                    }
-                    else
-                    {
-                        exist = PlatDependant.IsFileExist(file);
-                    }
+                    bool exist = PlatDependant.IsFileExist(file);
                     if (exist)
                     {
 #if EDITOR_LOADER_NO_CHECK
@@ -149,11 +137,12 @@ namespace Capstones.UnityEngineEx
                     return false;
                 };
 
-                var dflags = GetValidDistributeFlags();
-                for (int i = dflags.Length - 1; i >= 0; --i)
+                var dflags = _RuntimeCache.DFlags;
+                for (int i = dflags.Count - 1; i >= 0; --i)
                 {
                     var dflag = dflags[i];
-                    var package = EditorToClientUtils.GetPackageNameFromModName(dflag);
+                    string package;
+                    _RuntimeCache.ModToPackage.TryGetValue(dflag, out package);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
@@ -206,11 +195,12 @@ namespace Capstones.UnityEngineEx
 #endif
                     }
                 }
-                var cflags = EditorToClientUtils.GetCriticalMods();
-                for (int i = cflags.Length - 1; i >= 0; --i)
+                var cflags = _RuntimeCache.CriticalMods;
+                for (int i = cflags.Count - 1; i >= 0; --i)
                 {
                     var dflag = cflags[i];
-                    var package = EditorToClientUtils.GetPackageNameFromModName(dflag);
+                    string package;
+                    _RuntimeCache.ModToPackage.TryGetValue(dflag, out package);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
@@ -314,8 +304,8 @@ namespace Capstones.UnityEngineEx
 
                 if (distFolderName != null)
                 {
-                    var dflags = GetValidDistributeFlags();
-                    for (int i = dflags.Length - 1; i >= 0; --i)
+                    var dflags = _RuntimeCache.DFlags;
+                    for (int i = dflags.Count - 1; i >= 0; --i)
                     {
                         var dflag = dflags[i];
                         var realpath = distFolderName + "dist/" + dflag + path.Substring(distFolderName.Length - 1);
@@ -400,7 +390,8 @@ namespace Capstones.UnityEngineEx
                 for (int i = dflags.Count - 1; i >= 0; --i)
                 {
                     var dflag = dflags[i];
-                    var package = _RuntimeCache.ModToPackage[dflag];
+                    string package;
+                    _RuntimeCache.ModToPackage.TryGetValue(dflag, out package);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
@@ -441,7 +432,8 @@ namespace Capstones.UnityEngineEx
                 for (int i = cflags.Count - 1; i >= 0; --i)
                 {
                     var dflag = cflags[i];
-                    var package = _RuntimeCache.ModToPackage[dflag];
+                    string package;
+                    _RuntimeCache.ModToPackage.TryGetValue(dflag, out package);
                     if (!string.IsNullOrEmpty(package))
                     {
 #if EDITOR_LOAD_RAW_RES
