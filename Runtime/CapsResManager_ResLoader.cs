@@ -323,6 +323,15 @@ namespace Capstones.UnityEngineEx
             yield return Resources.UnloadUnusedAssets();
             ResLoader.UnloadUnusedRes();
         }
+        public static IEnumerator UnloadUnusedResDeep()
+        {
+            for (int i = 0; i < 3; ++i)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                yield return UnloadUnusedResAsync();
+            }
+        }
         public static void UnloadAllRes()
         {
             ResLoader.UnloadAllRes(false);
@@ -403,6 +412,10 @@ namespace Capstones.UnityEngineEx
         public static void BeforeLoadFirstScene()
         {
             ResLoader.BeforeLoadFirstScene();
+            Application.lowMemory += () =>
+            {
+                CoroutineRunner.StartCoroutine(UnloadUnusedResDeep());
+            };
         }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void AfterLoadFirstScene()
