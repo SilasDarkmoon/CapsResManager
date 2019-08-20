@@ -24,9 +24,12 @@ namespace Capstones.UnityEngineEx
         public static ulong GetThreadId()
         {
 #if MOD_NATIVETHREADLOCAL
-            if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
+            //if (!System.Threading.Thread.CurrentThread.IsThreadPoolThread)
             {
-                return NativeThreadLocalWrapper.GetThreadID();
+                if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
+                {
+                    return NativeThreadLocalWrapper.GetThreadID();
+                }
             }
 #endif
             if (_ThreadId == 0)
@@ -49,15 +52,18 @@ namespace Capstones.UnityEngineEx
         private static ThreadInfo GetThreadInfo()
         {
 #if MOD_NATIVETHREADLOCAL
-            if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
+            if (!System.Threading.Thread.CurrentThread.IsThreadPoolThread)
             {
-                var info = NativeThreadLocalWrapper.GetContainer<ThreadInfo>();
-                if (info == null)
+                if (NativeThreadLocalWrapper != null && NativeThreadLocalWrapper.Ready)
                 {
-                    info = new ThreadInfo();
-                    NativeThreadLocalWrapper.SetContainer(info);
+                    var info = NativeThreadLocalWrapper.GetContainer<ThreadInfo>();
+                    if (info == null)
+                    {
+                        info = new ThreadInfo();
+                        NativeThreadLocalWrapper.SetContainer(info);
+                    }
+                    return info;
                 }
-                return info;
             }
 #endif
             if (_ThreadInfo == null)
