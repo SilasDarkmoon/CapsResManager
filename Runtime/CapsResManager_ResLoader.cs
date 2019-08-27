@@ -327,10 +327,14 @@ namespace Capstones.UnityEngineEx
         {
             for (int i = 0; i < 3; ++i)
             {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                yield return UnloadUnusedResAsync();
+                yield return UnloadUnusedResStep();
             }
+        }
+        public static IEnumerator UnloadUnusedResStep()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            yield return UnloadUnusedResAsync();
         }
         public static void UnloadAllRes()
         {
@@ -408,14 +412,102 @@ namespace Capstones.UnityEngineEx
         }
 #endif
 
+        private class GarbageCollectorYieldable : CustomYieldInstruction
+        {
+            public override bool keepWaiting { get { return _NeedGarbageCollect && System.Environment.TickCount >= _NextGarbageCollectTick; } }
+        }
+        private static GarbageCollectorYieldable _GarbageCollectorIndicator = new GarbageCollectorYieldable();
+        private static bool _IsGarbageCollectorRunning = false;
+        private static bool _IsGarbageCollectorWorking = false;
+        private static int _NextGarbageCollectTick = int.MinValue;
+        private static bool _NeedGarbageCollect = false;
+        private static IEnumerator CollectGarbageWork()
+        {
+            try
+            {
+                yield return _GarbageCollectorIndicator;
+                while (true)
+                {
+                    _NeedGarbageCollect = false;
+                    _IsGarbageCollectorWorking = true;
+                    int startTick = System.Environment.TickCount;
+                    for (int j = 0; j < 3; ++j)
+                    {
+                        for (int i = 0; i < _CollectGarbageFuncs.Count; ++i)
+                        {
+                            var subwork = _CollectGarbageFuncs[i]();
+                            if (subwork != null)
+                            {
+                                yield return subwork;
+                            }
+                        }
+                    }
+                    int finishTick = System.Environment.TickCount;
+                    _NextGarbageCollectTick = finishTick + 2 * (finishTick - startTick);
+                    _IsGarbageCollectorWorking = false;
+                    yield return _GarbageCollectorIndicator;
+                }
+            }
+            finally
+            {
+                _IsGarbageCollectorWorking = false;
+                _IsGarbageCollectorRunning = false;
+            }
+        }
+        public static void StartGarbageCollect()
+        {
+            _NeedGarbageCollect = true;
+            if (!_IsGarbageCollectorRunning)
+            {
+                _IsGarbageCollectorRunning = true;
+                CoroutineRunner.StartCoroutine(CollectGarbageWork());
+            }
+        }
+        public static bool IsCollectingGarbage { get { return _IsGarbageCollectorWorking; } }
+
+        private static readonly List<Func<IEnumerator>> _CollectGarbageFuncs = new List<Func<IEnumerator>>();
+        public static event Func<IEnumerator> OnCollectGarbage
+        {
+            add
+            {
+                if (value != null)
+                {
+                    _CollectGarbageFuncs.Add(value);
+                }
+            }
+            remove
+            {
+                for (int i = 0; i < _CollectGarbageFuncs.Count; ++i)
+                {
+                    if (_CollectGarbageFuncs[i] == value)
+                    {
+                        _CollectGarbageFuncs.RemoveAt(i--);
+                    }
+                }
+            }
+        }
+        public static void InsertCollectGarbageFunc(int pos, Func<IEnumerator> func)
+        {
+            if (func != null)
+            {
+                if (pos < 0) pos = 0;
+                else if (pos > _CollectGarbageFuncs.Count) pos = _CollectGarbageFuncs.Count;
+                _CollectGarbageFuncs.Insert(pos, func);
+            }
+        }
+        public static void DelayGarbageCollectTo(int tick)
+        {
+            _NextGarbageCollectTick = tick;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void BeforeLoadFirstScene()
         {
             ResLoader.BeforeLoadFirstScene();
-            Application.lowMemory += () =>
-            {
-                CoroutineRunner.StartCoroutine(UnloadUnusedResDeep());
-            };
+            OnCollectGarbage += UnloadUnusedResStep;
+#if !UNITY_EDITOR
+            Application.lowMemory += StartGarbageCollect;
+#endif
         }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void AfterLoadFirstScene()
