@@ -331,6 +331,8 @@ namespace Capstones.UnityEngineEx
             private static IEnumerator LoadAssetAsyncWork(CoroutineTasks.CoroutineWork req, string asset, Type type)
             {
                 while (AsyncWorkTimer.Check()) yield return null;
+                while (ResManager.IsCollectingGarbage) yield return null;
+                ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
 
 #if COMPATIBLE_RESMANAGER_V1
                 asset = CompatibleAssetName(asset);
@@ -344,6 +346,7 @@ namespace Capstones.UnityEngineEx
                     {
                         var work = new CoroutineTasks.CoroutineWorkSingle();
                         work.SetWork(ai.LoadAsync(work, type));
+                        ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                         yield return work;
                         req.Result = work.Result;
                     }
@@ -389,6 +392,7 @@ namespace Capstones.UnityEngineEx
                                 }
                                 break;
                             }
+                            ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                             yield return null;
                         }
 
@@ -396,11 +400,14 @@ namespace Capstones.UnityEngineEx
                         {
                             var work = new CoroutineTasks.CoroutineWorkSingle();
                             work.SetWork(ai.LoadAsync(work, type));
+                            ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                             yield return work;
                             req.Result = work.Result;
                         }
                     }
                 }
+
+                ResManager.DelayGarbageCollectTo(int.MinValue);
             }
             public static CoroutineTasks.CoroutineWork LoadAssetAsync(string asset, Type type)
             {
