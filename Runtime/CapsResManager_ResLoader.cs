@@ -414,7 +414,7 @@ namespace Capstones.UnityEngineEx
 
         private class GarbageCollectorYieldable : CustomYieldInstruction
         {
-            public override bool keepWaiting { get { return _NeedGarbageCollect && System.Environment.TickCount >= _NextGarbageCollectTick; } }
+            public override bool keepWaiting { get { return !_NeedGarbageCollect || System.Environment.TickCount < _NextGarbageCollectTick; } }
         }
         private static GarbageCollectorYieldable _GarbageCollectorIndicator = new GarbageCollectorYieldable();
         private static bool _IsGarbageCollectorRunning = false;
