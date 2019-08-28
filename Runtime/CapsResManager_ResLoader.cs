@@ -431,6 +431,7 @@ namespace Capstones.UnityEngineEx
                     _NeedGarbageCollect = false;
                     _IsGarbageCollectorWorking = true;
                     int startTick = System.Environment.TickCount;
+                    Debug.LogWarning("CollectGarbageWork Begin");
                     for (int j = 0; j < 3; ++j)
                     {
                         for (int i = 0; i < _CollectGarbageFuncs.Count; ++i)
@@ -500,11 +501,18 @@ namespace Capstones.UnityEngineEx
             _NextGarbageCollectTick = tick;
         }
 
+        public static event Action OnCollectGarbageLite = () => { Debug.LogWarning("CollectGarbageWork Lite"); };
+        public static void StartGarbageCollectLite()
+        {
+            OnCollectGarbageLite();
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         public static void BeforeLoadFirstScene()
         {
             ResLoader.BeforeLoadFirstScene();
             OnCollectGarbage += UnloadUnusedResStep;
+            OnCollectGarbageLite += System.GC.Collect;
 #if !UNITY_EDITOR
             Application.lowMemory += StartGarbageCollect;
 #endif

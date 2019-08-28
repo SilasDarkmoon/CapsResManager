@@ -417,7 +417,10 @@ namespace Capstones.UnityEngineEx
             }
             public static IEnumerator LoadLevelAsync(string name, bool additive)
             {
-                return LoadAssetAsync(name, additive ? typeof(object) : null);
+                ResManager.StartGarbageCollectLite();
+                var work = LoadAssetAsync(name, additive ? typeof(object) : null);
+                work.OnDone += ResManager.StartGarbageCollectLite;
+                return work;
             }
 
             public Object LoadRes(string asset, Type type)

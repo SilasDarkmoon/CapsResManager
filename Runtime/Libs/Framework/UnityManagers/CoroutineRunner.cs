@@ -152,6 +152,8 @@ namespace Capstones.UnityEngineEx
             public virtual void Reset() { }
             public abstract void Dispose();
 
+            public event Action OnDone = () => { };
+
             protected bool TryStart()
             {
                 if (!_Started)
@@ -163,7 +165,18 @@ namespace Capstones.UnityEngineEx
                 return false;
             }
             protected virtual void Start() { }
-            public bool Done { get { return _Done; } }
+            public bool Done {
+                get { return _Done; }
+                protected set
+                {
+                    var old = _Done;
+                    _Done = value;
+                    if (!old && value)
+                    {
+                        OnDone();
+                    }
+                }
+            }
             public virtual object Result
             {
                 get { return _Result; }
@@ -190,13 +203,13 @@ namespace Capstones.UnityEngineEx
             }
             public override bool MoveNext()
             {
-                if (_Done)
+                if (Done)
                 {
                     return false;
                 }
                 if (_Inner == null)
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
                 if (_Suspended)
@@ -209,7 +222,7 @@ namespace Capstones.UnityEngineEx
                 }
                 else
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
             }
@@ -247,7 +260,7 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    if (_Suspended || _Done)
+                    if (_Suspended || Done)
                     {
                         return null;
                     }
@@ -264,14 +277,14 @@ namespace Capstones.UnityEngineEx
             }
             public override bool MoveNext()
             {
-                if (_Done)
+                if (Done)
                 {
                     return false;
                 }
                 var work = Work;
                 if (work == null)
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
                 if (_Suspended)
@@ -301,7 +314,7 @@ namespace Capstones.UnityEngineEx
                         }
                     }
                 }
-                _Done = true;
+                Done = true;
                 return false;
             }
             public override void Dispose()
@@ -366,13 +379,13 @@ namespace Capstones.UnityEngineEx
             }
             public override bool MoveNext()
             {
-                if (_Done)
+                if (Done)
                 {
                     return false;
                 }
                 if (_Inner == null)
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
                 if (_Suspended)
@@ -381,7 +394,7 @@ namespace Capstones.UnityEngineEx
                 }
                 if (_Inner.Done)
                 {
-                    _Done = true;
+                    Done = true;
                     _Result = _Inner.Result;
                     return false;
                 }
@@ -418,13 +431,13 @@ namespace Capstones.UnityEngineEx
             public override bool MoveNext()
             {
                 TryStart();
-                if (_Done)
+                if (Done)
                 {
                     return false;
                 }
                 if (_Inner == null)
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
                 if (_Suspended)
@@ -433,7 +446,7 @@ namespace Capstones.UnityEngineEx
                 }
                 if (_Inner.Done)
                 {
-                    _Done = true;
+                    Done = true;
                     _Result = _Inner.Result;
                     return false;
                 }
@@ -476,13 +489,13 @@ namespace Capstones.UnityEngineEx
             public override bool MoveNext()
             {
                 TryStart();
-                if (_Done)
+                if (Done)
                 {
                     return false;
                 }
                 if (_Works.Count == 0)
                 {
-                    _Done = true;
+                    Done = true;
                     return false;
                 }
                 if (_Suspended)
@@ -496,7 +509,7 @@ namespace Capstones.UnityEngineEx
                         return true;
                     }
                 }
-                _Done = true;
+                Done = true;
                 return false;
             }
             public override void Dispose()
