@@ -39,7 +39,7 @@ namespace Capstones.UnityEngineEx
         }
         public interface ISceneDestroyHandler
         {
-            void PreDestroy(GameObject[] objs);
+            void PreDestroy(IList<GameObject> objs);
             void PostDestroy();
         }
         private static List<ISceneDestroyHandler> _DestroyHandlers = new List<ISceneDestroyHandler>();
@@ -349,7 +349,7 @@ namespace Capstones.UnityEngineEx
             ResLoader.MarkPermanent(assetname);
         }
 
-        public static GameObject[] FindAllGameObject()
+        public static List<GameObject> FindAllGameObject()
         {
             var count = UnityEngine.SceneManagement.SceneManager.sceneCount;
             UnityEngine.SceneManagement.Scene sceneItem;
@@ -359,7 +359,7 @@ namespace Capstones.UnityEngineEx
                 sceneItem = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
                 list.AddRange(sceneItem.GetRootGameObjects());
             }
-            return list.ToArray();
+            return list;
         }
         public static void DestroyAllHard()
         {
@@ -370,14 +370,20 @@ namespace Capstones.UnityEngineEx
             {
                 _DestroyHandlers[i].PreDestroy(oldObjs);
             }
-            foreach (var obj in oldObjs) GameObject.Destroy(obj);
+            for (int i = 0; i < oldObjs.Count; ++i)
+            {
+                Object.Destroy(oldObjs[i]);
+            }
 
             var ddols = DontDestroyOnLoadManager.GetAllDontDestroyOnLoadObjs();
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
                 _DestroyHandlers[i].PreDestroy(ddols);
             }
-            foreach (var obj in ddols) GameObject.Destroy(obj);
+            for (int i = 0; i < ddols.Length; ++i)
+            {
+                Object.Destroy(ddols[i]);
+            }
 
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
@@ -393,7 +399,10 @@ namespace Capstones.UnityEngineEx
             {
                 _DestroyHandlers[i].PreDestroy(oldObjs);
             }
-            foreach (var obj in oldObjs) GameObject.Destroy(obj);
+            for (int i = 0; i < oldObjs.Count; ++i)
+            {
+                Object.Destroy(oldObjs[i]);
+            }
 
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
