@@ -1,0 +1,14 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+using Object = UnityEngine.Object;
+
+namespace Capstones.UnityEngineEx
+{
+    public class CapsResHolder : MonoBehaviour
+    {
+        public List<Object> ResList;
+    }
+}
