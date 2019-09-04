@@ -105,6 +105,11 @@ namespace Capstones.UnityEngineEx
                         var flag = DFlags[i];
                         ModToPackage[flag] = EditorToClientUtils.GetPackageNameFromModName(flag);
                     }
+                    for (int i = 0; i < CriticalMods.Count; ++i)
+                    {
+                        var flag = CriticalMods[i];
+                        ModToPackage[flag] = EditorToClientUtils.GetPackageNameFromModName(flag);
+                    }
                 }
             }
             private static RuntimeCache _RuntimeCache;

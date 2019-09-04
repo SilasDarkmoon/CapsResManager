@@ -194,22 +194,29 @@ namespace Capstones.UnityEngineEx
                 while (curNode != null)
                 {
                     int eindex = path.IndexOfAny(seperateChars, sindex);
-                    if (eindex >= 0)
+                    CapsResManifestNode foundNode = null;
+                    while (eindex >= 0)
                     {
                         var part = path.Substring(sindex, eindex - sindex);
                         if (curNode.Children != null)
                         {
-                            if (!curNode.Children.TryGetValue(part, out curNode))
+                            if (curNode.Children.TryGetValue(part, out foundNode))
                             {
-                                item = null;
-                                return false;
+                                break;
+                            }
+                            else
+                            {
+                                eindex = path.IndexOfAny(seperateChars, eindex + 1);
                             }
                         }
                         else
                         {
-                            item = null;
-                            return false;
+                            break;
                         }
+                    }
+                    if (foundNode != null)
+                    {
+                        curNode = foundNode;
                         sindex = eindex + 1;
                     }
                     else
