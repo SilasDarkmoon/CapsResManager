@@ -33,28 +33,12 @@ namespace Capstones.UnityEditorEx
             var path = GetDistributeFlagsFilePath();
             if (!System.IO.File.Exists(path))
             {
-                foreach (var package in CapsPackageEditor.Packages.Keys)
+                var src = CapsModEditor.FindAssetInMods("DefaultDistributeFlags.txt", true);
+                if (src != null && System.IO.File.Exists(src))
                 {
-                    var root = CapsModEditor.GetPackageRoot(package);
-                    var src = root + "/DefaultDistributeFlags.txt";
-                    if (System.IO.File.Exists(src))
-                    {
-                        System.IO.File.Copy(src, path);
-                        AssetDatabase.ImportAsset(path);
-                        return;
-                    }
-                }
-
-                var mods = CapsModEditor.GetAllMods();
-                for (int i = 0; i < mods.Length; ++i)
-                {
-                    var src = "Assets/Mods/" + mods[i] + "/Link/DefaultDistributeFlags.txt";
-                    if (System.IO.File.Exists(src))
-                    {
-                        System.IO.File.Copy(src, path);
-                        AssetDatabase.ImportAsset(path);
-                        return;
-                    }
+                    System.IO.File.Copy(src, path);
+                    AssetDatabase.ImportAsset(path);
+                    return;
                 }
             }
         }

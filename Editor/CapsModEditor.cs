@@ -492,6 +492,43 @@ namespace Capstones.UnityEditorEx
             return null;
         }
 
+        public static string FindAssetInMods(string part, bool in_mod_link)
+        {
+            foreach (var package in CapsPackageEditor.Packages.Keys)
+            {
+                var root = "Packages/" + package + "/";
+                var src = root + part;
+                if (System.IO.File.Exists(src))
+                {
+                    return src;
+                }
+            }
+
+            var mods = CapsModEditor.GetAllMods();
+            for (int i = 0; i < mods.Length; ++i)
+            {
+                var root = "Assets/Mods/" + mods[i];
+                if (in_mod_link)
+                {
+                    root += "/Link/";
+                }
+                else
+                {
+                    root += "/";
+                }
+                var src = root + part;
+                if (System.IO.File.Exists(src))
+                {
+                    return src;
+                }
+            }
+            return null;
+        }
+        public static string FindAssetInMods(string part)
+        {
+            return FindAssetInMods(part, false);
+        }
+
         public static string GetModRootInPackage(string mod)
         {
             return GetPackageRoot(GetPackageName(mod));
