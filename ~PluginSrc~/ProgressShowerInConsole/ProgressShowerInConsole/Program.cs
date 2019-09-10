@@ -9,6 +9,17 @@ namespace ProgressShowerInConsole
     {
         static void Main(string[] args)
         {
+#if DEBUG
+            for (int i = 0; i < 100; ++i)
+            {
+                if (!System.Diagnostics.Debugger.IsAttached)
+                {
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
+#endif
+            Console.WriteLine("Started");
+
             var pipeName = "";
             if (args != null && args.Length > 0)
             {
@@ -19,69 +30,74 @@ namespace ProgressShowerInConsole
                 pipeName = "";
             }
 
-            Console.OutputEncoding = Encoding.UTF8;
-
-            var thd_Read = new System.Threading.Thread(() =>
+            using (var pipein = new System.IO.Pipes.NamedPipeClientStream(".", "ProgressShowerInConsole" + pipeName, System.IO.Pipes.PipeDirection.In))
             {
-                try
+                using (var pipeout = new System.IO.Pipes.NamedPipeClientStream(".", "ProgressShowerInConsoleControl" + pipeName, System.IO.Pipes.PipeDirection.Out))
                 {
-                    using (var pipe = new System.IO.Pipes.NamedPipeClientStream(".", "ProgressShowerInConsole" + pipeName, System.IO.Pipes.PipeDirection.In))
+                    pipein.Connect();
+                    pipeout.Connect();
+                    Console.WriteLine("Connected");
+
+                    var thd_Read = new System.Threading.Thread(() =>
                     {
-                        pipe.Connect();
-                        var sr = new System.IO.StreamReader(pipe);
-                        while (true)
+                        try
                         {
-                            var line = sr.ReadLine();
-                            if (line == "\uEE05Message")
+                            var sr = new System.IO.StreamReader(pipein);
+                            while (true)
                             {
-                                var mess = sr.ReadLine();
-                                Console.WriteLine(mess);
-                            }
-                            else if (line == "\uEE05Title")
-                            {
-                                var title = sr.ReadLine();
-                                Console.Title = title;
-                                Console.WriteLine("Showing progress of " + title);
-                            }
-                            else if (line == "\uEE05Quit")
-                            {
-                                break;
+                                var line = sr.ReadLine();
+                                if (line == "\uEE05Message")
+                                {
+                                    var mess = sr.ReadLine();
+                                    Console.WriteLine(mess);
+                                }
+                                else if (line == "\uEE05Title")
+                                {
+                                    var title = sr.ReadLine();
+                                    Console.Title = title;
+                                    Console.WriteLine("Showing progress of " + title);
+                                }
+                                else if (line == "\uEE05Quit")
+                                {
+                                    break;
+                                }
                             }
                         }
-                    }
-                }
-                finally
-                {
-                    Console.WriteLine("Closing...");
-                    System.Threading.Thread.Sleep(3000);
-                }
-            });
-            thd_Read.Start();
-
-            var thd_Control = new System.Threading.Thread(() =>
-            {
-                try
-                {
-                    while (true)
-                    {
-                        var kinfo = Console.ReadKey(true);
-                        if (kinfo.Key == ConsoleKey.Q && (kinfo.Modifiers & ConsoleModifiers.Control) != 0)
+                        finally
                         {
-                            Console.Error.WriteLine("\uEE05Quit");
-                            Console.Error.Flush();
-                            break;
+                            Console.WriteLine("Closing...");
+                            System.Threading.Thread.Sleep(3000);
                         }
-                    }
-                }
-                finally
-                {
-                    thd_Read.Abort();
-                }
-            });
-            thd_Control.Start();
+                    });
+                    thd_Read.Start();
 
-            thd_Read.Join();
-            Environment.Exit(0);
+                    var thd_Control = new System.Threading.Thread(() =>
+                    {
+                        try
+                        {
+                            var sw = new System.IO.StreamWriter(pipeout);
+                            while (true)
+                            {
+                                var kinfo = Console.ReadKey(true);
+                                if (kinfo.Key == ConsoleKey.Q && (kinfo.Modifiers & ConsoleModifiers.Control) != 0)
+                                {
+                                    sw.WriteLine("\uEE05Quit");
+                                    sw.Flush();
+                                    break;
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            thd_Read.Abort();
+                        }
+                    });
+                    thd_Control.Start();
+
+                    thd_Read.Join();
+                    Environment.Exit(0);
+                }
+            }
         }
     }
 }

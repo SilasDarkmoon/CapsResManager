@@ -212,24 +212,23 @@ namespace Capstones.UnityEditorEx
         {
 #if UNITY_EDITOR_WIN
             var pipeName = System.DateTime.Now.ToString("yyMMddHHmmss");
-            var pipe = new System.IO.Pipes.NamedPipeServerStream("ProgressShowerInConsole" + pipeName, System.IO.Pipes.PipeDirection.Out);
-            var ar = pipe.BeginWaitForConnection(null, null);
+            var pipeout = new System.IO.Pipes.NamedPipeServerStream("ProgressShowerInConsole" + pipeName, System.IO.Pipes.PipeDirection.Out);
+            var pipein = new System.IO.Pipes.NamedPipeServerStream("ProgressShowerInConsoleControl" + pipeName, System.IO.Pipes.PipeDirection.In);
+            var arout = pipeout.BeginWaitForConnection(null, null);
+            var arin = pipein.BeginWaitForConnection(null, null);
 
             var dir = Application.dataPath + "/../";
             var tooldir = CapsModEditor.GetPackageOrModRoot(CapsEditorUtils.__MOD__) + "/~Tools~/";
             System.Diagnostics.ProcessStartInfo si = new System.Diagnostics.ProcessStartInfo(tooldir + "ProgressShowerInConsole.exe", pipeName);
             si.WorkingDirectory = tooldir;
-            si.UseShellExecute = false;
-            si.RedirectStandardError = true;
-            si.StandardErrorEncoding = System.Text.Encoding.UTF8;
             _ExProc = System.Diagnostics.Process.Start(si);
 
             var thd_Write = new System.Threading.Thread(() =>
             {
                 try
                 {
-                    pipe.EndWaitForConnection(ar);
-                    var sw = new System.IO.StreamWriter(pipe);
+                    pipeout.EndWaitForConnection(arout);
+                    var sw = new System.IO.StreamWriter(pipeout);
                     while (_MessageReady.WaitOne())
                     {
                         _MessageReady.Reset();
@@ -246,7 +245,7 @@ namespace Capstones.UnityEditorEx
                 }
                 finally
                 {
-                    pipe.Dispose();
+                    pipeout.Dispose();
                 }
             });
             thd_Write.Start();
@@ -255,9 +254,11 @@ namespace Capstones.UnityEditorEx
             {
                 try
                 {
+                    pipein.EndWaitForConnection(arin);
+                    var sr = new System.IO.StreamReader(pipein);
                     while (!_ExProc.HasExited)
                     {
-                        var line = _ExProc.StandardError.ReadLine();
+                        var line = sr.ReadLine();
                         if (line != null)
                         {
                             if (line == "\uEE05Quit")
@@ -272,6 +273,7 @@ namespace Capstones.UnityEditorEx
                     _ShouldQuit = true;
                     thd_Write.Abort();
                     _MessageReady.Set();
+                    pipein.Dispose();
                 }
             });
             thd_Read.Start();
