@@ -147,6 +147,7 @@ namespace Capstones.UnityEditorEx
         public static void CheckModsVisibility()
         {
             HashSet<string> compilerOpLines = new HashSet<string>();
+            System.Xml.Linq.XDocument linkxml = new System.Xml.Linq.XDocument();
 
             var flags = new HashSet<string>(ResManager.PreRuntimeDFlags);
             var mods = GetAllModsOrPackages();
@@ -187,6 +188,27 @@ namespace Capstones.UnityEditorEx
                         {
                             Debug.LogException(e);
                         }
+                    }
+                    string linkxmlpath;
+                    bool linkxmlPathExists = false;
+                    if (!string.IsNullOrEmpty(pdir))
+                    {
+                        linkxmlpath = pdir + "/link.xml";
+                        if (linkxmlPathExists = System.IO.File.Exists(linkxmlpath))
+                        {
+                        }
+                        else
+                        {
+                            linkxmlpath = "Assets/Mods/" + mod + "/Link/link.xml";
+                        }
+                    }
+                    else
+                    {
+                        linkxmlpath = "Assets/Mods/" + mod + "/Link/link.xml";
+                    }
+                    if (linkxmlPathExists || System.IO.File.Exists(linkxmlpath))
+                    {
+                        CapsEditorUtils.MergeXml(linkxml, linkxmlpath);
                     }
                     CapsEditorUtils.UnhideFile("Assets/Mods/" + mod);
                     if (System.IO.File.Exists("Assets/Mods/" + mod + ".meta"))
@@ -229,6 +251,15 @@ namespace Capstones.UnityEditorEx
                         }
                     }
                 }
+            }
+
+            if (linkxml.Root != null)
+            {
+                linkxml.Save("Assets/link.xml");
+            }
+            else
+            {
+                System.IO.File.Delete("Assets/link.xml");
             }
 
             compilerOpLines.Remove("");

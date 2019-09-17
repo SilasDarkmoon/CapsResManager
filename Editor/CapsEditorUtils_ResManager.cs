@@ -369,6 +369,91 @@ namespace Capstones.UnityEditorEx
             }
         }
 
+        public static void MergeXml(System.Xml.Linq.XElement eledest, System.Xml.Linq.XElement elesrc)
+        {
+            foreach (var attr in elesrc.Attributes())
+            {
+                eledest.SetAttributeValue(attr.Name, attr.Value);
+            }
+            foreach (var srcchild in elesrc.Elements())
+            {
+                //var dstchild = eledest.Element(srcchild.Name);
+                //if (dstchild != null)
+                //{
+                //    MergeXml(dstchild, srcchild);
+                //}
+                //else
+                //{
+                //    dstchild = new System.Xml.Linq.XElement(srcchild);
+                //    eledest.SetElementValue(srcchild.Name, dstchild);
+                //}
+                var dstchild = new System.Xml.Linq.XElement(srcchild);
+                eledest.Add(dstchild);
+            }
+        }
+        public static void MergeXml(string pathdst, string pathsrc)
+        {
+            System.Xml.Linq.XDocument src = null;
+            try
+            {
+                src = System.Xml.Linq.XDocument.Load(pathsrc);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError(e);
+            }
+            if (src == null)
+            {
+                return;
+            }
+
+            System.Xml.Linq.XDocument dst = null;
+            try
+            {
+                dst = System.Xml.Linq.XDocument.Load(pathdst);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError(e);
+            }
+            if (dst == null)
+            {
+                dst = new System.Xml.Linq.XDocument(src);
+            }
+            else
+            {
+                MergeXml(dst.Root, src.Root);
+            }
+
+            dst.Save(pathdst);
+        }
+
+        public static void MergeXml(System.Xml.Linq.XDocument dst, string pathsrc)
+        {
+            System.Xml.Linq.XDocument src = null;
+            try
+            {
+                src = System.Xml.Linq.XDocument.Load(pathsrc);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError(e);
+            }
+            if (src == null)
+            {
+                return;
+            }
+
+            if (dst.Root == null)
+            {
+                dst.Add(new System.Xml.Linq.XElement(src.Root));
+            }
+            else
+            {
+                MergeXml(dst.Root, src.Root);
+            }
+        }
+
         public static string GetStreamMD5(System.IO.Stream stream)
         { // TODO: test and move to runtime.
             try
