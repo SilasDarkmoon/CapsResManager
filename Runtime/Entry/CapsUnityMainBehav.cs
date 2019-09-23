@@ -206,6 +206,32 @@ public class CapsUnityMainBehav : MonoBehaviour
         }
     }
 
+    public class WaitForReadyToNextScene : ResManager.ILifetime, ResManager.IInitAsync
+    {
+        public static bool Done = true;
+
+        public int Order { get { return ResManager.LifetimeOrders.EntrySceneDone - 5; } }
+        public void Prepare()
+        {
+        }
+        public void Init()
+        {
+        }
+        public void Cleanup()
+        {
+        }
+        public IEnumerator InitAsync()
+        {
+            while (!Done)
+            {
+                yield return null;
+            }
+        }
+
+        private WaitForReadyToNextScene() { }
+        public static readonly WaitForReadyToNextScene Instance = new WaitForReadyToNextScene();
+    }
+
 #if UNITY_EDITOR
     private class WaitForReadyToStart : ResManager.ILifetime, ResManager.IInitAsync, ResManager.IInitProgressReporter
     {
@@ -254,6 +280,7 @@ public class CapsUnityMainBehav : MonoBehaviour
         if (MainBehavInstance != null)
         {
             ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader + 5, LoadEntrySceneBg);
+            ResManager.AddInitItem(WaitForReadyToNextScene.Instance);
             ResManager.AddInitItem(ResManager.LifetimeOrders.EntrySceneDone, EntrySceneDone);
         }
     }

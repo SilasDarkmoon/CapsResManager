@@ -779,12 +779,11 @@
         {
             byte[] buffer = CopyStreamBuffer;
             int readcnt = 0;
-            do
+            while ((readcnt = src.Read(buffer, 0, buffer.Length)) != 0)
             {
-                readcnt = src.Read(buffer, 0, buffer.Length);
                 dst.Write(buffer, 0, readcnt);
                 dst.Flush();
-            } while (readcnt != 0);
+            }
         }
 
         public static bool IsFileSameName(this string src, string dst)
