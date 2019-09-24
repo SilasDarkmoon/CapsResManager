@@ -582,11 +582,11 @@ namespace Capstones.UnityEngineEx
                 {
                     if (additive)
                     {
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(found, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                        UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Additive));
                     }
                     else
                     {
-                        UnityEngine.SceneManagement.SceneManager.LoadScene(found);
+                        UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
                     }
                 }
             }
