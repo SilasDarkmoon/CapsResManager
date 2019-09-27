@@ -545,8 +545,9 @@ namespace Capstones.UnityEditorEx
                 }
                 return 1;
             }
-            else if (!string.IsNullOrEmpty(key))
+            else
             {
+                key = key ?? "";
                 var real = val;
                 if (val != null)
                 {
@@ -568,7 +569,7 @@ namespace Capstones.UnityEditorEx
                     }
                 }
                 var oldkey = rawindices[index].Key;
-                var oldval = oldDict[oldkey];
+                var oldval = rawindices[index].Value;
                 if (oldval is Object && val == null)
                 {
                     specifiedTypes[index] = typeof(Object);
@@ -588,15 +589,20 @@ namespace Capstones.UnityEditorEx
                 bool changed = !DataDictionary.EqualVal(oldval, real) || oldkey != key;
                 if (changed)
                 {
-                    oldDict[key] = real;
+                    if (key != "")
+                    {
+                        oldDict[key] = real;
+                    }
                     if (oldkey != key)
                     {
                         oldDict.Remove(oldkey);
                     }
                     if (Target != null)
                     {
-
-                        Target[key] = real;
+                        if (key != "")
+                        {
+                            Target[key] = real;
+                        }
                         if (oldkey != key)
                         {
                             Target.Remove(oldkey);
