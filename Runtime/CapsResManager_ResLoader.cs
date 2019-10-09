@@ -114,6 +114,10 @@ namespace Capstones.UnityEngineEx
         {
             return LoadRes(asset, null);
         }
+        public static T LoadRes<T>(string asset) where T : Object
+        {
+            return LoadRes(asset, typeof(T)) as T;
+        }
         public static Object LoadResDeep(string asset, Type type)
         {
             var obj = LoadRes(asset, type);
