@@ -96,7 +96,7 @@ namespace Capstones.UnityEngineEx
                 public List<string> CriticalMods = new List<string>();
                 public List<string> DFlags = new List<string>();
 
-                public RuntimeCache()
+                public void Init()
                 {
                     DFlags.AddRange(GetValidDistributeFlags());
                     CriticalMods.AddRange(EditorToClientUtils.GetCriticalMods());
@@ -112,11 +112,12 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            private static RuntimeCache _RuntimeCache;
+            private static RuntimeCache _RuntimeCache = new RuntimeCache();
             public static RuntimeCache ResRuntimeCache { get { return _RuntimeCache; } }
             public static void RebuildRuntimeResCache()
             {
                 _RuntimeCache = new RuntimeCache();
+                _RuntimeCache.Init();
             }
             public static string CheckModPath(string path)
             {
