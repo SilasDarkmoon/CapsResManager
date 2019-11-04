@@ -126,10 +126,10 @@ namespace Capstones.UnityEditorEx
             return arrflags;
         }
 
-        public static event Action OnDistributeFlagsChanged = () => { };
+        public static OrderedEvent<Action> OnDistributeFlagsChanged = (Action)(() => { });
         internal static void FireOnDistributeFlagsChanged()
         {
-            OnDistributeFlagsChanged();
+            OnDistributeFlagsChanged.Handler();
         }
     }
 

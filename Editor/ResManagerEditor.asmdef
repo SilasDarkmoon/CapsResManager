@@ -3,9 +3,9 @@
     "references": [
         "ResManager",
         "Unity.IO.Compression",
-        "ResManagerEditorEntry"
+        "ResManagerEditorEntry",
+        "ResManagerEntry"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
@@ -14,5 +14,6 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": []
 }

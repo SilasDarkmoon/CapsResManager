@@ -19,6 +19,8 @@ namespace Capstones.UnityEditorEx
 
                 CapsPackageEditor.OnPackagesChanged += OnPackagesChanged;
                 CapsDistributeEditor.OnDistributeFlagsChanged += OnDistributeFlagsChanged;
+                //CapsDistributeEditor.OnDistributeFlagsChanged += CapsModEditor.CheckModsVisibility;
+                //CapsDistributeEditor.OnDistributeFlagsChanged += UnityEngineEx.ResManager.RebuildRuntimeResCache;
             }
 
             private static void OnPackagesChanged()
@@ -27,6 +29,7 @@ namespace Capstones.UnityEditorEx
                 CapsModEditor.CheckModsAndMakeLink();
                 UnityEngineEx.ResManager.RebuildRuntimeResCache();
             }
+            [UnityEngineEx.EventOrder(-100)]
             private static void OnDistributeFlagsChanged()
             {
                 CapsModEditor.CheckModsVisibility();
