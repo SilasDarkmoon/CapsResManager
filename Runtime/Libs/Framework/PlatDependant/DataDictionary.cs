@@ -517,7 +517,7 @@ namespace Capstones.UnityEngineEx
         ICollection IDictionary.Values { get { return Values; } }
         object IDictionary.this[object key]
         {
-            get { return ((IDictionary)_Data)[key]; }
+            get { return this[key as string]; }
             set
             {
                 ((IDictionary)_Data)[key] = value;
@@ -546,7 +546,19 @@ namespace Capstones.UnityEngineEx
         ICollection<object> IDictionary<string, object>.Values { get { return Values; } }
         public object this[string key]
         {
-            get { return _Data[key]; }
+            get
+            {
+                if (key == null)
+                {
+                    return null;
+                }
+                object rv;
+                if (_Data.TryGetValue(key, out rv))
+                {
+                    return rv;
+                }
+                return null;
+            }
             set
             {
                 _Data[key] = value;
