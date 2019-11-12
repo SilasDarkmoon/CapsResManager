@@ -92,7 +92,7 @@ namespace Capstones.UnityEditorEx
                 originDict = null;
                 try
                 {
-                    var prefab = PrefabUtility.GetPrefabParent(property.serializedObject.targetObject);
+                    var prefab = PrefabUtility.GetCorrespondingObjectFromOriginalSource(property.serializedObject.targetObject);
                     if (prefab)
                     {
                         var prefabdict = fieldInfo.GetValue(prefab) as DataDictionary;
@@ -114,7 +114,8 @@ namespace Capstones.UnityEditorEx
             }
             else
             {
-                originDict = new Dictionary<string, object>(oldDict);
+                
+                originDict = new Dictionary<string, object>(Target);
                 _GUI_Dirty = false;
                 dirtyKeys.Clear();
             }
@@ -147,7 +148,7 @@ namespace Capstones.UnityEditorEx
                 DataDictionary oDict = null;
                 try
                 {
-                    var prefab = PrefabUtility.GetPrefabParent(property.serializedObject.targetObject);
+                    var prefab = PrefabUtility.GetCorrespondingObjectFromOriginalSource(property.serializedObject.targetObject);
                     if (prefab)
                     {
                         var prefabdict = fieldInfo.GetValue(prefab) as DataDictionary;
@@ -202,13 +203,22 @@ namespace Capstones.UnityEditorEx
             {
                 SyncDataFromTarget(property);
             }
-            if (property.isInstantiatedPrefab)
+            //if (property.isInstantiatedPrefab)
+            //{
+            //    CheckDirty();
+            //}
+            //else
+            //{
+            //    _GUI_Dirty = false;
+            //}
+            CheckDirty();
+
+            if (_GUI_Dirty)
             {
-                CheckDirty();
-            }
-            else
-            {
-                _GUI_Dirty = false;
+                property.serializedObject.Update();
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
+                property.serializedObject.ApplyModifiedProperties();
+                //SyncDataFromTarget();
             }
 
             // the set-to-null btn
@@ -233,6 +243,8 @@ namespace Capstones.UnityEditorEx
                         }
                     }
                     property.serializedObject.Update();
+                    EditorUtility.SetDirty(property.serializedObject.targetObject);
+                    property.serializedObject.ApplyModifiedProperties();
                     return;
                 }
             }
@@ -428,7 +440,13 @@ namespace Capstones.UnityEditorEx
         {
             if (instance is Object)
             {
-                instance = PrefabUtility.GetPrefabParent(instance as Object);
+                //instance = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance as Object);
+                // 在prefab mode模式下
+                object ret = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance as Object);
+                if (ret == null)
+                {
+                    return object.ReferenceEquals(prefab, instance);
+                }
             }
 
             if ((prefab == null || (prefab is Object && ((Object)prefab) == null)) && (instance == null || (instance is Object && (((Object)instance) == null))))
