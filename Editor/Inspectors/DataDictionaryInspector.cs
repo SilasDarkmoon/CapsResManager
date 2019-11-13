@@ -213,13 +213,12 @@ namespace Capstones.UnityEditorEx
             //}
             CheckDirty();
 
-            if (_GUI_Dirty)
-            {
-                property.serializedObject.Update();
-                EditorUtility.SetDirty(property.serializedObject.targetObject);
-                property.serializedObject.ApplyModifiedProperties();
-                //SyncDataFromTarget();
-            }
+            //if (_GUI_Dirty)
+            //{
+            //    property.serializedObject.Update();
+            //    EditorUtility.SetDirty(property.serializedObject.targetObject);
+            //    property.serializedObject.ApplyModifiedProperties();
+            //}
 
             // the set-to-null btn
             GUIContent nullbtntxt = new GUIContent("X");
@@ -260,6 +259,22 @@ namespace Capstones.UnityEditorEx
             if (GUI.Button(reloadbtnrect, reloadbtntxt))
             {
                 SyncDataFromTarget(property);
+                return;
+            }
+
+            // save btn
+            GUIContent savebtntxt = new GUIContent("save");
+            var savebtnsize = GUI.skin.button.CalcSize(savebtntxt);
+            Rect savebtnrect = new Rect();
+            savebtnrect.xMin = position.xMax - savebtnsize.x - reloadbtnsize.x - nullbtnsize.x - EditorGUIUtility.standardVerticalSpacing;
+            savebtnrect.width = savebtnsize.x;
+            savebtnrect.yMin = position.yMin;
+            savebtnrect.height = EditorGUIUtility.singleLineHeight;
+            if (GUI.Button(savebtnrect, savebtntxt))
+            {
+                property.serializedObject.Update();
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
+                property.serializedObject.ApplyModifiedProperties();
                 return;
             }
 
