@@ -62,8 +62,9 @@ namespace Capstones.UnityEditorEx
                 EditorGUIUtility.PingObject(asset);
                 return;
             }
+            var real = path;
 #if COMPATIBLE_RESMANAGER_V1
-            var real = ResManager.CompatibleAssetName(path);
+            real = ResManager.CompatibleAssetName(path);
             if (real != path)
             {
                 path = real;
