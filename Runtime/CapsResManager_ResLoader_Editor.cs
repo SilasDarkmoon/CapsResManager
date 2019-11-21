@@ -592,6 +592,28 @@ namespace Capstones.UnityEngineEx
                 }
             }
 
+            public static AsyncOperation LoadSceneAsyncInPlayMode(string name, bool additive)
+            {
+#if COMPATIBLE_RESMANAGER_V1
+                name = CompatibleAssetName(name);
+#endif
+                var found = CheckDistributePath("CapsRes/" + name);
+                AsyncOperation op = null;
+                if (found != null)
+                {
+                    if (additive)
+                    {
+                        op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Additive));
+                    }
+                    else
+                    {
+                        op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+                    }
+                }
+
+                return op;
+            }
+
             public static void EditorStartupPrepare()
             {
                 // Currently, we need to do nothing.
@@ -614,8 +636,8 @@ namespace Capstones.UnityEngineEx
             }
             public IEnumerator LoadSceneAsync(string name, bool additive)
             {
-                LoadScene(name, additive);
-                yield break;
+                AsyncOperation op = LoadSceneAsyncInPlayMode(name, additive);
+                yield return op;
             }
 
             public int Order { get { return LifetimeOrders.ResLoader; } }
