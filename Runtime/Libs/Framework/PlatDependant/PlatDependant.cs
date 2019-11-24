@@ -7,9 +7,15 @@
     using System.Text;
     using System.IO;
 
-//#if UNITY_EDITOR
-//    [UnityEditor.InitializeOnLoad]
-//#endif
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+    using Unity.IO.Compression;
+#else
+    using System.IO.Compression;
+#endif
+
+    //#if UNITY_EDITOR
+    //    [UnityEditor.InitializeOnLoad]
+    //#endif
     public static class PlatDependant
     {
         public static event Action PreQuitting = () => { };
@@ -28,8 +34,13 @@
             _FastQuitEnabled = false;
         }
 
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
         private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+#else
+        private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+        private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+#endif
         private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
         private static System.Threading.AutoResetEvent LogFileDoneNotify = new System.Threading.AutoResetEvent(true);
 
@@ -46,7 +57,7 @@
         public static volatile bool LogToFileEnabled = true;
         [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
         public static string LogFilePath;
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         public struct LogMessage
         {
             public DateTime Time;
@@ -61,7 +72,7 @@
 
         static PlatDependant()
         {
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             UnityEngine.Application.quitting += () =>
             {
                 PreQuitting();
@@ -95,7 +106,7 @@
             LogToConsoleEnabled = false;
 #endif
 
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
             {
                 if (LogEnabled)
@@ -226,7 +237,7 @@
             if (!LogInfoEnabled) return;
             if (LogToConsoleEnabled)
             {
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 UnityEngine.Debug.Log(obj);
                 return;
 #endif
@@ -235,7 +246,7 @@
             {
                 var time = DateTime.Now;
                 var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                 var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Log, Time = time };
                 if (LogCSharpStackTraceEnabled)
@@ -259,7 +270,7 @@
             if (!LogErrorEnabled) return;
             if (LogToConsoleEnabled)
             {
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 UnityEngine.Debug.LogError(obj);
                 return;
 #endif
@@ -268,7 +279,7 @@
             {
                 var time = DateTime.Now;
                 var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                 var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Error, Time = time };
                 if (LogCSharpStackTraceEnabled)
@@ -292,7 +303,7 @@
             if (!LogWarningEnabled) return;
             if (LogToConsoleEnabled)
             {
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 UnityEngine.Debug.LogWarning(obj);
                 return;
 #endif
@@ -301,7 +312,7 @@
             {
                 var time = DateTime.Now;
                 var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                 var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Warning, Time = time };
                 if (LogCSharpStackTraceEnabled)
@@ -988,7 +999,7 @@
                         {
                             using (var stream = PlatDependant.OpenRead(zip))
                             {
-                                using (var zipa = new Unity.IO.Compression.ZipArchive(stream, Unity.IO.Compression.ZipArchiveMode.Read))
+                                using (var zipa = new ZipArchive(stream, ZipArchiveMode.Read))
                                 {
                                     var entries = zipa.Entries;
                                     if (entries != null)

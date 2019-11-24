@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using Object = UnityEngine.Object;
+#endif
 
 namespace Capstones.UnityEngineEx
 {
@@ -147,6 +149,7 @@ namespace Capstones.UnityEngineEx
             return result ?? format ?? key;
         }
 
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         public static void IterateText(Transform trans)
         {
             UnityEngine.UI.Text[] textArr = trans.GetComponentsInChildren<UnityEngine.UI.Text>(true);
@@ -167,5 +170,13 @@ namespace Capstones.UnityEngineEx
         {
             ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
         }
+#endif
+
+#if UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
+        static LanguageConverter()
+        {
+            Init();
+        }
+#endif
     }
 }

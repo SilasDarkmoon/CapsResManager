@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using uobj = UnityEngine.Object;
+#else
+using PlayerPrefs = Capstones.UnityEngineEx.IsolatedPrefs;
+#endif
 
 namespace Capstones.UnityEngineEx
 {
@@ -17,6 +21,7 @@ namespace Capstones.UnityEngineEx
                 if (_PreRuntimeDFlags == null)
                 {
                     _PreRuntimeDFlags = new List<string>();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     TextAsset txt = Resources.Load<TextAsset>("DistributeFlags");
                     if (txt != null)
                     {
@@ -30,6 +35,27 @@ namespace Capstones.UnityEngineEx
                             }
                         }
                     }
+#else
+                    if (PlatDependant.IsFileExist("./DistributeFlags.txt"))
+                    {
+                        try
+                        {
+                            var strflags = System.IO.File.ReadAllText("./DistributeFlags.txt");
+                            if (!string.IsNullOrEmpty(strflags))
+                            {
+                                var cflags = strflags.Split(new[] { '<' }, System.StringSplitOptions.RemoveEmptyEntries);
+                                if (cflags != null)
+                                {
+                                    _PreRuntimeDFlags.AddRange(cflags);
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
+#endif
                 }
                 return _PreRuntimeDFlags;
             }
@@ -233,7 +259,9 @@ namespace Capstones.UnityEngineEx
                     break;
                 }
             }
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             RebuildRuntimeResCache();
+#endif
         }
         public static void AddDistributeFlag(string flag)
         {
@@ -287,7 +315,9 @@ namespace Capstones.UnityEngineEx
             }
 #endif
             _RuntimeCachedDFlags = null;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             RebuildRuntimeResCache();
+#endif
         }
         public static void SetDistributeFlags(IEnumerable<string> toRemove, IEnumerable<string> toAdd)
         {
@@ -364,7 +394,9 @@ namespace Capstones.UnityEngineEx
                 PlayerPrefs.Save();
 #endif
                 _RuntimeCachedDFlags = null;
-                RebuildRuntimeResCache();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            RebuildRuntimeResCache();
+#endif
             }
         }
         public static void ReloadDistributeFlags()
@@ -372,6 +404,7 @@ namespace Capstones.UnityEngineEx
             _RuntimeCachedDFlags = null;
         }
 
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         private readonly static Dictionary<string, CapsModDesc> _LoadedDistributeDescs = new Dictionary<string, CapsModDesc>();
         public static void ClearLoadedDistributeDescs()
         {
@@ -452,8 +485,10 @@ namespace Capstones.UnityEngineEx
 #endif
             return null;
         }
+#endif
         public static bool CheckDistributeDep(string flag)
         {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             var desc = GetDistributeDesc(flag);
             if (desc != null)
             {
@@ -473,6 +508,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
+#endif
             return true;
         }
 

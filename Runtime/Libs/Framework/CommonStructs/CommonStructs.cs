@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using uobj = UnityEngine.Object;
+#endif
 
 namespace Capstones.UnityEngineEx
 {
@@ -268,7 +270,7 @@ namespace Capstones.UnityEngineEx
 
         private int _cnt;
 
-        #region static funcs for set and get
+#region static funcs for set and get
         private delegate T GetTDel(ref ValueList<T> list);
         private delegate void SetTDel(ref ValueList<T> list, T val);
 
@@ -320,9 +322,9 @@ namespace Capstones.UnityEngineEx
             SetT8,
             SetT9,
         };
-        #endregion
+#endregion
 
-        #region IList<T>
+#region IList<T>
         public int IndexOf(T item)
         {
             for (int i = 0; i < _cnt; ++i)
@@ -490,7 +492,7 @@ namespace Capstones.UnityEngineEx
                 yield return this[i];
             }
         }
-        #endregion
+#endregion
 
         public override bool Equals(object obj)
         {

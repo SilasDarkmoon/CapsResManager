@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using Object = UnityEngine.Object;
+#endif
 
 namespace Capstones.UnityEngineEx
 {

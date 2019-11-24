@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using Object = UnityEngine.Object;
+#endif
 
 namespace Capstones.UnityEngineEx
 {
     public static class IsolatedPrefs
     {
-#if UNITY_STANDALONE && !UNITY_EDITOR
-#if NET_4_6
+#if UNITY_STANDALONE && !UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
+#if NET_4_6 || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
         private class IsolatedIDFileHolder
         {
             private int _InstanceID = 0;
@@ -24,8 +26,13 @@ namespace Capstones.UnityEngineEx
                 _IsolatedIDMutex.WaitOne();
                 try
                 {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var file = Application.persistentDataPath + "/iid.txt";
                     var fileh = Application.persistentDataPath + "/iidh.txt";
+#else
+                    var file = "./runtime/iid.txt";
+                    var fileh = "./runtime/iidh.txt";
+#endif
                     if (PlatDependant.IsFileExist(fileh))
                     {
                         bool shouldDeleteFile = true;
@@ -101,7 +108,11 @@ namespace Capstones.UnityEngineEx
                         _IsolatedIDHolder.Dispose();
                         _IsolatedIDHolder = null;
                     }
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var file = Application.persistentDataPath + "/iid.txt";
+#else
+                    var file = "./runtime/iid.txt";
+#endif
                     int instanceid = 0;
                     if (PlatDependant.IsFileExist(file))
                     {
@@ -296,9 +307,13 @@ namespace Capstones.UnityEngineEx
         private static string _InstallID;
         private static string LoadInstallID()
         {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
             string capid = null;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             string capidfile = "EditorOutput/Runtime/capid.txt";
+#else
+            string capidfile = "./runtime/capid.txt";
+#endif
             if (PlatDependant.IsFileExist(capidfile))
             {
                 try
@@ -364,7 +379,7 @@ namespace Capstones.UnityEngineEx
         {
 #if UNITY_EDITOR
             return InstallID;
-#elif UNITY_STANDALONE
+#elif UNITY_STANDALONE || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
             if (_InstanceHolder.InstanceID == 0)
             {
                 return InstallID;
@@ -398,7 +413,7 @@ namespace Capstones.UnityEngineEx
         {
             get
             {
-#if UNITY_STANDALONE && !UNITY_EDITOR
+#if UNITY_STANDALONE && !UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
                 return _InstanceHolder.InstanceID;
 #else
                 return 0;
@@ -421,8 +436,17 @@ namespace Capstones.UnityEngineEx
             }
 #elif UNITY_ANDROID
             return UnityEngine.Application.persistentDataPath;
-#else
+#elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
             return UnityEngine.Application.temporaryCachePath;
+#else
+            if (_InstanceHolder.InstanceID == 0)
+            {
+                return "./cache";
+            }
+            else
+            {
+                return "./cache/instance" + _InstanceHolder.InstanceID.ToString();
+            }
 #endif
         }
 
@@ -535,7 +559,7 @@ namespace Capstones.UnityEngineEx
         {
             _Dict[key] = value;
         }
-#else
+#elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
         public static void DeleteAll()
         {
             PlayerPrefs.DeleteAll();
@@ -575,6 +599,104 @@ namespace Capstones.UnityEngineEx
         public static void SetString(string key, string value)
         {
             PlayerPrefs.SetString(key, value);
+        }
+#else
+        private static JSONObject _Dict = new JSONObject();
+        static IsolatedPrefs()
+        {
+            string json = null;
+            string file = GetIsolatedPath() + "/iprefs.txt";
+            if (PlatDependant.IsFileExist(file))
+            {
+                try
+                {
+                    using (var sr = PlatDependant.OpenReadText(file))
+                    {
+                        json = sr.ReadToEnd();
+                    }
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        try
+                        {
+                            _Dict = new JSONObject(json);
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    PlatDependant.LogError(e);
+                }
+            }
+        }
+
+        public static void DeleteAll()
+        {
+            _Dict.Clear();
+        }
+        public static void DeleteKey(string key)
+        {
+            _Dict.RemoveField(key);
+        }
+        public static double GetNumber(string key)
+        {
+            double val = 0.0;
+            _Dict.GetField(ref val, key);
+            return val;
+        }
+        public static int GetInt(string key)
+        {
+            int val = 0;
+            _Dict.GetField(ref val, key);
+            return val;
+        }
+        public static string GetString(string key)
+        {
+            string val = null;
+            _Dict.GetField(ref val, key);
+            return val;
+        }
+        public static bool HasKey(string key)
+        {
+            return _Dict.HasField(key);
+        }
+        public static void Save()
+        {
+            try
+            {
+                string json = _Dict.ToString(true);
+                string file = GetIsolatedPath() + "/iprefs.txt";
+                if (string.IsNullOrEmpty(json))
+                {
+                    PlatDependant.DeleteFile(file);
+                }
+                else
+                {
+                    using (var sw = PlatDependant.OpenWriteText(file))
+                    {
+                        sw.Write(json);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                PlatDependant.LogError(e);
+            }
+        }
+        public static void SetNumber(string key, double value)
+        {
+            _Dict.SetField(key, value);
+        }
+        public static void SetInt(string key, int value)
+        {
+            _Dict.SetField(key, value);
+        }
+        public static void SetString(string key, string value)
+        {
+            _Dict.SetField(key, value);
         }
 #endif
     }

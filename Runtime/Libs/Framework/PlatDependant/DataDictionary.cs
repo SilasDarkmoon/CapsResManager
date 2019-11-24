@@ -584,5 +584,30 @@ namespace Capstones.UnityEngineEx
         {
             return _Data.TryGetValue(key, out value);
         }
+
+        #region Typed Getter and Setter
+        // TODO: typed ChangeExVal and Typed AddExVal...
+        //public void Set(string key, bool val)
+        //{
+        //    this[key] = val;
+        //}
+        //public void Set(string key, int val)
+        //{
+
+        //}
+        //public void Set(string key, double val)
+        //{
+
+        //}
+        //public void Set(string key, string val)
+        //{
+
+        //}
+        //public void Set(string key, Object val)
+        //{
+
+        //}
+        //public void 
+        #endregion
     }
 }

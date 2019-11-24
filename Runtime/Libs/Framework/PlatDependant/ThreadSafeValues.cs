@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
 using UnityEngine;
 
 using uobj = UnityEngine.Object;
+#endif
 
 namespace Capstones.UnityEngineEx
 {
@@ -17,10 +19,13 @@ namespace Capstones.UnityEngineEx
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
 #endif
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+#endif
         public static void Init()
         {
             _UpdatePath = IsolatedPrefs.GetIsolatedPath();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             _cached_Application_platform = Application.platform.ToString();
             _cached_Application_streamingAssetsPath = Application.streamingAssetsPath;
             _cached_Application_temporaryCachePath = Application.temporaryCachePath;
@@ -28,6 +33,19 @@ namespace Capstones.UnityEngineEx
             _cached_Application_dataPath = Application.dataPath;
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = ThreadLocalObj.GetThreadId();
+#else
+#if NETCOREAPP
+            _cached_Application_platform = "DotNetCore";
+#else
+            _cached_Application_platform = "DotNet";
+#endif
+            _cached_Application_streamingAssetsPath = "./streaming";
+            _cached_Application_temporaryCachePath = "./cache";
+            _cached_Application_persistentDataPath = "./runtime";
+            _cached_Application_dataPath = ".";
+            _cached_Capid = IsolatedPrefs.IsolatedID;
+            _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;
+#endif
         }
 
         private static string _UpdatePath;

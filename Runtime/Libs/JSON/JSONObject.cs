@@ -4,11 +4,15 @@
 //#define POOLING	//Currently using a build setting for this one (also it's experimental)
 
 using System.Diagnostics;
-using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+using UnityEngine;
 using Debug = UnityEngine.Debug;
+#else
+using Debug = Capstones.UnityEngineEx.PlatDependant;
+#endif
 
 /*
  * http://www.opensource.org/licenses/lgpl-2.1.php
@@ -266,7 +270,7 @@ public class JSONObject {
 		return obj;
 	}
 	public JSONObject() { }
-	#region PARSE
+#region PARSE
 	public JSONObject(string str, int maxDepth = -2, bool storeExcessLevels = false, bool strict = false) {	//create a new JSONObject from a string (this will also create any children, and parse the whole string)
 		Parse(str, maxDepth, storeExcessLevels, strict);
 	}
@@ -422,7 +426,7 @@ public class JSONObject {
 		} else type = Type.NULL;	//If the string is missing, this is a null
 		//Profiler.EndSample();
 	}
-	#endregion
+#endregion
 	public bool IsNumber { get { return type == Type.NUMBER; } }
 	public bool IsNull { get { return type == Type.NULL; } }
 	public bool IsString { get { return type == Type.STRING; } }
@@ -502,6 +506,7 @@ public class JSONObject {
     public void SetField(string name, float val) { SetField(name, Create(val)); }
     public void SetField(string name, double val) { SetField(name, Create(val)); }
     public void SetField(string name, int val) { SetField(name, Create(val)); }
+    public void SetField(string name, string val) { SetField(name, CreateStringObject(val)); }
 	public void SetField(string name, JSONObject obj) {
 		if(HasField(name)) {
 			list.Remove(this[name]);
@@ -708,13 +713,13 @@ public class JSONObject {
 		yield return builder.ToString();
 	}
 #pragma warning restore 219
-	#region STRINGIFY
+#region STRINGIFY
 	const float maxFrameTime = 0.008f;
 	static readonly Stopwatch printWatch = new Stopwatch();
 	IEnumerable StringifyAsync(int depth, StringBuilder builder, bool pretty = false) {	//Convert the JSONObject into a string
 		//Profiler.BeginSample("JSONprint");
 		if(depth++ > MAX_DEPTH) {
-			Debug.Log("reached max depth!");
+			Debug.LogWarning("reached max depth!");
 			yield break;
 		}
 		if(printWatch.Elapsed.TotalSeconds > maxFrameTime) {
@@ -751,7 +756,7 @@ public class JSONObject {
 			case Type.OBJECT:
 				builder.Append("{");
 				if(list.Count > 0) {
-#if(PRETTY)	//for a bit more readability, comment the define above to disable system-wide
+#if (PRETTY)    //for a bit more readability, comment the define above to disable system-wide
 					if(pretty)
 						builder.Append("\n");
 #endif
@@ -759,7 +764,7 @@ public class JSONObject {
 						string key = keys[i];
 						JSONObject obj = list[i];
 						if(obj) {
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								for(int j = 0; j < depth; j++)
 									builder.Append("\t"); //for a bit more readability
@@ -768,20 +773,20 @@ public class JSONObject {
 							foreach(IEnumerable e in obj.StringifyAsync(depth, builder, pretty))
 								yield return e;
 							builder.Append(",");
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								builder.Append("\n");
 #endif
 						}
 					}
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Length -= 2;
 					else
 #endif
 					builder.Length--;
 				}
-#if(PRETTY)
+#if (PRETTY)
 				if(pretty && list.Count > 0) {
 					builder.Append("\n");
 					for(int j = 0; j < depth - 1; j++)
@@ -793,13 +798,13 @@ public class JSONObject {
 			case Type.ARRAY:
 				builder.Append("[");
 				if(list.Count > 0) {
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Append("\n"); //for a bit more readability
 #endif
 					for(int i = 0; i < list.Count; i++) {
 						if(list[i]) {
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								for(int j = 0; j < depth; j++)
 									builder.Append("\t"); //for a bit more readability
@@ -807,20 +812,20 @@ public class JSONObject {
 							foreach(IEnumerable e in list[i].StringifyAsync(depth, builder, pretty))
 								yield return e;
 							builder.Append(",");
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								builder.Append("\n"); //for a bit more readability
 #endif
 						}
 					}
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Length -= 2;
 					else
 #endif
 						builder.Length--;
 				}
-#if(PRETTY)
+#if (PRETTY)
 				if(pretty && list.Count > 0) {
 					builder.Append("\n");
 					for(int j = 0; j < depth - 1; j++)
@@ -851,7 +856,7 @@ public class JSONObject {
 	void Stringify(int depth, StringBuilder builder, bool pretty = false) {	//Convert the JSONObject into a string
 		//Profiler.BeginSample("JSONprint");
 		if(depth++ > MAX_DEPTH) {
-			Debug.Log("reached max depth!");
+			Debug.LogWarning("reached max depth!");
 			return;
 		}
 		switch(type) {
@@ -883,7 +888,7 @@ public class JSONObject {
 			case Type.OBJECT:
 				builder.Append("{");
 				if(list.Count > 0) {
-#if(PRETTY)	//for a bit more readability, comment the define above to disable system-wide
+#if (PRETTY)    //for a bit more readability, comment the define above to disable system-wide
 					if(pretty)
 						builder.Append("\n");
 #endif
@@ -891,7 +896,7 @@ public class JSONObject {
 						string key = keys[i];
 						JSONObject obj = list[i];
 						if(obj) {
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								for(int j = 0; j < depth; j++)
 									builder.Append("\t"); //for a bit more readability
@@ -899,20 +904,20 @@ public class JSONObject {
 							builder.AppendFormat("\"{0}\":", key);
 							obj.Stringify(depth, builder, pretty);
 							builder.Append(",");
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								builder.Append("\n");
 #endif
 						}
 					}
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Length -= 2;
 					else
 #endif
 						builder.Length--;
 				}
-#if(PRETTY)
+#if (PRETTY)
 				if(pretty && list.Count > 0) {
 					builder.Append("\n");
 					for(int j = 0; j < depth - 1; j++)
@@ -924,33 +929,33 @@ public class JSONObject {
 			case Type.ARRAY:
 				builder.Append("[");
 				if(list.Count > 0) {
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Append("\n"); //for a bit more readability
 #endif
 					for(int i = 0; i < list.Count; i++) {
 						if(list[i]) {
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								for(int j = 0; j < depth; j++)
 									builder.Append("\t"); //for a bit more readability
 #endif
 							list[i].Stringify(depth, builder, pretty);
 							builder.Append(",");
-#if(PRETTY)
+#if (PRETTY)
 							if(pretty)
 								builder.Append("\n"); //for a bit more readability
 #endif
 						}
 					}
-#if(PRETTY)
+#if (PRETTY)
 					if(pretty)
 						builder.Length -= 2;
 					else
 #endif
 						builder.Length--;
 				}
-#if(PRETTY)
+#if (PRETTY)
 				if(pretty && list.Count > 0) {
 					builder.Append("\n");
 					for(int j = 0; j < depth - 1; j++)
@@ -971,8 +976,9 @@ public class JSONObject {
 		}
 		//Profiler.EndSample();
 	}
-	#endregion
-	public static implicit operator WWWForm(JSONObject obj) {
+    #endregion
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+    public static implicit operator WWWForm(JSONObject obj) {
 		WWWForm form = new WWWForm();
 		for(int i = 0; i < obj.list.Count; i++) {
 			string key = i + "";
@@ -985,7 +991,8 @@ public class JSONObject {
 		}
 		return form;
 	}
-	public JSONObject this[int index] {
+#endif
+    public JSONObject this[int index] {
 		get {
 			if(list.Count > index) return list[index];
 			return null;
@@ -1031,20 +1038,7 @@ public class JSONObject {
     {
         if (type == Type.OBJECT)
         {
-            Dictionary<string, object> result = new Dictionary<string, object>();
-            for (int i = 0; i < list.Count; i++)
-            {
-                JSONObject val = list[i];
-                switch (val.type)
-                {
-                    case Type.STRING: result.Add(keys[i], val.str); break;
-                    case Type.NUMBER: result.Add(keys[i], val.n); break;
-                    case Type.BOOL: result.Add(keys[i], val.b); break;
-                    case Type.NULL: result.Add(keys[i], null); break;
-                    default: if (GLog.IsLogWarningEnabled) GLog.LogWarning("Omitting object: " + keys[i] + " in dictionary conversion"); break;
-                }
-            }
-            return result;
+            return ToObject() as Dictionary<string, object>;
         }
         Debug.LogWarning("Tried to turn non-Object JSONObject into a dictionary");
         return null;
