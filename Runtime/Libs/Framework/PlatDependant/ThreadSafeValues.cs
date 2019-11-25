@@ -24,7 +24,8 @@ namespace Capstones.UnityEngineEx
 #endif
         public static void Init()
         {
-            _UpdatePath = IsolatedPrefs.GetIsolatedPath();
+            _UpdatePath = IsolatedPrefs.GetUpdatePath();
+            _IsolatedPath = IsolatedPrefs.GetIsolatedPath();
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             _cached_Application_platform = Application.platform.ToString();
             _cached_Application_streamingAssetsPath = Application.streamingAssetsPath;
@@ -49,6 +50,7 @@ namespace Capstones.UnityEngineEx
         }
 
         private static string _UpdatePath;
+        private static string _IsolatedPath;
         private static string _cached_Application_platform;
         private static string _cached_Application_streamingAssetsPath;
         private static string _cached_Application_temporaryCachePath;
@@ -58,6 +60,7 @@ namespace Capstones.UnityEngineEx
         private static ulong _UnityThreadID;
 
         public static string UpdatePath { get { return _UpdatePath; } }
+        public static string IsolatedPath { get { return _IsolatedPath; } }
         public static string AppPlatform { get { return _cached_Application_platform; } }
         public static string AppStreamingAssetsPath { get { return _cached_Application_streamingAssetsPath; } }
         public static string AppTemporaryCachePath { get { return _cached_Application_temporaryCachePath; } }

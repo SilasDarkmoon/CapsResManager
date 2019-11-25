@@ -18,6 +18,296 @@
     //#endif
     public static class PlatDependant
     {
+        private static class Logger
+        {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+            private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+#else
+            private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+            private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
+#endif
+            private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
+            private static System.Threading.AutoResetEvent LogFileDoneNotify = new System.Threading.AutoResetEvent(true);
+
+            public static bool LogEnabled = true;
+            public static bool LogInfoEnabled = true;
+            public static bool LogWarningEnabled = true;
+            public static bool LogErrorEnabled = true;
+            public static bool _LogToConsoleEnabled = true;
+            public static bool LogToConsoleEnabled
+            {
+                get { return _LogToConsoleEnabled; }
+                set { _LogToConsoleEnabled = value; }
+            }
+            public static volatile bool LogToFileEnabled = true;
+            [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
+            public static string LogFilePath;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            public struct LogMessage
+            {
+                public DateTime Time;
+                public string Message;
+                public string StackTrace;
+                public UnityEngine.LogType LogType;
+            }
+            public static readonly LogMessage[] LogMessages = new LogMessage[32];
+            private static int _LogMessageIndex = 0;
+            public static int LogMessageIndex { get { return _LogMessageIndex; } }
+#endif
+
+            static Logger()
+            {
+#if DISABLE_LOG_ALL
+                LogEnabled = false;
+#endif
+#if DISABLE_LOG_INFO
+                LogInfoEnabled = false;
+#endif
+#if DISABLE_LOG_WARN
+                LogWarningEnabled = false;
+#endif
+#if DISABLE_LOG_ERROR
+                LogErrorEnabled = false;
+#endif
+#if DISABLE_LOG_CONSOLE
+                LogToConsoleEnabled = false;
+#endif
+#if DISABLE_LOG_STACKTRACE
+                LogCSharpStackTraceEnabled = false;
+#endif
+#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
+                LogToConsoleEnabled = false;
+#endif
+
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
+                {
+                    if (LogEnabled)
+                    {
+                        if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
+                        {
+                            var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
+                            var message = new LogMessage() { Message = condition, StackTrace = stackTrace, LogType = type, Time = DateTime.Now };
+                            LogMessages[index] = message;
+
+                            if (LogToFileEnabled)
+                            {
+                                var sb = GetStringBuilder();
+                                sb.AppendFormat("{0:HH-mm-ss.ff}", message.Time);
+                                switch (type)
+                                {
+                                    case UnityEngine.LogType.Log:
+                                        sb.AppendLine(" I");
+                                        break;
+                                    case UnityEngine.LogType.Warning:
+                                        sb.AppendLine(" W");
+                                        break;
+                                    default:
+                                        sb.AppendLine(" E");
+                                        break;
+                                }
+                                sb.AppendLine(condition);
+                                sb.AppendLine(stackTrace);
+                                EnqueueLog(sb);
+                            }
+                        }
+                    }
+                };
+#endif
+
+                string logdir = Capstones.UnityEngineEx.ThreadSafeValues.IsolatedPath;
+#if UNITY_IOS && !UNITY_EDITOR && (LOG_TO_DOCUMENT_FOLDER || DEVELOPMENT_BUILD || ALWAYS_SHOW_LOG || DEBUG)
+                logdir = Capstones.UnityEngineEx.ThreadSafeValues.AppPersistentDataPath;
+#endif
+                var file = logdir + "/log/cs/log" + DateTime.Now.ToString("MMdd") + ".txt";
+                if (!IsFileExist(file))
+                {
+                    foreach (var ofile in GetAllFiles(logdir + "/log/cs/"))
+                    {
+                        DeleteFile(ofile);
+                    }
+                }
+                LogFilePath = file;
+
+                RunBackground(prog =>
+                {
+#if UNITY_EDITOR
+                    try
+                    {
+#endif
+                        while (LogNotify.WaitOne())
+                        {
+                            WaitForLogFileDone();
+                            using (var sw = OpenAppendText(LogFilePath))
+                            {
+                                StringBuilder sb;
+                                while (LogQueue.TryDequeue(out sb))
+                                {
+                                    sw.WriteLine(sb);
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
+                                    Console.WriteLine(sb);
+#endif
+                                    ReturnStringBuilder(sb);
+                                }
+                            }
+                            SetLogFileDone();
+                        }
+#if UNITY_EDITOR
+                    }
+                    catch (System.Threading.ThreadAbortException) { }
+#endif
+                });
+            }
+
+            public static string SendLogBegin()
+            {
+                LogToFileEnabled = false;
+                WaitForLogFileDone();
+                return LogFilePath;
+            }
+            public static void SendLogEnd()
+            {
+                SetLogFileDone();
+                LogToFileEnabled = true;
+            }
+
+            public static void WaitForLogFileDone()
+            {
+                LogFileDoneNotify.WaitOne();
+            }
+            public static void SetLogFileDone()
+            {
+                LogFileDoneNotify.Set();
+            }
+
+            public static void EnqueueLog(StringBuilder sb)
+            {
+                if (sb != null)
+                {
+                    LogQueue.Enqueue(sb);
+                    LogNotify.Set();
+                }
+            }
+            public static StringBuilder GetStringBuilder()
+            {
+                StringBuilder rv = null;
+                if (LogPool.TryDequeue(out rv))
+                {
+                    rv.Remove(0, rv.Length);
+                    return rv;
+                }
+                rv = new StringBuilder();
+                return rv;
+            }
+            public static void ReturnStringBuilder(StringBuilder sb)
+            {
+                if (sb != null)
+                {
+                    LogPool.Enqueue(sb);
+                }
+            }
+
+            public static void LogInfo(object obj)
+            {
+                if (!LogEnabled) return;
+                if (!LogInfoEnabled) return;
+                if (LogToConsoleEnabled)
+                {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    UnityEngine.Debug.Log(obj);
+                    return;
+#endif
+                }
+                if (LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
+                    var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Log, Time = time };
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        message.StackTrace = Environment.StackTrace;
+                    }
+                    LogMessages[index] = message;
+#endif
+
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendLine(" I");
+                    sb.AppendLine(msg);
+                    EnqueueLog(sb);
+                }
+            }
+
+            public static void LogError(object obj)
+            {
+                if (!LogEnabled) return;
+                if (!LogErrorEnabled) return;
+                if (LogToConsoleEnabled)
+                {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    UnityEngine.Debug.LogError(obj);
+                    return;
+#endif
+                }
+                if (LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
+                    var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Error, Time = time };
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        message.StackTrace = Environment.StackTrace;
+                    }
+                    LogMessages[index] = message;
+#endif
+
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendLine(" E");
+                    sb.AppendLine(msg);
+                    EnqueueLog(sb);
+                }
+            }
+
+            public static void LogWarning(object obj)
+            {
+                if (!LogEnabled) return;
+                if (!LogWarningEnabled) return;
+                if (LogToConsoleEnabled)
+                {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    UnityEngine.Debug.LogWarning(obj);
+                    return;
+#endif
+                }
+                if (LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                    var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
+                    var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Warning, Time = time };
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        message.StackTrace = Environment.StackTrace;
+                    }
+                    LogMessages[index] = message;
+#endif
+
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendLine(" W");
+                    sb.AppendLine(msg);
+                    EnqueueLog(sb);
+                }
+            }
+        }
+
         public static event Action PreQuitting = () => { };
         public static event Action Quitting = () => { };
         private static void FastQuit()
@@ -34,42 +324,6 @@
             _FastQuitEnabled = false;
         }
 
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-        private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
-        private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
-#else
-        private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
-        private static System.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new System.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
-#endif
-        private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
-        private static System.Threading.AutoResetEvent LogFileDoneNotify = new System.Threading.AutoResetEvent(true);
-
-        public static bool LogEnabled = true;
-        public static bool LogInfoEnabled = true;
-        public static bool LogWarningEnabled = true;
-        public static bool LogErrorEnabled = true;
-        public static bool _LogToConsoleEnabled = true;
-        public static bool LogToConsoleEnabled
-        {
-            get { return _LogToConsoleEnabled; }
-            set { _LogToConsoleEnabled = value; }
-        }
-        public static volatile bool LogToFileEnabled = true;
-        [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
-        public static string LogFilePath;
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-        public struct LogMessage
-        {
-            public DateTime Time;
-            public string Message;
-            public string StackTrace;
-            public UnityEngine.LogType LogType;
-        }
-        public static readonly LogMessage[] LogMessages = new LogMessage[32];
-        private static int _LogMessageIndex = 0;
-        public static int LogMessageIndex { get { return _LogMessageIndex; } }
-#endif
-
         static PlatDependant()
         {
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
@@ -82,252 +336,41 @@
                     FastQuit();
                 }
             };
-#endif
-
-#if DISABLE_LOG_ALL
-            LogEnabled = false;
-#endif
-#if DISABLE_LOG_INFO
-            LogInfoEnabled = false;
-#endif
-#if DISABLE_LOG_WARN
-            LogWarningEnabled = false;
-#endif
-#if DISABLE_LOG_ERROR
-            LogErrorEnabled = false;
-#endif
-#if DISABLE_LOG_CONSOLE
-            LogToConsoleEnabled = false;
-#endif
-#if DISABLE_LOG_STACKTRACE
-            LogCSharpStackTraceEnabled = false;
-#endif
-#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
-            LogToConsoleEnabled = false;
-#endif
-
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-            UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
+#else
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
             {
-                if (LogEnabled)
+                PreQuitting();
+                Quitting();
+                if (_FastQuitEnabled)
                 {
-                    if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
-                    {
-                        var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
-                        var message = new LogMessage() { Message = condition, StackTrace = stackTrace, LogType = type, Time = DateTime.Now };
-                        LogMessages[index] = message;
-
-                        if (LogToFileEnabled)
-                        {
-                            var sb = GetStringBuilder();
-                            sb.AppendFormat("{0:HH-mm-ss.ff}", message.Time);
-                            switch (type)
-                            {
-                                case UnityEngine.LogType.Log:
-                                    sb.AppendLine(" I");
-                                    break;
-                                case UnityEngine.LogType.Warning:
-                                    sb.AppendLine(" W");
-                                    break;
-                                default:
-                                    sb.AppendLine(" E");
-                                    break;
-                            }
-                            sb.AppendLine(condition);
-                            sb.AppendLine(stackTrace);
-                            EnqueueLog(sb);
-                        }
-                    }
+                    FastQuit();
                 }
             };
 #endif
-
-            string logdir = Capstones.UnityEngineEx.ThreadSafeValues.UpdatePath;
-#if UNITY_IOS && !UNITY_EDITOR && (LOG_TO_DOCUMENT_FOLDER || DEVELOPMENT_BUILD || ALWAYS_SHOW_LOG || DEBUG)
-            logdir = Capstones.UnityEngineEx.ThreadSafeValues.AppPersistentDataPath;
-#endif
-            var file = logdir + "/log/cs/log" + DateTime.Now.ToString("MMdd") + ".txt";
-            if (!IsFileExist(file))
-            {
-                foreach (var ofile in GetAllFiles(logdir + "/log/cs/"))
-                {
-                    DeleteFile(ofile);
-                }
-            }
-            LogFilePath = file;
-
-            RunBackground(prog =>
-            {
-#if UNITY_EDITOR
-                try
-                {
-#endif
-                    while (LogNotify.WaitOne())
-                    {
-                        WaitForLogFileDone();
-                        using (var sw = OpenAppendText(LogFilePath))
-                        {
-                            StringBuilder sb;
-                            while (LogQueue.TryDequeue(out sb))
-                            {
-                                sw.WriteLine(sb);
-                                ReturnStringBuilder(sb);
-                            }
-                        }
-                        SetLogFileDone();
-                    }
-#if UNITY_EDITOR
-                }
-                catch (System.Threading.ThreadAbortException) { }
-#endif
-            });
         }
 
         public static string SendLogBegin()
         {
-            LogToFileEnabled = false;
-            WaitForLogFileDone();
-            return LogFilePath;
+            return Logger.SendLogBegin();
         }
         public static void SendLogEnd()
         {
-            SetLogFileDone();
-            LogToFileEnabled = true;
-        }
-
-        private static void WaitForLogFileDone()
-        {
-            LogFileDoneNotify.WaitOne();
-        }
-        private static void SetLogFileDone()
-        {
-            LogFileDoneNotify.Set();
-        }
-
-        private static void EnqueueLog(StringBuilder sb)
-        {
-            if (sb != null)
-            {
-                LogQueue.Enqueue(sb);
-                LogNotify.Set();
-            }
-        }
-        public static StringBuilder GetStringBuilder()
-        {
-            StringBuilder rv = null;
-            if (LogPool.TryDequeue(out rv))
-            {
-                rv.Remove(0, rv.Length);
-                return rv;
-            }
-            rv = new StringBuilder();
-            return rv;
-        }
-        public static void ReturnStringBuilder(StringBuilder sb)
-        {
-            if (sb != null)
-            {
-                LogPool.Enqueue(sb);
-            }
+            Logger.SendLogEnd();
         }
 
         public static void LogInfo(this object obj)
         {
-            if (!LogEnabled) return;
-            if (!LogInfoEnabled) return;
-            if (LogToConsoleEnabled)
-            {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                UnityEngine.Debug.Log(obj);
-                return;
-#endif
-            }
-            if (LogToFileEnabled)
-            {
-                var time = DateTime.Now;
-                var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
-                var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Log, Time = time };
-                if (LogCSharpStackTraceEnabled)
-                {
-                    message.StackTrace = Environment.StackTrace;
-                }
-                LogMessages[index] = message;
-#endif
-
-                var sb = GetStringBuilder();
-                sb.AppendFormat("{0:HH-mm-ss.ff}", time);
-                sb.AppendLine(" I");
-                sb.AppendLine(msg);
-                EnqueueLog(sb);
-            }
+            Logger.LogInfo(obj);
         }
 
         public static void LogError(this object obj)
         {
-            if (!LogEnabled) return;
-            if (!LogErrorEnabled) return;
-            if (LogToConsoleEnabled)
-            {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                UnityEngine.Debug.LogError(obj);
-                return;
-#endif
-            }
-            if (LogToFileEnabled)
-            {
-                var time = DateTime.Now;
-                var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
-                var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Error, Time = time };
-                if (LogCSharpStackTraceEnabled)
-                {
-                    message.StackTrace = Environment.StackTrace;
-                }
-                LogMessages[index] = message;
-#endif
-
-                var sb = GetStringBuilder();
-                sb.AppendFormat("{0:HH-mm-ss.ff}", time);
-                sb.AppendLine(" E");
-                sb.AppendLine(msg);
-                EnqueueLog(sb);
-            }
+            Logger.LogError(obj);
         }
 
         public static void LogWarning(this object obj)
         {
-            if (!LogEnabled) return;
-            if (!LogWarningEnabled) return;
-            if (LogToConsoleEnabled)
-            {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                UnityEngine.Debug.LogWarning(obj);
-                return;
-#endif
-            }
-            if (LogToFileEnabled)
-            {
-                var time = DateTime.Now;
-                var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
-                var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Warning, Time = time };
-                if (LogCSharpStackTraceEnabled)
-                {
-                    message.StackTrace = Environment.StackTrace;
-                }
-                LogMessages[index] = message;
-#endif
-
-                var sb = GetStringBuilder();
-                sb.AppendFormat("{0:HH-mm-ss.ff}", time);
-                sb.AppendLine(" W");
-                sb.AppendLine(msg);
-                EnqueueLog(sb);
-            }
+            Logger.LogWarning(obj);
         }
 
         public static bool IsValueType(this Type type)
@@ -611,6 +654,7 @@
                         }
                     }
                 }
+                catch (System.IO.DirectoryNotFoundException) { }
                 catch (Exception e)
                 {
                     LogInfo(e);
@@ -633,6 +677,7 @@
                         }
                     }
                 }
+                catch (System.IO.DirectoryNotFoundException) { }
                 catch (Exception e)
                 {
                     LogInfo(e);

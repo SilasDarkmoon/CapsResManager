@@ -11,6 +11,15 @@ namespace Capstones.UnityEngineEx
 {
     public static class IsolatedPrefs
     {
+        private static void LogError(object message)
+        {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            Debug.LogError(message);
+#else
+            Console.WriteLine(message);
+#endif
+        }
+
 #if UNITY_STANDALONE && !UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
 #if NET_4_6 || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
         private class IsolatedIDFileHolder
@@ -78,7 +87,7 @@ namespace Capstones.UnityEngineEx
                         }
                         catch (Exception e)
                         {
-                            PlatDependant.LogError(e);
+                            LogError(e);
                         }
                     }
                     using (var sw = PlatDependant.OpenWriteText(file))
@@ -88,7 +97,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
                 finally
                 {
@@ -126,7 +135,7 @@ namespace Capstones.UnityEngineEx
                         }
                         catch (Exception e)
                         {
-                            PlatDependant.LogError(e);
+                            LogError(e);
                         }
                     }
                     if (instanceid <= 1)
@@ -143,7 +152,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
                 finally
                 {
@@ -234,7 +243,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
                 finally
                 {
@@ -292,7 +301,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
                 finally
                 {
@@ -325,7 +334,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
             }
             if (string.IsNullOrEmpty(capid))
@@ -340,7 +349,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
             }
             return capid;
@@ -450,6 +459,21 @@ namespace Capstones.UnityEngineEx
 #endif
         }
 
+        public static string GetUpdatePath()
+        {
+#if UNITY_EDITOR
+            return "EditorOutput/Runtime";
+#elif UNITY_STANDALONE
+            return UnityEngine.Application.temporaryCachePath;
+#elif UNITY_ANDROID
+            return UnityEngine.Application.persistentDataPath;
+#elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            return UnityEngine.Application.temporaryCachePath;
+#else
+            return "./cache";
+#endif
+        }
+
 #if UNITY_EDITOR || UNITY_STANDALONE
         private static DataDictionary _Dict = new DataDictionary();
         static IsolatedPrefs()
@@ -471,7 +495,7 @@ namespace Capstones.UnityEngineEx
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
             }
         }
@@ -544,7 +568,7 @@ namespace Capstones.UnityEngineEx
             }
             catch (Exception e)
             {
-                PlatDependant.LogError(e);
+                LogError(e);
             }
         }
         public static void SetNumber(string key, double value)
@@ -622,13 +646,13 @@ namespace Capstones.UnityEngineEx
                         }
                         catch (Exception e)
                         {
-                            PlatDependant.LogError(e);
+                            LogError(e);
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    PlatDependant.LogError(e);
+                    LogError(e);
                 }
             }
         }
@@ -683,7 +707,7 @@ namespace Capstones.UnityEngineEx
             }
             catch (Exception e)
             {
-                PlatDependant.LogError(e);
+                LogError(e);
             }
         }
         public static void SetNumber(string key, double value)
