@@ -77,7 +77,9 @@
                 LogCSharpStackTraceEnabled = false;
 #endif
 #if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 LogToConsoleEnabled = false;
+#endif
 #endif
 
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
@@ -145,9 +147,6 @@
                                 while (LogQueue.TryDequeue(out sb))
                                 {
                                     sw.WriteLine(sb);
-#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
-                                    Console.WriteLine(sb);
-#endif
                                     ReturnStringBuilder(sb);
                                 }
                             }
@@ -217,6 +216,8 @@
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     UnityEngine.Debug.Log(obj);
                     return;
+#else
+                    Console.WriteLine(obj);
 #endif
                 }
                 if (LogToFileEnabled)
@@ -250,6 +251,8 @@
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     UnityEngine.Debug.LogError(obj);
                     return;
+#else
+                    Console.WriteLine(obj);
 #endif
                 }
                 if (LogToFileEnabled)
@@ -283,6 +286,8 @@
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     UnityEngine.Debug.LogWarning(obj);
                     return;
+#else
+                    Console.WriteLine(obj);
 #endif
                 }
                 if (LogToFileEnabled)
