@@ -13,7 +13,7 @@ namespace Capstones.UnityEngineEx
         {
             public ClientResLoader()
             {
-#if !UNITY_EDITOR
+#if !UNITY_EDITOR || FORCE_USE_CLIENT_RESLOADER
                 ResLoader = this;
 #endif
             }
