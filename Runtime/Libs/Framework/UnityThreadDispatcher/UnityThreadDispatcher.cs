@@ -76,7 +76,11 @@ namespace Capstones.UnityEngineEx
         }
 
 #pragma warning disable 0414
+#if !NET_4_6 && !NET_STANDARD_2_0
         private static Unity.Collections.Concurrent.ConcurrentQueue<Action> ActionQueue = new Unity.Collections.Concurrent.ConcurrentQueue<Action>();
+#else
+        private static System.Collections.Concurrent.ConcurrentQueue<Action> ActionQueue = new System.Collections.Concurrent.ConcurrentQueue<Action>();
+#endif
         private static bool _Inited = false;
         private static bool _UsingObjRunner = false;
         internal static GameObject _RunningObj = null;

@@ -7,7 +7,7 @@
     using System.Text;
     using System.IO;
 
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
     using Unity.IO.Compression;
 #else
     using System.IO.Compression;
@@ -20,7 +20,7 @@
     {
         private static class Logger
         {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
             private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
             private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogPool = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
 #else

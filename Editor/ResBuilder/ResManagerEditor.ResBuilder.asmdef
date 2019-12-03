@@ -1,11 +1,8 @@
 {
-    "name": "ResManagerEditor",
+    "name": "ResManagerEditor.ResBuilder",
     "references": [
         "ResManager",
-        "Unity.IO.Compression",
-        "ResManagerEditorEntry",
-        "ResManagerEntry",
-		"System.IO.Compression"
+        "ResManagerEditor"
     ],
     "includePlatforms": [
         "Editor"

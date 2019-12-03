@@ -39,21 +39,5 @@ namespace Capstones.UnityEditorEx
 #pragma warning disable 0414
         private static CapsEditorInitializer_ResManager i_CapsEditorInitializer_ResManager = new CapsEditorInitializer_ResManager();
 #pragma warning restore
-
-        [MenuItem("Res/Check Build", priority = 200105)]
-        public static void CheckBuildCommand()
-        {
-            CapsResBuilderChecker.CheckRes("EditorOutput/Intermediate/ResBuildCheckResult.txt");
-        }
-
-        [MenuItem("Res/Build Res (No Update)", priority = 200110)]
-        public static void BuildResCommand()
-        {
-            CapsResBuilder.BuildingParams = CapsResBuilder.ResBuilderParams.Create();
-            CapsResBuilder.BuildingParams.makezip = false;
-            var work = CapsResBuilder.BuildResAsync(null, null);
-            while (work.MoveNext()) ;
-            CapsResBuilder.BuildingParams = null;
-        }
     }
 }

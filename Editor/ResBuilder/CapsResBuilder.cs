@@ -5,6 +5,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Capstones.UnityEngineEx;
+#if !NET_4_6 && !NET_STANDARD_2_0
+using Unity.IO.Compression;
+#else
+using System.IO.Compression;
+#endif
 
 namespace Capstones.UnityEditorEx
 {
@@ -347,7 +352,7 @@ namespace Capstones.UnityEditorEx
                     progress.Total = entries.Count;
                     using (var stream = PlatDependant.OpenWrite(zipFile))
                     {
-                        using (var zip = new Unity.IO.Compression.ZipArchive(stream, Unity.IO.Compression.ZipArchiveMode.Create))
+                        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create))
                         {
                             if (!srcDir.EndsWith("/") && !srcDir.EndsWith("\\"))
                             {
@@ -478,7 +483,7 @@ namespace Capstones.UnityEditorEx
                 yield break;
             }
 
-            var zip = new Unity.IO.Compression.ZipArchive(stream, Unity.IO.Compression.ZipArchiveMode.Create);
+            var zip = new ZipArchive(stream, ZipArchiveMode.Create);
 
             try
             {

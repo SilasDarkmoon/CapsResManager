@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+#if !NET_4_6 && !NET_STANDARD_2_0
 using Unity.IO.Compression;
+#else
+using System.IO.Compression;
+#endif
 using UnityEngine;
 
 using Object = UnityEngine.Object;
@@ -805,7 +809,7 @@ namespace Capstones.UnityEngineEx
             LoadedAssetBundles.Clear();
         }
 
-        #region Zip Archive on Android APK
+#region Zip Archive on Android APK
         [ThreadStatic] private static System.IO.Stream _AndroidApkFileStream;
         [ThreadStatic] private static ZipArchive _AndroidApkZipArchive;
         public static System.IO.Stream AndroidApkFileStream
@@ -1055,6 +1059,6 @@ namespace Capstones.UnityEngineEx
         {
             return ObbEntryType(file) != ZipEntryType.NonExist;
         }
-        #endregion
+#endregion
     }
 }

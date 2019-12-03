@@ -1,2 +1,3 @@
 -define:MOD_CAPSRESMANAGER
 -define:UNITY_ENGINE
+-r:System.IO.Compression.dll
