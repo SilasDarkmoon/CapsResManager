@@ -865,7 +865,11 @@ namespace Capstones.UnityEngineEx
                         }
                         else
                         {
+#if !NET_4_6 && !NET_STANDARD_2_0
                             _AndroidApkZipArchive.ThrowIfDisposed();
+#else
+                            { var entries = _AndroidApkZipArchive.Entries; }
+#endif
                             if (_AndroidApkZipArchive.Mode == ZipArchiveMode.Create)
                             {
                                 disposed = true;
@@ -961,7 +965,11 @@ namespace Capstones.UnityEngineEx
                             }
                             else
                             {
+#if !NET_4_6 && !NET_STANDARD_2_0
                                 _ObbZipArchive.ThrowIfDisposed();
+#else
+                                { var entries = _ObbZipArchive.Entries; }
+#endif
                                 if (_ObbZipArchive.Mode == ZipArchiveMode.Create)
                                 {
                                     disposed = true;
