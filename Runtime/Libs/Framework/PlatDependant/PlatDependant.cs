@@ -123,6 +123,7 @@
                 logdir = Capstones.UnityEngineEx.ThreadSafeValues.AppPersistentDataPath;
 #endif
                 var file = logdir + "/log/cs/log" + DateTime.Now.ToString("MMdd") + ".txt";
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (!IsFileExist(file))
                 {
                     foreach (var ofile in GetAllFiles(logdir + "/log/cs/"))
@@ -130,6 +131,7 @@
                         DeleteFile(ofile);
                     }
                 }
+#endif
                 LogFilePath = file;
 
                 RunBackground(prog =>
