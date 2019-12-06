@@ -219,6 +219,8 @@
                     UnityEngine.Debug.Log(obj);
                     return;
 #else
+                    var time = DateTime.Now;
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
 #endif
                 }
@@ -254,7 +256,11 @@
                     UnityEngine.Debug.LogError(obj);
                     return;
 #else
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    var time = DateTime.Now;
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
+                    Console.ResetColor();
 #endif
                 }
                 if (LogToFileEnabled)
@@ -289,7 +295,11 @@
                     UnityEngine.Debug.LogWarning(obj);
                     return;
 #else
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    var time = DateTime.Now;
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
+                    Console.ResetColor();
 #endif
                 }
                 if (LogToFileEnabled)
