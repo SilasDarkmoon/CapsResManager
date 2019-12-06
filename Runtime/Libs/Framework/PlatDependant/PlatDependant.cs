@@ -96,7 +96,7 @@
                             if (LogToFileEnabled)
                             {
                                 var sb = GetStringBuilder();
-                                sb.AppendFormat("{0:HH-mm-ss.ff}", message.Time);
+                                sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", message.Time);
                                 switch (type)
                                 {
                                     case UnityEngine.LogType.Log:
@@ -239,7 +239,7 @@
 #endif
 
                     var sb = GetStringBuilder();
-                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" I");
                     sb.AppendLine(msg);
                     EnqueueLog(sb);
@@ -278,7 +278,7 @@
 #endif
 
                     var sb = GetStringBuilder();
-                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" E");
                     sb.AppendLine(msg);
                     EnqueueLog(sb);
@@ -317,7 +317,7 @@
 #endif
 
                     var sb = GetStringBuilder();
-                    sb.AppendFormat("{0:HH-mm-ss.ff}", time);
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" W");
                     sb.AppendLine(msg);
                     EnqueueLog(sb);
