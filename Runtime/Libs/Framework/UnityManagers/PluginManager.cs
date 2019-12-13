@@ -103,12 +103,19 @@ namespace Capstones.UnityEngineEx
                     var codeEmitModule = asmbuilder.DefineDynamicModule(assemblyName.Name);
                     var typebuilder = codeEmitModule.DefineType(assemblyName.Name, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Abstract | TypeAttributes.Sealed, typeof(object));
 
+                    var dllname = lib;
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        // TODO: on higher version .NET Core, we should consider MacOS X.
+                        dllname = AppDomain.CurrentDomain.BaseDirectory + "/lib" + lib + ".so";
+                    }
+
                     var mbuilder_load = typebuilder.DefineMethod("UnityPluginLoad", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new[] { typeof(IUnityInterfaces).MakeByRefType() });
-                    var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { lib });
+                    var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { dllname });
                     mbuilder_load.SetCustomAttribute(dllimport);
 
                     var mbuilder_unload = typebuilder.DefineMethod("UnityPluginUnload", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new Type[0]);
-                    //var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { lib });
+                    //var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { dllname });
                     mbuilder_unload.SetCustomAttribute(dllimport);
 
                     var createdtype = typebuilder.CreateType();
