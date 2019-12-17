@@ -109,13 +109,13 @@ namespace Capstones.UnityEngineEx
                         // TODO: on higher version .NET Core, we should consider MacOS X.
                         dllname = AppDomain.CurrentDomain.BaseDirectory + "/lib" + lib + ".so";
                     }
-#if UNITY_EDITOR_OSX
-                    var epLoad = "CapsPluginLoad";
-                    var epUnload = "CapsPluginUnload";
-#else
+//#if UNITY_EDITOR_OSX
+//                    var epLoad = "CapsPluginLoad";
+//                    var epUnload = "CapsPluginUnload";
+//#else
                     var epLoad = "UnityPluginLoad";
                     var epUnload = "UnityPluginUnload";
-#endif
+//#endif
                     var mbuilder_load = typebuilder.DefineMethod(epLoad, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new[] { typeof(IUnityInterfaces).MakeByRefType() });
                     var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { dllname });
                     mbuilder_load.SetCustomAttribute(dllimport);
