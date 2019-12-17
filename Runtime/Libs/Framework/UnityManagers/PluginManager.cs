@@ -1,4 +1,4 @@
-﻿#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || UNITY_EDITOR_OSX
+﻿#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
