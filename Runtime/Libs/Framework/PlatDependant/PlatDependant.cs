@@ -13,9 +13,9 @@
     using System.IO.Compression;
 #endif
 
-    //#if UNITY_EDITOR
-    //    [UnityEditor.InitializeOnLoad]
-    //#endif
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoad]
+#endif
     public static class PlatDependant
     {
         private static class Logger
@@ -82,42 +82,6 @@
 #endif
 #endif
 
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
-                {
-                    if (LogEnabled)
-                    {
-                        if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
-                        {
-                            var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
-                            var message = new LogMessage() { Message = condition, StackTrace = stackTrace, LogType = type, Time = DateTime.Now };
-                            LogMessages[index] = message;
-
-                            if (LogToFileEnabled)
-                            {
-                                var sb = GetStringBuilder();
-                                sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", message.Time);
-                                switch (type)
-                                {
-                                    case UnityEngine.LogType.Log:
-                                        sb.AppendLine(" I");
-                                        break;
-                                    case UnityEngine.LogType.Warning:
-                                        sb.AppendLine(" W");
-                                        break;
-                                    default:
-                                        sb.AppendLine(" E");
-                                        break;
-                                }
-                                sb.AppendLine(condition);
-                                sb.AppendLine(stackTrace);
-                                EnqueueLog(sb);
-                            }
-                        }
-                    }
-                };
-#endif
-
                 string logdir = Capstones.UnityEngineEx.ThreadSafeValues.IsolatedPath;
 #if UNITY_IOS && !UNITY_EDITOR && (LOG_TO_DOCUMENT_FOLDER || DEVELOPMENT_BUILD || ALWAYS_SHOW_LOG || DEBUG)
                 logdir = Capstones.UnityEngineEx.ThreadSafeValues.AppPersistentDataPath;
@@ -160,6 +124,42 @@
 #endif
                 });
             }
+
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            public static void OnUnityLogReceived(string condition, string stackTrace, UnityEngine.LogType type)
+            {
+                if (LogEnabled)
+                {
+                    if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
+                    {
+                        var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
+                        var message = new LogMessage() { Message = condition, StackTrace = stackTrace, LogType = type, Time = DateTime.Now };
+                        LogMessages[index] = message;
+
+                        if (LogToFileEnabled)
+                        {
+                            var sb = GetStringBuilder();
+                            sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", message.Time);
+                            switch (type)
+                            {
+                                case UnityEngine.LogType.Log:
+                                    sb.AppendLine(" I");
+                                    break;
+                                case UnityEngine.LogType.Warning:
+                                    sb.AppendLine(" W");
+                                    break;
+                                default:
+                                    sb.AppendLine(" E");
+                                    break;
+                            }
+                            sb.AppendLine(condition);
+                            sb.AppendLine(stackTrace);
+                            EnqueueLog(sb);
+                        }
+                    }
+                }
+            }
+#endif
 
             public static string SendLogBegin()
             {
@@ -343,6 +343,13 @@
 
         static PlatDependant()
         {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+            UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
+            {
+                Logger.OnUnityLogReceived(condition, stackTrace, type);
+            };
+#endif
+
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             UnityEngine.Application.quitting += () =>
             {
