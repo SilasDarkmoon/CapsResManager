@@ -1,4 +1,4 @@
-﻿#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
+﻿#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || UNITY_EDITOR_OSX
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -109,18 +109,24 @@ namespace Capstones.UnityEngineEx
                         // TODO: on higher version .NET Core, we should consider MacOS X.
                         dllname = AppDomain.CurrentDomain.BaseDirectory + "/lib" + lib + ".so";
                     }
-
-                    var mbuilder_load = typebuilder.DefineMethod("UnityPluginLoad", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new[] { typeof(IUnityInterfaces).MakeByRefType() });
+#if UNITY_EDITOR_OSX
+                    var epLoad = "CapsPluginLoad";
+                    var epUnload = "CapsPluginUnload";
+#else
+                    var epLoad = "UnityPluginLoad";
+                    var epUnload = "UnityPluginUnload";
+#endif
+                    var mbuilder_load = typebuilder.DefineMethod(epLoad, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new[] { typeof(IUnityInterfaces).MakeByRefType() });
                     var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { dllname });
                     mbuilder_load.SetCustomAttribute(dllimport);
 
-                    var mbuilder_unload = typebuilder.DefineMethod("UnityPluginUnload", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new Type[0]);
+                    var mbuilder_unload = typebuilder.DefineMethod(epUnload, MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.PinvokeImpl, typeof(void), new Type[0]);
                     //var dllimport = new CustomAttributeBuilder(typeof(DllImportAttribute).GetConstructor(new[] { typeof(string) }), new[] { dllname });
                     mbuilder_unload.SetCustomAttribute(dllimport);
 
                     var createdtype = typebuilder.CreateType();
-                    info.OnLoad = (UnityPluginLoadDel)Delegate.CreateDelegate(typeof(UnityPluginLoadDel), createdtype.GetMethod("UnityPluginLoad"));
-                    info.OnUnload = (UnityPluginUnloadDel)Delegate.CreateDelegate(typeof(UnityPluginUnloadDel), createdtype.GetMethod("UnityPluginUnload"));
+                    info.OnLoad = (UnityPluginLoadDel)Delegate.CreateDelegate(typeof(UnityPluginLoadDel), createdtype.GetMethod(epLoad));
+                    info.OnUnload = (UnityPluginUnloadDel)Delegate.CreateDelegate(typeof(UnityPluginUnloadDel), createdtype.GetMethod(epUnload));
                     try
                     {
                         info.OnLoad(ref UnityInterfaces);
