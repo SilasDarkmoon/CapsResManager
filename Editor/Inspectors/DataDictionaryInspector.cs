@@ -457,7 +457,12 @@ namespace Capstones.UnityEditorEx
             {
                 //instance = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance as Object);
                 // 在prefab mode模式下
-                object ret = PrefabUtility.GetCorrespondingObjectFromOriginalSource(instance as Object);
+                var obj = instance as Object;
+                if (obj == null)
+                {
+                    return object.ReferenceEquals(prefab, instance);
+                }
+                object ret = PrefabUtility.GetCorrespondingObjectFromOriginalSource(obj);
                 if (ret == null)
                 {
                     return object.ReferenceEquals(prefab, instance);
