@@ -688,4 +688,26 @@ namespace Capstones.UnityEngineEx
             }
         }
     }
+
+    public class WaitForTickCount : CustomYieldInstruction
+    {
+        private int _ToTick;
+
+        public WaitForTickCount(int delta)
+        {
+            SetDelta(delta);
+        }
+        public void SetDelta(int delta)
+        {
+            _ToTick = Environment.TickCount + delta;
+        }
+
+        public override bool keepWaiting
+        {
+            get
+            {
+                return _ToTick - Environment.TickCount > 0;
+            }
+        }
+    }
 }
