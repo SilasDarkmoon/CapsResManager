@@ -307,12 +307,122 @@ namespace Capstones.UnityEditorEx
                 catch { }
                 AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(MonoScript.FromScriptableObject(ScriptableObject.CreateInstance<CapsModDesc>())), ImportAssetOptions.ForceUpdate);
                 // Update all package...
-                foreach (var kvp in _PackageName2ModName)
-                {
-                    var pname = kvp.Key;
-                    AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ImportRecursive);
-                }
+                //foreach (var kvp in _PackageName2ModName)
+                //{
+                //    var pname = kvp.Key;
+                //    AssetDatabase.ImportAsset("Packages/" + pname, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ImportRecursive);
+                //}
+                ReimportAllAssemblyDefinitions();
                 EditorApplication.UnlockReloadAssemblies();
+            }
+            AssetDatabase.Refresh();
+        }
+
+        public static void ReimportAllAssemblyFromCode()
+        {
+            var allasms = AssetDatabase.FindAssets("t:asmdef");
+            HashSet<string> asmdirs = new HashSet<string>();
+            for (int i = 0; i < allasms.Length; ++i)
+            {
+                var asmguid = allasms[i];
+                var asmpath = AssetDatabase.GUIDToAssetPath(asmguid);
+                if (!string.IsNullOrEmpty(asmpath))
+                {
+                    asmdirs.Add(System.IO.Path.GetDirectoryName(asmpath));
+                }
+            }
+            foreach (var asmpath in asmdirs)
+            {
+                if (!string.IsNullOrEmpty(asmpath))
+                {
+                    bool firstFound = false;
+                    var spts = System.IO.Directory.GetFiles(asmpath, "*.cs", System.IO.SearchOption.TopDirectoryOnly);
+                    if (spts != null && spts.Length > 0)
+                    {
+                        AssetDatabase.ImportAsset(spts[0].Replace("\\", "/"), ImportAssetOptions.ForceUpdate);
+                    }
+                    else
+                    {
+                        spts = System.IO.Directory.GetFiles(asmpath, "*.cs", System.IO.SearchOption.AllDirectories);
+                        for (int i = 0; i < spts.Length; ++i)
+                        {
+                            var sptpath = spts[i].Replace("\\", "/");
+                            if (!string.IsNullOrEmpty(sptpath))
+                            {
+                                bool isInChildAsm = false;
+                                string dir = sptpath;
+                                try
+                                {
+                                    while (true)
+                                    {
+                                        dir = System.IO.Path.GetDirectoryName(dir);
+                                        if (string.IsNullOrEmpty(dir) || dir == asmpath || dir.Length <= asmpath.Length)
+                                        {
+                                            break;
+                                        }
+                                        if (asmdirs.Contains(dir))
+                                        {
+                                            isInChildAsm = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                catch { }
+                                if (!isInChildAsm)
+                                {
+                                    if (!firstFound)
+                                    {
+                                        firstFound = true;
+                                        AssetDatabase.ImportAsset(sptpath, ImportAssetOptions.ForceUpdate);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public static void ReimportAllAssemblyDefinitions()
+        {
+            var allasms = AssetDatabase.FindAssets("t:asmdef");
+            Dictionary<string, byte[]> Contents = new Dictionary<string, byte[]>();
+            for (int i = 0; i < allasms.Length; ++i)
+            {
+                var asmguid = allasms[i];
+                var asmpath = AssetDatabase.GUIDToAssetPath(asmguid);
+                if (!string.IsNullOrEmpty(asmpath))
+                {
+                    var content = System.IO.File.ReadAllBytes(asmpath);
+                    Contents[asmpath] = content;
+                    try
+                    {
+                        using (var stream = System.IO.File.OpenWrite(asmpath))
+                        {
+                            stream.Write(content, 0, content.Length);
+                            stream.Write(new byte[] { (byte)'\n' }, 0, 1);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            AssetDatabase.Refresh();
+            for (int i = 0; i < allasms.Length; ++i)
+            {
+                var asmguid = allasms[i];
+                var asmpath = AssetDatabase.GUIDToAssetPath(asmguid);
+                if (!string.IsNullOrEmpty(asmpath))
+                {
+                    byte[] content;
+                    if (Contents.TryGetValue(asmpath, out content))
+                    {
+                        try
+                        {
+                            System.IO.File.WriteAllBytes(asmpath, content);
+                        }
+                        catch { }
+                    }
+                }
             }
             AssetDatabase.Refresh();
         }
