@@ -103,6 +103,35 @@ namespace Capstones.UnityEditorEx
             }
             Debug.Log("Can not find asset: " + path);
         }
+
+        [MenuItem("Res/Delete Empty Folders", priority = 200210)]
+        public static void DeleteEmptyAssetFolders()
+        {
+            var assets = AssetDatabase.GetAllAssetPaths();
+            Array.Sort(assets, (a, b) => -Comparer<string>.Default.Compare(a, b));
+            HashSet<string> nonEmptyFolders = new HashSet<string>();
+            bool dirty = false;
+            for (int i = 0; i < assets.Length; ++i)
+            {
+                var path = assets[i];
+                if (System.IO.Directory.Exists(path) && !nonEmptyFolders.Contains(path))
+                {
+                    dirty = true;
+                    Debug.LogError("Delete: " + path);
+                    System.IO.Directory.Delete(path, true);
+                }
+                else
+                {
+                    var dir = System.IO.Path.GetDirectoryName(path).Replace('\\', '/');
+                    nonEmptyFolders.Add(dir);
+                }
+            }
+            if (dirty)
+            {
+                AssetDatabase.Refresh();
+            }
+        }
+
         public static string GetAssetNormPath(string path)
         {
             if (path != null)
