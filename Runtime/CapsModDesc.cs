@@ -26,6 +26,12 @@ namespace Capstones.UnityEngineEx
 #endif
                 return _Mod;
             }
+#if UNITY_EDITOR
+            set
+            {
+                _Mod = value;
+            }
+#endif
         }
         public bool IsOptional
         {
