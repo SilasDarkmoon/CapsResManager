@@ -54,6 +54,7 @@ namespace Capstones.UnityEditorEx
                             sw.WriteLine(_Symbol);
                         }
                         CapsModEditor.CheckModsVisibility();
+                        DistributeSelectWindow.Init();
                     }
                     Close();
                 }

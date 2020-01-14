@@ -136,7 +136,7 @@ namespace Capstones.UnityEditorEx
     public class DistributeSelectWindow : EditorWindow
     {
         [MenuItem("Res/Select Distribute Flags", priority = 200000)]
-        static void Init()
+        public static void Init()
         {
             var win = GetWindow<DistributeSelectWindow>();
             win.titleContent = new GUIContent("Distribute Flags");
