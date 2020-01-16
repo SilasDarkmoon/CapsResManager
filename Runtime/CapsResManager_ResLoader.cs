@@ -165,9 +165,9 @@ namespace Capstones.UnityEngineEx
             }
 
             LoadingScenes.Add(new Pack<string, bool, bool>(name, false, additive));
-            ++LoadingSceneQueueIndex;
             if (LoadingScenes.Count == 1)
             {
+                LoadingSceneQueueIndex = 0;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
                 ResLoader.LoadScene(name, additive);
             }
@@ -398,9 +398,9 @@ namespace Capstones.UnityEngineEx
             }
 
             LoadingScenes.Add(new Pack<string, bool, bool>(name, true, additive));
-            ++LoadingSceneQueueIndex;
             if (LoadingScenes.Count == 1)
             {
+                LoadingSceneQueueIndex = 0;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
                 return ResLoader.LoadSceneAsync(name, additive);
             }
