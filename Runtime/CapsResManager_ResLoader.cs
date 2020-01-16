@@ -131,9 +131,68 @@ namespace Capstones.UnityEngineEx
         {
             return LoadResDeep(asset, null);
         }
+
+        private static List<Pack<string, bool, bool>> LoadingScenes = new List<Pack<string, bool, bool>>();
+        private static int LoadingSceneQueueIndex = -1;
         public static void LoadScene(string name, bool additive)
         {
-            ResLoader.LoadScene(name, additive);
+            if (!additive)
+            {
+                string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
+                if (loadingScene != "IntermediateScene")
+                {
+                    if (LoadingScenes.Count > 0)
+                    {
+                        string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
+                        if (curScene == loadingScene)
+                        {
+                            LoadScene("Common/IntermediateScene.unity", false);
+                        }
+                    }
+                    else
+                    {
+                        var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
+                        for (int i = 0; i < sceneCnt; ++i)
+                        {
+                            if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
+                            {
+                                LoadScene("Common/IntermediateScene.unity", false);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            LoadingScenes.Add(new Pack<string, bool, bool>(name, false, additive));
+            ++LoadingSceneQueueIndex;
+            if (LoadingScenes.Count == 1)
+            {
+                UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
+                ResLoader.LoadScene(name, additive);
+            }
+        }
+        private static void OnSceneLoadedClearLoadingQueue(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
+        {
+            ++LoadingSceneQueueIndex;
+            if (LoadingSceneQueueIndex < LoadingScenes.Count)
+            {
+                var info = LoadingScenes[LoadingSceneQueueIndex];
+                if (info.t2)
+                {
+                    ResLoader.LoadSceneAsync(info.t1, info.t3);
+                }
+                else
+                {
+                    ResLoader.LoadScene(info.t1, info.t3);
+                }
+            }
+            else
+            {
+                LoadingScenes.Clear();
+                LoadingSceneQueueIndex = -1;
+                UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedClearLoadingQueue;
+            }
         }
         public static void LoadScene(string name)
         {
@@ -310,11 +369,59 @@ namespace Capstones.UnityEngineEx
         }
         public static IEnumerator LoadSceneAsync(string name, bool additive)
         {
-            return ResLoader.LoadSceneAsync(name, additive);
+            if (!additive)
+            {
+                string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
+                if (loadingScene != "IntermediateScene")
+                {
+                    if (LoadingScenes.Count > 0)
+                    {
+                        string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
+                        if (curScene == loadingScene)
+                        {
+                            LoadScene("Common/IntermediateScene.unity", false);
+                        }
+                    }
+                    else
+                    {
+                        var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
+                        for (int i = 0; i < sceneCnt; ++i)
+                        {
+                            if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
+                            {
+                                LoadScene("Common/IntermediateScene.unity", false);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            LoadingScenes.Add(new Pack<string, bool, bool>(name, true, additive));
+            ++LoadingSceneQueueIndex;
+            if (LoadingScenes.Count == 1)
+            {
+                UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
+                return ResLoader.LoadSceneAsync(name, additive);
+            }
+            else
+            {
+                return new LoadSceneAsyncYieldable();
+            }
         }
         public static IEnumerator LoadSceneAsync(string name)
         {
             return LoadSceneAsync(name, false);
+        }
+        private class LoadSceneAsyncYieldable : UnityEngine.CustomYieldInstruction
+        {
+            public override bool keepWaiting
+            {
+                get
+                {
+                    return LoadingScenes.Count > 0;
+                }
+            }
         }
 
         public static void UnloadUnusedRes()
