@@ -348,16 +348,31 @@ namespace Capstones.UnityEngineEx
                     {
                         if (sceneindex >= 0)
                         {
-                            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneindex);
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneindex, additive ? UnityEngine.SceneManagement.LoadSceneMode.Additive : UnityEngine.SceneManagement.LoadSceneMode.Single);
                         }
                         else
                         {
-                            UnityEngine.SceneManagement.SceneManager.LoadScene(System.IO.Path.GetFileNameWithoutExtension(node.PPath));
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(System.IO.Path.GetFileNameWithoutExtension(node.PPath), additive ? UnityEngine.SceneManagement.LoadSceneMode.Additive : UnityEngine.SceneManagement.LoadSceneMode.Single);
                         }
                     }
                     else
                     {
                         LoadAsset(node.Item, additive ? typeof(object) : null);
+                    }
+                }
+                else
+                {
+                    int sceneindex;
+                    if (IsBuiltinScene(name, out sceneindex))
+                    {
+                        if (sceneindex >= 0)
+                        {
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneindex, additive ? UnityEngine.SceneManagement.LoadSceneMode.Additive : UnityEngine.SceneManagement.LoadSceneMode.Single);
+                        }
+                        else
+                        {
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(System.IO.Path.GetFileNameWithoutExtension(name), additive ? UnityEngine.SceneManagement.LoadSceneMode.Additive : UnityEngine.SceneManagement.LoadSceneMode.Single);
+                        }
                     }
                 }
             }
@@ -422,11 +437,11 @@ namespace Capstones.UnityEngineEx
                     {
                         if (sceneindex >= 0)
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex);
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
                         else
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(node.PPath));
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(node.PPath), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
                         ResManager.DelayGarbageCollectTo(int.MinValue);
                         //req.Result = ???
@@ -496,6 +511,24 @@ namespace Capstones.UnityEngineEx
                             yield return work;
                             req.Result = work.Result;
                         }
+                    }
+                }
+                else
+                {
+                    int sceneindex;
+                    if (IsBuiltinScene(asset, out sceneindex))
+                    {
+                        if (sceneindex >= 0)
+                        {
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                        }
+                        else
+                        {
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(asset), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                        }
+                        ResManager.DelayGarbageCollectTo(int.MinValue);
+                        //req.Result = ???
+                        yield break;
                     }
                 }
 
