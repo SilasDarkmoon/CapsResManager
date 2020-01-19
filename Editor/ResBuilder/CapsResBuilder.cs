@@ -1076,6 +1076,23 @@ namespace Capstones.UnityEditorEx
                         }
                     }
                 }
+                using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/res/builtin-scenes.txt"))
+                {
+                    var scenes = EditorBuildSettings.scenes;
+                    int index = 0;
+                    for (int i = 0; i < scenes.Length; ++i)
+                    {
+                        var sceneinfo = scenes[i];
+                        if (sceneinfo.enabled)
+                        {
+                            var guid = sceneinfo.guid.ToString();
+                            var scenepath = AssetDatabase.GUIDToAssetPath(guid);
+                            sw.Write(scenepath);
+                            sw.Write("|");
+                            sw.WriteLine(index++);
+                        }
+                    }
+                }
             }
         }
     }

@@ -304,6 +304,115 @@ namespace Capstones.UnityEngineEx
             }
         }
 
+        public static System.IO.Stream LoadFileInStreaming(string file)
+        {
+            System.IO.Stream stream = null;
+            if (!SkipPending)
+            {
+                stream = PlatDependant.OpenRead(ThreadSafeValues.UpdatePath + "/pending/" + file);
+                if (stream != null)
+                {
+                    return stream;
+                }
+            }
+            if (!SkipUpdate)
+            {
+                stream = PlatDependant.OpenRead(ThreadSafeValues.UpdatePath + "/" + file);
+                if (stream != null)
+                {
+                    return stream;
+                }
+            }
+            if (Application.streamingAssetsPath.Contains("://"))
+            {
+                if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
+                {
+                    if (!SkipObb && _LoadAssetsFromObb)
+                    {
+                        int retryTimes = 3;
+                        for (int i = 0; i < retryTimes; ++i)
+                        {
+                            ZipArchive za = ObbZipArchive;
+                            if (za == null)
+                            {
+                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                                continue;
+                            }
+
+                            try
+                            {
+                                var entry = za.GetEntry(file);
+                                if (entry != null)
+                                {
+                                    return entry.Open();
+                                }
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                            }
+                        }
+                    }
+                    if (!SkipPackage)
+                    {
+                        int retryTimes = 3;
+                        for (int i = 0; i < retryTimes; ++i)
+                        {
+                            ZipArchive za = AndroidApkZipArchive;
+                            if (za == null)
+                            {
+                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                                continue;
+                            }
+
+                            try
+                            {
+                                var entry = za.GetEntry("assets/" + file);
+                                if (entry != null)
+                                {
+                                    return entry.Open();
+                                }
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (!SkipPackage)
+                {
+                    stream = PlatDependant.OpenRead(Application.streamingAssetsPath + "/" + file);
+                    if (stream != null)
+                    {
+                        return stream;
+                    }
+                }
+            }
+            return null;
+        }
+
         public interface IAssetBundleLoaderEx
         {
             bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out AssetBundleInfo bi);

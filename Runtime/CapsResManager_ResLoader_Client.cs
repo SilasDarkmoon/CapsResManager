@@ -101,6 +101,56 @@ namespace Capstones.UnityEngineEx
 
                 CollapsedManifest.CollapseManifest(dflags);
                 CollapsedManifest.TrimExcess();
+                ParseBuiltinScenes();
+            }
+
+            private static Dictionary<string, int> _BuiltinScenes = new Dictionary<string, int>();
+            private static void ParseBuiltinScenes()
+            {
+                _BuiltinScenes.Clear();
+                System.IO.StreamReader sr = null;
+                System.IO.Stream stream = null;
+                try
+                {
+                    stream = LoadFileInStreaming("res/builtin-scenes.txt");
+                    if (stream != null)
+                    {
+                        sr = new System.IO.StreamReader(stream);
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            var items = line.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                            if (items != null && items.Length > 0)
+                            {
+                                var scenepath = items[0];
+                                int index = -1;
+                                if (items.Length >= 2)
+                                {
+                                    if (!int.TryParse(items[1], out index))
+                                    {
+                                        index = -1;
+                                    }
+                                }
+                                _BuiltinScenes[scenepath] = index;
+                            }
+                        }
+                    }
+                }
+                finally
+                {
+                    if (sr != null)
+                    {
+                        sr.Dispose();
+                    }
+                    if (stream != null)
+                    {
+                        stream.Dispose();
+                    }
+                }
+            }
+            public static bool IsBuiltinScene(string path, out int index)
+            {
+                return _BuiltinScenes.TryGetValue(path, out index);
             }
 
             public interface IAssetInfo
@@ -287,7 +337,23 @@ namespace Capstones.UnityEngineEx
                 CapsResManifestNode node;
                 if (CollapsedManifest.TryGetItem(name, out node) && node.Item != null)
                 {
-                    LoadAsset(node.Item, additive ? typeof(object) : null);
+                    var scenepath = node.GetFullPath();
+                    int sceneindex;
+                    if (IsBuiltinScene(scenepath, out sceneindex))
+                    {
+                        if (sceneindex >= 0)
+                        {
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneindex);
+                        }
+                        else
+                        {
+                            UnityEngine.SceneManagement.SceneManager.LoadScene(System.IO.Path.GetFileNameWithoutExtension(node.PPath));
+                        }
+                    }
+                    else
+                    {
+                        LoadAsset(node.Item, additive ? typeof(object) : null);
+                    }
                 }
             }
 
@@ -340,6 +406,22 @@ namespace Capstones.UnityEngineEx
                 CapsResManifestNode node;
                 if (CollapsedManifest.TryGetItem(asset, out node) && node.Item != null)
                 {
+                    var scenepath = node.GetFullPath();
+                    int sceneindex;
+                    if (IsBuiltinScene(scenepath, out sceneindex))
+                    {
+                        if (sceneindex >= 0)
+                        {
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex);
+                        }
+                        else
+                        {
+                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(node.PPath));
+                        }
+                        ResManager.DelayGarbageCollectTo(int.MinValue);
+                        //req.Result = ???
+                        yield break;
+                    }
                     var item = node.Item;
                     var ai = item.Attached as IAssetInfo;
                     if (ai != null)
