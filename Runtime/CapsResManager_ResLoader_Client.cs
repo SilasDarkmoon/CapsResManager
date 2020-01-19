@@ -337,7 +337,12 @@ namespace Capstones.UnityEngineEx
                 CapsResManifestNode node;
                 if (CollapsedManifest.TryGetItem(name, out node) && node.Item != null)
                 {
-                    var scenepath = node.GetFullPath();
+                    var item = node.Item;
+                    while (item.Ref != null)
+                    {
+                        item = item.Ref;
+                    }
+                    var scenepath = item.Node.GetFullPath();
                     int sceneindex;
                     if (IsBuiltinScene(scenepath, out sceneindex))
                     {
@@ -406,7 +411,12 @@ namespace Capstones.UnityEngineEx
                 CapsResManifestNode node;
                 if (CollapsedManifest.TryGetItem(asset, out node) && node.Item != null)
                 {
-                    var scenepath = node.GetFullPath();
+                    var item = node.Item;
+                    while (item.Ref != null)
+                    {
+                        item = item.Ref;
+                    }
+                    var scenepath = item.Node.GetFullPath();
                     int sceneindex;
                     if (IsBuiltinScene(scenepath, out sceneindex))
                     {
