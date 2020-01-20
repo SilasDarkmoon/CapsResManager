@@ -874,7 +874,7 @@ namespace Capstones.UnityEngineEx
             foreach (var kvpb in LoadedAssetBundles)
             {
                 var abi = kvpb.Value;
-                if (!abi.Permanent && abi.RefCnt <= 0)
+                if (abi != null && !abi.Permanent && abi.RefCnt <= 0)
                 {
                     if (abi.Bundle != null)
                     {
@@ -889,7 +889,7 @@ namespace Capstones.UnityEngineEx
             var newLoadedAssetBundles = new Dictionary<string, AssetBundleInfo>();
             foreach (var abi in LoadedAssetBundles)
             {
-                if (!abi.Value.Permanent)
+                if (abi.Value != null && !abi.Value.Permanent)
                 {
                     if (abi.Value.Bundle != null)
                     {
@@ -897,7 +897,7 @@ namespace Capstones.UnityEngineEx
                         abi.Value.Bundle = null;
                     }
                 }
-                else
+                else if (abi.Value != null)
                 {
                     newLoadedAssetBundles[abi.Key] = abi.Value;
                 }
@@ -909,7 +909,7 @@ namespace Capstones.UnityEngineEx
             foreach (var kvpb in LoadedAssetBundles)
             {
                 var abi = kvpb.Value;
-                if (abi.Bundle != null)
+                if (abi != null && abi.Bundle != null)
                 {
                     abi.Bundle.Unload(true);
                     abi.Bundle = null;
@@ -917,8 +917,28 @@ namespace Capstones.UnityEngineEx
             }
             LoadedAssetBundles.Clear();
         }
+        public static void UnloadNonPermanentBundle()
+        {
+            var newLoadedAssetBundles = new Dictionary<string, AssetBundleInfo>();
+            foreach (var abi in LoadedAssetBundles)
+            {
+                if (abi.Value != null && !abi.Value.Permanent)
+                {
+                    if (abi.Value.Bundle != null)
+                    {
+                        abi.Value.Bundle.Unload(true);
+                        abi.Value.Bundle = null;
+                    }
+                }
+                else if (abi.Value != null)
+                {
+                    newLoadedAssetBundles[abi.Key] = abi.Value;
+                }
+            }
+            LoadedAssetBundles = newLoadedAssetBundles;
+        }
 
-#region Zip Archive on Android APK
+        #region Zip Archive on Android APK
         [ThreadStatic] private static System.IO.Stream _AndroidApkFileStream;
         [ThreadStatic] private static ZipArchive _AndroidApkZipArchive;
         public static System.IO.Stream AndroidApkFileStream

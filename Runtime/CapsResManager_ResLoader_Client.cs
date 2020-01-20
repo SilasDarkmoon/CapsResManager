@@ -605,6 +605,7 @@ namespace Capstones.UnityEngineEx
                             }
                         }
                     }
+                    UnloadAllBundle();
                 }
                 else
                 {
@@ -612,7 +613,12 @@ namespace Capstones.UnityEngineEx
                     {
                         foreach (var item in CollapsedManifest.Items)
                         {
-                            var ai = item.Attached as AssetInfo_Base;
+                            var curitem = item;
+                            while (curitem.Ref != null)
+                            {
+                                curitem = curitem.Ref;
+                            }
+                            var ai = curitem.Attached as AssetInfo_Base;
                             if (ai != null)
                             {
                                 var bundles = ai.DepBundles;
@@ -622,10 +628,11 @@ namespace Capstones.UnityEngineEx
                                 }
                             }
                         }
+                        UnloadNonPermanentBundle();
                         foreach (var item in CollapsedManifest.Items)
                         {
                             var ai = item.Attached as IAssetInfo;
-                            if (ai != null && !(ai is AssetInfo_Base))
+                            if (ai != null)
                             {
                                 ai.CheckAlive();
                             }
@@ -641,7 +648,12 @@ namespace Capstones.UnityEngineEx
                     CollapsedManifest.TryGetItem(assetname, out node);
                     if (node != null && node.Item != null)
                     {
-                        var ai = node.Item.Attached as AssetInfo_Base;
+                        var item = node.Item;
+                        while (item.Ref != null)
+                        {
+                            item = item.Ref;
+                        }
+                        var ai = item.Attached as AssetInfo_Base;
                         if (ai != null)
                         {
                             var bundles = ai.DepBundles;
