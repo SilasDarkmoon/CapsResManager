@@ -94,13 +94,31 @@ namespace Capstones.UnityEngineEx
                         return null;
                     }
                 }
+                public void Preload()
+                {
+                    if (Real != null)
+                    {
+                        Real.Preload();
+                    }
+                }
+                public IEnumerator PreloadAsync()
+                {
+                    if (Real != null)
+                    {
+                        return Real.PreloadAsync();
+                    }
+                    else
+                    {
+                        return CoroutineRunner.GetEmptyEnumerator();
+                    }
+                }
             }
 
             public class TypedResLoader_Redirect : TypedResLoader_Base
             {
                 public override int ResItemType { get { return (int)CapsResManifestItemType.Redirect; } }
 
-                public override IAssetInfo PreloadRes(CapsResManifestItem item)
+                public override IAssetInfo CreateAssetInfo(CapsResManifestItem item)
                 {
                     var ai = item.Attached as IAssetInfo;
                     if (ai == null)
@@ -111,7 +129,7 @@ namespace Capstones.UnityEngineEx
                         var realitem = item.Ref;
                         if (realitem != null)
                         {
-                            var air = PreloadAsset(realitem);
+                            var air = ClientResLoader.CreateAssetInfo(realitem);
                             if (air != null)
                             {
                                 ain.Real = air;
@@ -119,27 +137,6 @@ namespace Capstones.UnityEngineEx
                         }
                     }
                     return ai;
-                }
-
-                public override IEnumerator PreloadResAsync(CoroutineTasks.CoroutineWork req, CapsResManifestItem item)
-                {
-                    var realitem = item.Ref;
-                    if (realitem != null)
-                    {
-                        var work = PreloadAssetAsync(realitem);
-                        var waiter = new CoroutineTasks.CoroutineAwait();
-                        waiter.SetWork(work);
-                        yield return waiter;
-                        var rr = work.Result as PreloadResResult;
-                        if (rr != null && rr.AssetInfo != null)
-                        {
-                            AssetInfo_Redirect ain = new AssetInfo_Redirect() { ManiItem = item };
-                            ain.Real = rr.AssetInfo;
-                            var pr = new PreloadResResult();
-                            pr.AssetInfo = ain;
-                            req.Result = pr;
-                        }
-                    }
                 }
             }
             public static TypedResLoader_Redirect Instance_TypedResLoader_Redirect = new TypedResLoader_Redirect();

@@ -488,8 +488,6 @@ namespace Capstones.UnityEngineEx
         }
         public static void DestroyAllHard()
         {
-            UnloadAllRes(true);
-
             var oldObjs = FindAllGameObject();
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
@@ -514,11 +512,11 @@ namespace Capstones.UnityEngineEx
             {
                 _DestroyHandlers[i].PostDestroy();
             }
+
+            UnloadAllRes(true);
         }
         public static void DestroyAll()
         {
-            UnloadAllRes();
-
             var oldObjs = FindAllGameObject();
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
@@ -528,11 +526,12 @@ namespace Capstones.UnityEngineEx
             {
                 Object.Destroy(oldObjs[i]);
             }
-
             for (int i = 0; i < _DestroyHandlers.Count; ++i)
             {
                 _DestroyHandlers[i].PostDestroy();
             }
+
+            UnloadAllRes();
         }
 
 #if COMPATIBLE_RESMANAGER_V1

@@ -299,198 +299,21 @@ namespace Capstones.UnityEngineEx
             {
                 public override int ResItemType { get { return (int)CapsResManifestItemType.Normal; } }
 
-                protected virtual AssetInfo_Base CreateAssetInfo(CapsResManifestItem item)
+                protected virtual AssetInfo_Base CreateAssetInfoRaw(CapsResManifestItem item)
                 {
                     return new AssetInfo_Normal() { ManiItem = item };
                 }
 
-                public override IAssetInfo PreloadRes(CapsResManifestItem item)
+                public override IAssetInfo CreateAssetInfo(CapsResManifestItem item)
                 {
                     var ai = item.Attached as IAssetInfo;
                     if (ai == null)
                     {
-                        var opmod = item.Manifest.MFlag;
-                        var mod = opmod;
-                        if (item.Manifest.InMain)
-                        {
-                            mod = "";
-                        }
-
-                        string bundle = item.BRef;
-                        if (string.IsNullOrEmpty(bundle))
-                        {
-                            bundle = FormatBundleNameFor(item);
-                        }
-
-                        AssetInfo_Base ain = CreateAssetInfo(item);
+                        AssetInfo_Base ain = CreateAssetInfoRaw(item);
                         item.Attached = ain;
                         ai = ain;
-
-                        var cabi = LoadAssetBundleEx(mod, bundle, true);
-                        if (cabi != null)
-                        {
-                            AssetBundleManifest umani;
-                            if (UnityManifests.TryGetValue(mod, out umani) && umani)
-                            {
-                                var deps = umani.GetAllDependencies(bundle);
-                                if (deps != null)
-                                {
-                                    for (int i = 0; i < deps.Length; ++i)
-                                    {
-                                        var dep = deps[i];
-                                        var bi = LoadAssetBundleEx(mod, dep, false);
-                                        if (bi != null)
-                                        {
-                                            bi.AddRef();
-                                            ain.DepBundles.Add(bi);
-                                        }
-                                    }
-                                }
-                            }
-
-                            cabi.AddRef();
-                            ain.DepBundles.Add(cabi);
-                        }
                     }
                     return ai;
-                }
-
-                public override IEnumerator PreloadResAsync(CoroutineTasks.CoroutineWork req, CapsResManifestItem item)
-                {
-                    var opmod = item.Manifest.MFlag;
-                    var mod = opmod;
-                    if (item.Manifest.InMain)
-                    {
-                        mod = "";
-                    }
-
-                    string bundle = item.BRef;
-                    if (string.IsNullOrEmpty(bundle))
-                    {
-                        bundle = FormatBundleNameFor(item);
-                    }
-
-                    AssetBundleInfo cabi = null;
-                    List<AssetBundleInfo> bundles = new List<AssetBundleInfo>();
-                    try
-                    {
-                        cabi = LoadAssetBundleEx(mod, bundle, true);
-                        if (cabi != null)
-                        {
-                            cabi.AddRef();
-
-                            while (AsyncWorkTimer.Check()) yield return null;
-
-                            AssetBundleManifest umani;
-                            if (UnityManifests.TryGetValue(mod, out umani) && umani)
-                            {
-                                var deps = umani.GetAllDependencies(bundle);
-                                if (deps != null)
-                                {
-                                    for (int i = 0; i < deps.Length; ++i)
-                                    {
-                                        var dep = deps[i];
-                                        var bi = LoadAssetBundleEx(mod, dep, false);
-                                        if (bi != null)
-                                        {
-                                            bi.AddRef();
-                                            bundles.Add(bi);
-
-                                            while (AsyncWorkTimer.Check()) yield return null;
-                                        }
-                                    }
-                                }
-                            }
-
-
-                            AssetInfo_Base ain = CreateAssetInfo(item);
-                            ain.DepBundles.AddRange(bundles);
-                            ain.DepBundles.Add(cabi);
-
-                            var pr = new PreloadResResult();
-                            pr.AssetInfo = ain;
-                            req.Result = pr;
-
-                            bundles = null;
-                            cabi = null;
-                        }
-                    }
-                    finally
-                    {
-                        if (bundles != null)
-                        {
-                            for (int i = 0; i < bundles.Count; ++i)
-                            {
-                                bundles[i].Release();
-                            }
-                        }
-                        if (cabi != null)
-                        {
-                            cabi.Release();
-                        }
-                    }
-                }
-
-                public virtual string FormatBundleNameFor(CapsResManifestItem item)
-                {
-                    return FormatBundleName(item);
-                }
-                public static string FormatBundleName(CapsResManifestItem item)
-                {
-                    var node = item.Node;
-                    var depth = node.GetDepth();
-                    string[] parts = new string[depth];
-                    for (int i = depth - 1; i >= 0; --i)
-                    {
-                        parts[i] = node.PPath;
-                        node = node.Parent;
-                    }
-
-                    var mod = item.Manifest.MFlag;
-                    var dist = item.Manifest.DFlag;
-                    var rootdepth = 2; // Assets/CapsRes/
-                    if (depth > 2 && parts[1] == "Mods")
-                    {
-                        rootdepth += 2; // Assets/Mods/XXX/CapsRes/
-                    }
-                    else if (depth > 1 && parts[0] == "Packages")
-                    {
-                        rootdepth += 1; // Packages/xx.xx.xx/CapsRes/
-                    }
-                    if (!string.IsNullOrEmpty(dist))
-                    {
-                        rootdepth += 2; // .../dist/XXX/
-                    }
-
-                    System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
-                    sbbundle.Append("m-");
-                    sbbundle.Append((mod ?? "").ToLower());
-                    sbbundle.Append("-d-");
-                    sbbundle.Append((dist ?? "").ToLower());
-                    sbbundle.Append("-");
-                    for (int i = rootdepth; i < depth - 1; ++i)
-                    {
-                        if (i > rootdepth)
-                        {
-                            sbbundle.Append("-");
-                        }
-                        sbbundle.Append(parts[i].ToLower());
-                    }
-                    var filename = item.Node.PPath;
-                    if (filename.EndsWith(".unity"))
-                    {
-                        var sceneName = parts[depth - 1];
-                        sceneName = sceneName.Substring(0, sceneName.Length - ".unity".Length);
-                        sbbundle.Append("-");
-                        sbbundle.Append(sceneName.ToLower());
-                        sbbundle.Append(".s");
-                    }
-                    else if (filename.EndsWith(".prefab"))
-                    {
-                        sbbundle.Append(".o");
-                    }
-                    sbbundle.Append(".ab");
-                    return sbbundle.ToString();
                 }
             }
             public static TypedResLoader_Normal Instance_TypedResLoader_Normal = new TypedResLoader_Normal();

@@ -118,7 +118,7 @@ namespace Capstones.UnityEngineEx
             {
                 public override int ResItemType { get { return (int)CapsResManifestItemType.Prefab; } }
 
-                protected override AssetInfo_Base CreateAssetInfo(CapsResManifestItem item)
+                protected override AssetInfo_Base CreateAssetInfoRaw(CapsResManifestItem item)
                 {
                     return new AssetInfo_Prefab() { ManiItem = item };
                 }

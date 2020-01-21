@@ -155,6 +155,8 @@ namespace Capstones.UnityEngineEx
 
             public interface IAssetInfo
             {
+                void Preload();
+                IEnumerator PreloadAsync();
                 Object Load(Type type);
                 IEnumerator LoadAsync(CoroutineTasks.CoroutineWork req, Type type);
                 void Unload();
@@ -186,34 +188,67 @@ namespace Capstones.UnityEngineEx
                     }
                     var path = sbpath.ToString();
                     return path;
-                    //var node = ManiItem.Node;
-                    //System.Text.StringBuilder sbpath = new System.Text.StringBuilder();
-                    //while (node.Parent != null)
-                    //{
-                    //    if (sbpath.Length > 0)
-                    //    {
-                    //        ++sbpath.Length;
-                    //    }
-                    //    sbpath.Length += node.PPath.Length;
-                    //    node = node.Parent;
-                    //}
-                    //node = ManiItem.Node;
-                    //int curIndex = sbpath.Length;
-                    //while (node.Parent != null)
-                    //{
-                    //    curIndex -= node.PPath.Length;
-                    //    for (int i = node.PPath.Length - 1; i >= 0; --i)
-                    //    {
-                    //        sbpath[--curIndex] = char.ToLower(node.PPath[i]);
-                    //    }
-                    //    if (--curIndex >= 0)
-                    //    {
-                    //        sbpath[curIndex] = '/';
-                    //    }
-                    //    node = node.Parent;
-                    //}
-                    //var path = sbpath.ToString();
-                    //return path;
+                }
+                public virtual string FormatBundleName()
+                {
+                    return FormatBundleName(ManiItem);
+                }
+                public static string FormatBundleName(CapsResManifestItem item)
+                {
+                    var node = item.Node;
+                    var depth = node.GetDepth();
+                    string[] parts = new string[depth];
+                    for (int i = depth - 1; i >= 0; --i)
+                    {
+                        parts[i] = node.PPath;
+                        node = node.Parent;
+                    }
+
+                    var mod = item.Manifest.MFlag;
+                    var dist = item.Manifest.DFlag;
+                    var rootdepth = 2; // Assets/CapsRes/
+                    if (depth > 2 && parts[1] == "Mods")
+                    {
+                        rootdepth += 2; // Assets/Mods/XXX/CapsRes/
+                    }
+                    else if (depth > 1 && parts[0] == "Packages")
+                    {
+                        rootdepth += 1; // Packages/xx.xx.xx/CapsRes/
+                    }
+                    if (!string.IsNullOrEmpty(dist))
+                    {
+                        rootdepth += 2; // .../dist/XXX/
+                    }
+
+                    System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
+                    sbbundle.Append("m-");
+                    sbbundle.Append((mod ?? "").ToLower());
+                    sbbundle.Append("-d-");
+                    sbbundle.Append((dist ?? "").ToLower());
+                    sbbundle.Append("-");
+                    for (int i = rootdepth; i < depth - 1; ++i)
+                    {
+                        if (i > rootdepth)
+                        {
+                            sbbundle.Append("-");
+                        }
+                        sbbundle.Append(parts[i].ToLower());
+                    }
+                    var filename = item.Node.PPath;
+                    if (filename.EndsWith(".unity"))
+                    {
+                        var sceneName = parts[depth - 1];
+                        sceneName = sceneName.Substring(0, sceneName.Length - ".unity".Length);
+                        sbbundle.Append("-");
+                        sbbundle.Append(sceneName.ToLower());
+                        sbbundle.Append(".s");
+                    }
+                    else if (filename.EndsWith(".prefab"))
+                    {
+                        sbbundle.Append(".o");
+                    }
+                    sbbundle.Append(".ab");
+                    return sbbundle.ToString();
                 }
 
                 public abstract Object Load(Type type);
@@ -270,18 +305,177 @@ namespace Capstones.UnityEngineEx
                     Unload();
                     return false;
                 }
+
+                protected bool _PreloadReady = false;
+                public virtual void Preload()
+                {
+                    if (_PreloadReady)
+                    {
+                        for (int i = 0; i < DepBundles.Count; ++i)
+                        {
+                            var bi = DepBundles[i];
+                            if (bi == null || bi.Bundle == null)
+                            {
+                                _PreloadReady = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (_PreloadReady)
+                    {
+                        return;
+                    }
+                    var oldbundles = new List<AssetBundleInfo>(DepBundles);
+                    DepBundles.Clear();
+
+                    var opmod = ManiItem.Manifest.MFlag;
+                    var mod = opmod;
+                    if (ManiItem.Manifest.InMain)
+                    {
+                        mod = "";
+                    }
+
+                    string bundle = ManiItem.BRef;
+                    if (string.IsNullOrEmpty(bundle))
+                    {
+                        bundle = FormatBundleName();
+                    }
+
+                    var cabi = LoadAssetBundleEx(mod, bundle, true);
+                    if (cabi != null)
+                    {
+                        AssetBundleManifest umani;
+                        if (UnityManifests.TryGetValue(mod, out umani) && umani)
+                        {
+                            var deps = umani.GetAllDependencies(bundle);
+                            if (deps != null)
+                            {
+                                for (int i = 0; i < deps.Length; ++i)
+                                {
+                                    var dep = deps[i];
+                                    var bi = LoadAssetBundleEx(mod, dep, false);
+                                    if (bi != null)
+                                    {
+                                        bi.AddRef();
+                                        DepBundles.Add(bi);
+                                    }
+                                }
+                            }
+                        }
+
+                        cabi.AddRef();
+                        DepBundles.Add(cabi);
+                    }
+
+                    for (int i = 0; i < oldbundles.Count; ++i)
+                    {
+                        var bi = oldbundles[i];
+                        if (bi != null)
+                        {
+                            bi.Release();
+                        }
+                    }
+                    _PreloadReady = true;
+                }
+                public virtual IEnumerator PreloadAsync()
+                {
+                    if (_PreloadReady)
+                    {
+                        for (int i = 0; i < DepBundles.Count; ++i)
+                        {
+                            var bi = DepBundles[i];
+                            if (bi == null || bi.Bundle == null)
+                            {
+                                _PreloadReady = false;
+                                break;
+                            }
+                        }
+                        if (_PreloadReady)
+                        {
+                            yield break;
+                        }
+                    }
+
+                    List<AssetBundleInfo> bundles = new List<AssetBundleInfo>();
+                    try
+                    {
+                        var opmod = ManiItem.Manifest.MFlag;
+                        var mod = opmod;
+                        if (ManiItem.Manifest.InMain)
+                        {
+                            mod = "";
+                        }
+
+                        string bundle = ManiItem.BRef;
+                        if (string.IsNullOrEmpty(bundle))
+                        {
+                            bundle = FormatBundleName();
+                        }
+
+                        var cabi = LoadAssetBundleEx(mod, bundle, true);
+                        if (cabi != null)
+                        {
+                            cabi.AddRef();
+                            bundles.Add(cabi);
+                            while (AsyncWorkTimer.Check()) yield return null;
+                            if (_PreloadReady) { yield break; }
+
+                            AssetBundleManifest umani;
+                            if (UnityManifests.TryGetValue(mod, out umani) && umani)
+                            {
+                                var deps = umani.GetAllDependencies(bundle);
+                                if (deps != null)
+                                {
+                                    for (int i = 0; i < deps.Length; ++i)
+                                    {
+                                        var dep = deps[i];
+                                        var bi = LoadAssetBundleEx(mod, dep, false);
+                                        if (bi != null)
+                                        {
+                                            bi.AddRef();
+                                            bundles.Insert(bundles.Count - 1, bi);
+                                            while (AsyncWorkTimer.Check()) yield return null;
+                                            if (_PreloadReady) { yield break; }
+                                        }
+                                    }
+                                }
+                            }
+
+                            for (int i = 0; i < DepBundles.Count; ++i)
+                            {
+                                var bi = DepBundles[i];
+                                if (bi != null)
+                                {
+                                    bi.Release();
+                                }
+                            }
+                            DepBundles.Clear();
+                            DepBundles.AddRange(bundles);
+                            bundles.Clear();
+                            _PreloadReady = true;
+                        }
+                    }
+                    finally
+                    {
+                        if (bundles != null)
+                        {
+                            for (int i = 0; i < bundles.Count; ++i)
+                            {
+                                bundles[i].Release();
+                            }
+                        }
+                    }
+                }
             }
 
             public interface ITypedResLoader
             {
-                IAssetInfo PreloadRes(CapsResManifestItem item);
-                IEnumerator PreloadResAsync(CoroutineTasks.CoroutineWork req, CapsResManifestItem item);
+                IAssetInfo CreateAssetInfo(CapsResManifestItem item);
             }
             public abstract class TypedResLoader_Base : ITypedResLoader
             {
                 public abstract int ResItemType { get; }
-                public abstract IAssetInfo PreloadRes(CapsResManifestItem item);
-                public abstract IEnumerator PreloadResAsync(CoroutineTasks.CoroutineWork req, CapsResManifestItem item);
+                public abstract IAssetInfo CreateAssetInfo(CapsResManifestItem item);
 
                 public TypedResLoader_Base()
                 {
@@ -291,25 +485,26 @@ namespace Capstones.UnityEngineEx
             }
             public static Dictionary<int, ITypedResLoader> TypedResLoaders;
 
-            public static IAssetInfo PreloadAsset(CapsResManifestItem item)
+            public static IAssetInfo CreateAssetInfo(CapsResManifestItem item)
             {
                 var restype = item.Type;
                 ITypedResLoader loader;
                 if (TypedResLoaders != null && TypedResLoaders.TryGetValue(restype, out loader) && loader != null)
                 {
-                    return loader.PreloadRes(item);
+                    return loader.CreateAssetInfo(item);
                 }
                 else
                 {
-                    return Instance_TypedResLoader_Normal.PreloadRes(item);
+                    return Instance_TypedResLoader_Normal.CreateAssetInfo(item);
                 }
             }
 
             private static Object LoadAsset(CapsResManifestItem item, Type type)
             {
-                var ai = PreloadAsset(item);
+                var ai = CreateAssetInfo(item);
                 if (ai != null)
                 {
+                    ai.Preload();
                     return ai.Load(type);
                 }
                 else
@@ -377,43 +572,6 @@ namespace Capstones.UnityEngineEx
                 }
             }
 
-            public class PreloadResResult
-            {
-                private IAssetInfo _AssetInfo;
-                private object _Holder;
-
-                public IAssetInfo AssetInfo
-                {
-                    get { return _AssetInfo; }
-                    set
-                    {
-                        _AssetInfo = value;
-                        if (value == null)
-                        {
-                            _Holder = null;
-                        }
-                        else
-                        {
-                            _Holder = value.Hold();
-                        }
-                    }
-                }
-            }
-            private static CoroutineTasks.CoroutineWork PreloadAssetAsync(CapsResManifestItem item)
-            {
-                var restype = item.Type;
-                ITypedResLoader loader;
-                if (TypedResLoaders == null || !TypedResLoaders.TryGetValue(restype, out loader) || loader == null)
-                {
-                    loader = Instance_TypedResLoader_Normal;
-                }
-
-                var work = new CoroutineTasks.CoroutineWorkSingle();
-                work.SetWork(loader.PreloadResAsync(work, item));
-                item.Attached = work;
-                work.StartCoroutine();
-                return work;
-            }
             private static IEnumerator LoadAssetAsyncWork(CoroutineTasks.CoroutineWork req, string asset, Type type)
             {
                 while (AsyncWorkTimer.Check()) yield return null;
@@ -448,70 +606,14 @@ namespace Capstones.UnityEngineEx
                         yield break;
                     }
                     var item = node.Item;
-                    var ai = item.Attached as IAssetInfo;
-                    if (ai != null)
-                    {
-                        var work = new CoroutineTasks.CoroutineWorkSingle();
-                        work.SetWork(ai.LoadAsync(work, type));
-                        ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
-                        yield return work;
-                        req.Result = work.Result;
-                    }
-                    else
-                    {
-                        var loadwork = item.Attached as CoroutineTasks.CoroutineWork;
-                        if (loadwork == null)
-                        {
-                            loadwork = PreloadAssetAsync(item);
-                        }
-
-                        while (true)
-                        {
-                            if (item.Attached is IAssetInfo)
-                            {
-                                ai = item.Attached as IAssetInfo;
-                                if (loadwork.Done)
-                                {
-                                    var pr = loadwork.Result as PreloadResResult;
-                                    if (pr != null && pr.AssetInfo != null)
-                                    {
-                                        pr.AssetInfo.Unload();
-                                    }
-                                }
-                                else
-                                {
-                                    loadwork.Dispose();
-                                }
-                                break;
-                            }
-                            if (loadwork.Done)
-                            {
-                                var pr = loadwork.Result as PreloadResResult;
-                                if (pr != null && pr.AssetInfo != null)
-                                {
-                                    ai = pr.AssetInfo;
-                                    item.Attached = ai;
-                                }
-                                else
-                                {
-                                    ai = null;
-                                    item.Attached = null;
-                                }
-                                break;
-                            }
-                            ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
-                            yield return null;
-                        }
-
-                        if (ai != null)
-                        {
-                            var work = new CoroutineTasks.CoroutineWorkSingle();
-                            work.SetWork(ai.LoadAsync(work, type));
-                            ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
-                            yield return work;
-                            req.Result = work.Result;
-                        }
-                    }
+                    var ai = CreateAssetInfo(item);
+                    ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
+                    yield return ai.PreloadAsync();
+                    ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
+                    var work = new CoroutineTasks.CoroutineWorkSingle();
+                    work.SetWork(ai.LoadAsync(work, type));
+                    yield return work;
+                    req.Result = work.Result;
                 }
                 else
                 {
@@ -606,6 +708,15 @@ namespace Capstones.UnityEngineEx
                         }
                     }
                     UnloadAllBundle();
+
+                    // sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
+                    // and then the sprite would rebuild itself when the atlas is loaded again.
+                    // so we do a force unload here.
+                    var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+                    for (int i = 0; i < sprites.Length; ++i)
+                    {
+                        Resources.UnloadAsset(sprites[i]);
+                    }
                 }
                 else
                 {
@@ -636,6 +747,23 @@ namespace Capstones.UnityEngineEx
                             {
                                 ai.CheckAlive();
                             }
+                        }
+                    }
+                    else
+                    {
+                        UnloadNonPermanentBundle();
+                    }
+
+                    // sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
+                    // and then the sprite would rebuild itself when the atlas is loaded again.
+                    // so we do a force unload here.
+                    var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+                    for (int i = 0; i < sprites.Length; ++i)
+                    {
+                        var sprite = sprites[i];
+                        if (sprite && !sprite.texture)
+                        {
+                            Resources.UnloadAsset(sprites[i]);
                         }
                     }
                 }
