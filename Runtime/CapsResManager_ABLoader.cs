@@ -323,9 +323,9 @@ namespace Capstones.UnityEngineEx
                     return stream;
                 }
             }
-            if (Application.streamingAssetsPath.Contains("://"))
+            if (ThreadSafeValues.AppStreamingAssetsPath.Contains("://"))
             {
-                if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
+                if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
                 {
                     if (!SkipObb && _LoadAssetsFromObb)
                     {
@@ -403,10 +403,118 @@ namespace Capstones.UnityEngineEx
             {
                 if (!SkipPackage)
                 {
-                    stream = PlatDependant.OpenRead(Application.streamingAssetsPath + "/" + file);
+                    stream = PlatDependant.OpenRead(ThreadSafeValues.AppStreamingAssetsPath + "/" + file);
                     if (stream != null)
                     {
                         return stream;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static string FindUrlInStreaming(string file)
+        {
+            if (!SkipPending)
+            {
+                var path = ThreadSafeValues.UpdatePath + "/pending/" + file;
+                if (PlatDependant.IsFileExist(path))
+                {
+                    return path;
+                }
+            }
+            if (!SkipUpdate)
+            {
+                var path = ThreadSafeValues.UpdatePath + "/" + file;
+                if (PlatDependant.IsFileExist(path))
+                {
+                    return path;
+                }
+            }
+            if (ThreadSafeValues.AppStreamingAssetsPath.Contains("://"))
+            {
+                if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
+                {
+                    if (!SkipObb && _LoadAssetsFromObb)
+                    {
+                        int retryTimes = 3;
+                        for (int i = 0; i < retryTimes; ++i)
+                        {
+                            ZipArchive za = ObbZipArchive;
+                            if (za == null)
+                            {
+                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                                continue;
+                            }
+
+                            try
+                            {
+                                var entry = za.GetEntry(file);
+                                if (entry != null)
+                                {
+                                    return "jar:file://" + ObbPath + "!/" + file;
+                                }
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                            }
+                        }
+                    }
+                    if (!SkipPackage)
+                    {
+                        int retryTimes = 3;
+                        for (int i = 0; i < retryTimes; ++i)
+                        {
+                            ZipArchive za = AndroidApkZipArchive;
+                            if (za == null)
+                            {
+                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                                continue;
+                            }
+
+                            try
+                            {
+                                var entry = za.GetEntry("assets/" + file);
+                                if (entry != null)
+                                {
+                                    return ThreadSafeValues.AppStreamingAssetsPath + "/" + file;
+                                }
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                                if (i != retryTimes - 1)
+                                {
+                                    PlatDependant.LogInfo("Need Retry " + i);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (!SkipPackage)
+                {
+                    var path = ThreadSafeValues.AppStreamingAssetsPath + "/" + file;
+                    if (PlatDependant.IsFileExist(path))
+                    {
+                        return path;
                     }
                 }
             }
