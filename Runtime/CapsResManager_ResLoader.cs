@@ -136,33 +136,33 @@ namespace Capstones.UnityEngineEx
         private static int LoadingSceneQueueIndex = -1;
         public static void LoadScene(string name, bool additive)
         {
-            if (!additive)
-            {
-                string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
-                if (loadingScene != "IntermediateScene")
-                {
-                    if (LoadingScenes.Count > 0)
-                    {
-                        string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
-                        if (curScene == loadingScene)
-                        {
-                            LoadScene("Common/IntermediateScene.unity", false);
-                        }
-                    }
-                    else
-                    {
-                        var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
-                        for (int i = 0; i < sceneCnt; ++i)
-                        {
-                            if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
-                            {
-                                LoadScene("Common/IntermediateScene.unity", false);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            //if (!additive)
+            //{
+            //    string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
+            //    if (loadingScene != "IntermediateScene")
+            //    {
+            //        if (LoadingScenes.Count > 0)
+            //        {
+            //            string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
+            //            if (curScene == loadingScene)
+            //            {
+            //                LoadScene("Common/IntermediateScene.unity", false);
+            //            }
+            //        }
+            //        else
+            //        {
+            //            var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
+            //            for (int i = 0; i < sceneCnt; ++i)
+            //            {
+            //                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
+            //                {
+            //                    LoadScene("Common/IntermediateScene.unity", false);
+            //                    break;
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             LoadingScenes.Add(new Pack<string, bool, bool>(name, false, additive));
             if (LoadingScenes.Count == 1)
@@ -369,33 +369,33 @@ namespace Capstones.UnityEngineEx
         }
         public static IEnumerator LoadSceneAsync(string name, bool additive)
         {
-            if (!additive)
-            {
-                string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
-                if (loadingScene != "IntermediateScene")
-                {
-                    if (LoadingScenes.Count > 0)
-                    {
-                        string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
-                        if (curScene == loadingScene)
-                        {
-                            LoadScene("Common/IntermediateScene.unity", false);
-                        }
-                    }
-                    else
-                    {
-                        var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
-                        for (int i = 0; i < sceneCnt; ++i)
-                        {
-                            if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
-                            {
-                                LoadScene("Common/IntermediateScene.unity", false);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            //if (!additive)
+            //{
+            //    string loadingScene = System.IO.Path.GetFileNameWithoutExtension(name);
+            //    if (loadingScene != "IntermediateScene")
+            //    {
+            //        if (LoadingScenes.Count > 0)
+            //        {
+            //            string curScene = System.IO.Path.GetFileNameWithoutExtension(LoadingScenes[LoadingScenes.Count - 1].t1);
+            //            if (curScene == loadingScene)
+            //            {
+            //                LoadScene("Common/IntermediateScene.unity", false);
+            //            }
+            //        }
+            //        else
+            //        {
+            //            var sceneCnt = UnityEngine.SceneManagement.SceneManager.sceneCount;
+            //            for (int i = 0; i < sceneCnt; ++i)
+            //            {
+            //                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).name == loadingScene)
+            //                {
+            //                    LoadScene("Common/IntermediateScene.unity", false);
+            //                    break;
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             LoadingScenes.Add(new Pack<string, bool, bool>(name, true, additive));
             if (LoadingScenes.Count == 1)
