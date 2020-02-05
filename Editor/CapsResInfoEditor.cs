@@ -132,6 +132,45 @@ namespace Capstones.UnityEditorEx
             }
         }
 
+        [MenuItem("Assets/Create/ScriptableObject Asset", priority = 30)]
+        public static void CreateScriptableObjectAsset()
+        {
+            var guids = Selection.assetGUIDs;
+            if (guids != null)
+            {
+                var scripts = from guid in guids
+                              let path = AssetDatabase.GUIDToAssetPath(guid)
+                              let asset = AssetDatabase.LoadAssetAtPath<MonoScript>(path)
+                              where asset
+                              let stype = asset.GetClass()
+                              where stype != null && stype.IsSubclassOf(typeof(ScriptableObject))
+                              select new { Type = stype, Path = path };
+
+                var script = scripts.FirstOrDefault();
+                if (script != null)
+                {
+                    var asset = ScriptableObject.CreateInstance(script.Type);
+                    var fileWithoutExt = script.Path.Substring(0, script.Path.Length - System.IO.Path.GetExtension(script.Path).Length);
+                    var file = fileWithoutExt + ".asset";
+                    if (System.IO.File.Exists(file))
+                    {
+                        int i = 0;
+                        while (true)
+                        {
+                            file = fileWithoutExt + ++i + ".asset";
+                            if (!System.IO.File.Exists(file))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    AssetDatabase.CreateAsset(asset, file);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+                }
+            }
+        }
+
         public static string GetAssetNormPath(string path)
         {
             if (path != null)

@@ -635,13 +635,57 @@ namespace Capstones.UnityEditorEx
 
         public static string FindAssetInMods(string part, bool in_mod_link)
         {
+            //foreach (var package in CapsPackageEditor.Packages.Keys)
+            //{
+            //    var root = "Packages/" + package + "/";
+            //    var src = root + part;
+            //    if (System.IO.File.Exists(src))
+            //    {
+            //        return src;
+            //    }
+            //}
+
+            //var mods = CapsModEditor.GetAllMods();
+            //for (int i = 0; i < mods.Length; ++i)
+            //{
+            //    var root = "Assets/Mods/" + mods[i];
+            //    if (in_mod_link)
+            //    {
+            //        root += "/Link/";
+            //    }
+            //    else
+            //    {
+            //        root += "/";
+            //    }
+            //    var src = root + part;
+            //    if (System.IO.File.Exists(src))
+            //    {
+            //        return src;
+            //    }
+            //}
+            //return null;
+
+            var results = FindAssetsInMods(part, in_mod_link);
+            if (results.Length > 0)
+            {
+                return results[0];
+            }
+            return null;
+        }
+        public static string FindAssetInMods(string part)
+        {
+            return FindAssetInMods(part, false);
+        }
+        public static string[] FindAssetsInMods(string part, bool in_mod_link)
+        {
+            List<string> results = new List<string>();
             foreach (var package in CapsPackageEditor.Packages.Keys)
             {
                 var root = "Packages/" + package + "/";
                 var src = root + part;
                 if (System.IO.File.Exists(src))
                 {
-                    return src;
+                    results.Add(src);
                 }
             }
 
@@ -660,14 +704,14 @@ namespace Capstones.UnityEditorEx
                 var src = root + part;
                 if (System.IO.File.Exists(src))
                 {
-                    return src;
+                    results.Add(src);
                 }
             }
-            return null;
+            return results.ToArray();
         }
-        public static string FindAssetInMods(string part)
+        public static string[] FindAssetsInMods(string part)
         {
-            return FindAssetInMods(part, false);
+            return FindAssetsInMods(part, false);
         }
 
         public static string GetModRootInPackage(string mod)
