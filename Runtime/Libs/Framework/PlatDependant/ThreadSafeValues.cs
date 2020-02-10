@@ -47,6 +47,7 @@ namespace Capstones.UnityEngineEx
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;
 #endif
+            _IsMainThread = true;
         }
 
         private static string _UpdatePath;
@@ -58,6 +59,7 @@ namespace Capstones.UnityEngineEx
         private static string _cached_Application_dataPath;
         private static string _cached_Capid;
         private static ulong _UnityThreadID;
+        [ThreadStatic] private static bool _IsMainThread;
 
         public static string UpdatePath { get { return _UpdatePath; } }
         public static string IsolatedPath { get { return _IsolatedPath; } }
@@ -68,5 +70,17 @@ namespace Capstones.UnityEngineEx
         public static string AppDataPath { get { return _cached_Application_dataPath; } }
         public static string Capid { get { return _cached_Capid; } }
         public static ulong UnityThreadID { get { return _UnityThreadID; } }
+        public static bool IsMainThread { get { return _IsMainThread; } }
+        public static ulong ThreadId
+        {
+            get
+            {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+                return ThreadLocalObj.GetThreadId();
+#else
+                return (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;
+#endif
+            }
+        }
     }
 }

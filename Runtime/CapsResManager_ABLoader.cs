@@ -304,6 +304,7 @@ namespace Capstones.UnityEngineEx
             }
         }
 
+        // TODO: 1、mod and dist? 2、in server?
         public static System.IO.Stream LoadFileInStreaming(string file)
         {
             System.IO.Stream stream = null;

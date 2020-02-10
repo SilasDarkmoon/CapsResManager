@@ -78,12 +78,42 @@ namespace Capstones.UnityEngineEx
             public static readonly CapsLangFormatter Instance = new CapsLangFormatter();
         }
 
-        public static string JSONPATH = "config/language.json";
+        public static class LanguageConverterConfig
+        {
+            public static string JSONPATH = "config/language.json";
+        }
+
         private static Dictionary<string, string> _LangDict;
 
         public static void Init()
         {
-            _LangDict = ResManager.TryLoadConfig(JSONPATH);
+            CapsResInitializer.CheckInit();
+            _LangDict = ResManager.TryLoadConfig(LanguageConverterConfig.JSONPATH);
+        }
+
+        public static void UpdateDict(Dictionary<string, string> newMap)
+        {
+            if (newMap != null)
+            {
+                if (_LangDict == null)
+                {
+                    PlatDependant.LogError("Update LanguageConverter when it is not initialized.");
+                }
+                else
+                {
+                    foreach (var kvp in newMap)
+                    {
+                        if (kvp.Value == null)
+                        {
+                            _LangDict.Remove(kvp.Key);
+                        }
+                        else
+                        {
+                            _LangDict[kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+            }
         }
 
         public static bool ContainsKey(string key)
@@ -148,6 +178,14 @@ namespace Capstones.UnityEngineEx
             }
             return result ?? format ?? key;
         }
+        public static string Translate(string key, params object[] args)
+        {
+            return GetLangValue(key, args);
+        }
+        public static void Translate(ref string key, params object[] args)
+        {
+            key = GetLangValue(key, args);
+        }
 
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         public static void IterateText(Transform trans)
@@ -168,7 +206,9 @@ namespace Capstones.UnityEngineEx
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void OnUnityStart()
         {
+#if !UNITY_EDITOR
             ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
+#endif
         }
 #endif
 
