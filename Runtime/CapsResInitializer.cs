@@ -2,11 +2,34 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-#if UNITY_EDITOR
-[UnityEditor.InitializeOnLoad]
-#endif
 public class CapsResInitializer : ScriptableObject
 {
+#if UNITY_EDITOR
+    [UnityEditor.InitializeOnLoad]
+#endif
+    private static class Initializer
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void CheckInit()
+        {
+        }
+        static Initializer()
+        {
+            var assets = Resources.LoadAll<CapsResInitializer>("CapsResInitializer");
+            if (assets != null)
+            {
+                for (int i = 0; i < assets.Length; ++i)
+                {
+                    var asset = assets[i];
+                    if (asset)
+                    {
+                        asset.Init();
+                    }
+                }
+            }
+        }
+    }
+
     public CapsResInitializer[] SubInitializers;
 
     public virtual void Init()
@@ -24,24 +47,8 @@ public class CapsResInitializer : ScriptableObject
         }
     }
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     public static void CheckInit()
     {
-    }
-
-    static CapsResInitializer()
-    {
-        var assets = Resources.LoadAll<CapsResInitializer>("CapsResInitializer");
-        if (assets != null)
-        {
-            for (int i = 0; i < assets.Length; ++i)
-            {
-                var asset = assets[i];
-                if (asset)
-                {
-                    asset.Init();
-                }
-            }
-        }
+        Initializer.CheckInit();
     }
 }

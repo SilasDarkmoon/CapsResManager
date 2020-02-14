@@ -203,6 +203,14 @@ namespace Capstones.UnityEngineEx
         private static bool EditorOnPlayModeChange_ClearRuntimeCachedDFlags_Listening = false;
 #endif
 
+        public static bool HasDistributeFlag(string flag)
+        {
+            return GetDistributeFlagsSet().Contains(flag);
+        }
+        public static bool IsDistributeFlagValid(string flag)
+        {
+            return GetValidDistributeFlagsSet().Contains(flag);
+        }
         public static void RemoveDistributeFlag(string flag)
         {
             if (string.IsNullOrEmpty(flag))

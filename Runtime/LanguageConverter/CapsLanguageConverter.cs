@@ -88,7 +88,7 @@ namespace Capstones.UnityEngineEx
         public static void Init()
         {
             CapsResInitializer.CheckInit();
-            _LangDict = ResManager.TryLoadConfig(LanguageConverterConfig.JSONPATH);
+            _LangDict = ResManager.TryLoadConfig(LanguageConverterConfig.JSONPATH) ?? new Dictionary<string, string>();
         }
 
         public static void UpdateDict(Dictionary<string, string> newMap)
@@ -97,9 +97,9 @@ namespace Capstones.UnityEngineEx
             {
                 if (_LangDict == null)
                 {
-                    PlatDependant.LogError("Update LanguageConverter when it is not initialized.");
+                    Init();
                 }
-                else
+                //else
                 {
                     foreach (var kvp in newMap)
                     {

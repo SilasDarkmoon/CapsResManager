@@ -133,7 +133,7 @@ namespace Capstones.UnityEditorEx
         }
     }
 
-    public class DistributeSelectWindow : EditorWindow
+    public class DistributeSelectWindow : EditorWindow, ISerializationCallbackReceiver
     {
         [MenuItem("Res/Select Distribute Flags", priority = 200000)]
         public static void Init()
@@ -172,7 +172,7 @@ namespace Capstones.UnityEditorEx
             Dictionary<string, bool> copy = new Dictionary<string, bool>(DistributeFlags);
             foreach (var kvp in copy)
             {
-                SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(kvp.Key, kvp.Value));
+                SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(kvp.Key, kvp.Value, GUILayout.Width(GUI.skin.label.CalcSize(new GUIContent(kvp.Key)).x + GUI.skin.toggle.CalcSize(GUIContent.none).x)));
             }
 
             GUILayout.EndScrollView();
@@ -194,7 +194,7 @@ namespace Capstones.UnityEditorEx
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("▲", new GUIStyle(GUI.skin.button) { stretchWidth = false, fixedWidth = 25 })) nodeup = curnode;
                 if (GUILayout.Button("▼", new GUIStyle(GUI.skin.button) { stretchWidth = false, fixedWidth = 25 })) nodedown = curnode;
-                EditorGUILayout.LabelField(node.Value);
+                EditorGUILayout.LabelField(node.Value, GUILayout.Width(GUI.skin.label.CalcSize(new GUIContent(node.Value)).x));
                 GUILayout.EndHorizontal();
                 node = node.Next;
             }
@@ -270,6 +270,36 @@ namespace Capstones.UnityEditorEx
 
                 ResManager.PreRuntimeDFlags = new List<string>(DistributeFlagOrder);
                 CapsDistributeEditor.FireOnDistributeFlagsChanged();
+            }
+        }
+
+        [SerializeField] protected string[] SerializeDistributeFlags;
+        [SerializeField] protected bool[] SerializeDistributeFlagStates;
+        [SerializeField] string[] SerializeDistributeFlagOrder;
+        public void OnBeforeSerialize()
+        {
+            SerializeDistributeFlags = DistributeFlags.Keys.ToArray();
+            SerializeDistributeFlagStates = DistributeFlags.Values.ToArray();
+            SerializeDistributeFlagOrder = DistributeFlagOrder.ToArray();
+        }
+
+        public void OnAfterDeserialize()
+        {
+            DistributeFlags.Clear();
+            DistributeFlagOrder.Clear();
+            if (SerializeDistributeFlags != null && SerializeDistributeFlagStates != null)
+            {
+                for (int i = 0; i < SerializeDistributeFlags.Length && i < SerializeDistributeFlagStates.Length; ++i)
+                {
+                    DistributeFlags[SerializeDistributeFlags[i]] = SerializeDistributeFlagStates[i];
+                }
+            }
+            if (SerializeDistributeFlagOrder != null)
+            {
+                for (int i = 0; i < SerializeDistributeFlagOrder.Length; ++i)
+                {
+                    DistributeFlagOrder.AddLast(SerializeDistributeFlagOrder[i]);
+                }
             }
         }
     }
