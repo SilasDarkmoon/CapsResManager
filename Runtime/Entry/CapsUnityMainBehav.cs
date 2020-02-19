@@ -173,28 +173,34 @@ public class CapsUnityMainBehav : MonoBehaviour
     private static GameObject _EntrySceneBg;
     public static void LoadEntrySceneBg()
     {
-        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
-        for (int i = 0; i < inititems.Length; ++i)
+        if (MainBehavInstance)
         {
-            inititems[i].Init();
-        }
-        var bg = ResManager.LoadResDeep(EntrySceneBgPath) as GameObject;
-        if (bg)
-        {
-            _EntrySceneBg = Instantiate(bg);
+            var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+            for (int i = 0; i < inititems.Length; ++i)
+            {
+                inititems[i].Init();
+            }
+            var bg = ResManager.LoadResDeep(EntrySceneBgPath) as GameObject;
+            if (bg)
+            {
+                _EntrySceneBg = Instantiate(bg);
+            }
         }
     }
     public static void UnloadEntrySceneBg()
     {
-        if (_EntrySceneBg)
+        if (MainBehavInstance)
         {
-            Destroy(_EntrySceneBg);
-            _EntrySceneBg = null;
-        }
-        var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
-        for (int i = inititems.Length - 1; i >= 0; --i)
-        {
-            inititems[i].Cleanup();
+            if (_EntrySceneBg)
+            {
+                Destroy(_EntrySceneBg);
+                _EntrySceneBg = null;
+            }
+            var inititems = ResManager.GetInitItems(ResManager.LifetimeOrders.ResLoader, ResManager.LifetimeOrders.PostResLoader);
+            for (int i = inititems.Length - 1; i >= 0; --i)
+            {
+                inititems[i].Cleanup();
+            }
         }
     }
     public static void EntrySceneDone()
