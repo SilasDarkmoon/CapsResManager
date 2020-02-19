@@ -84,6 +84,21 @@ namespace Capstones.UnityEngineEx
         }
 
         private static Dictionary<string, string> _LangDict;
+        public static Dictionary<string, string> LangDict
+        {
+            get
+            {
+                if (_LangDict == null)
+                {
+                    Init();
+                }
+                return _LangDict;
+            }
+            //private set
+            //{
+            //    _LangDict = value;
+            //}
+        }
 
         public static void Init()
         {
@@ -95,22 +110,16 @@ namespace Capstones.UnityEngineEx
         {
             if (newMap != null)
             {
-                if (_LangDict == null)
+                var dict = LangDict;
+                foreach (var kvp in newMap)
                 {
-                    Init();
-                }
-                //else
-                {
-                    foreach (var kvp in newMap)
+                    if (kvp.Value == null)
                     {
-                        if (kvp.Value == null)
-                        {
-                            _LangDict.Remove(kvp.Key);
-                        }
-                        else
-                        {
-                            _LangDict[kvp.Key] = kvp.Value;
-                        }
+                        dict.Remove(kvp.Key);
+                    }
+                    else
+                    {
+                        dict[kvp.Key] = kvp.Value;
                     }
                 }
             }
@@ -118,7 +127,7 @@ namespace Capstones.UnityEngineEx
 
         public static bool ContainsKey(string key)
         {
-            return _LangDict != null && _LangDict.ContainsKey(key);
+            return LangDict.ContainsKey(key);
         }
 
         public static string GetLangValue(string key, params object[] args)
@@ -130,47 +139,40 @@ namespace Capstones.UnityEngineEx
             }
             else
             {
-                if (_LangDict == null)
+                if (!LangDict.TryGetValue(key, out format))
                 {
-                    PlatDependant.LogWarning("Language Converter - not initialized.");
+                    PlatDependant.LogError("Language Converter - cannot find key: " + key);
                 }
                 else
                 {
-                    if (!_LangDict.TryGetValue(key, out format))
+                    if (format == null)
                     {
-                        PlatDependant.LogError("Language Converter - cannot find key: " + key);
+                        PlatDependant.LogError("Language Converter - null record for key: " + key);
                     }
                     else
                     {
-                        if (format == null)
+                        if (args != null && args.Length > 0)
                         {
-                            PlatDependant.LogError("Language Converter - null record for key: " + key);
-                        }
-                        else
-                        {
-                            if (args != null && args.Length > 0)
+                            try
                             {
-                                try
+                                result = string.Format(CapsLangFormatter.Instance, format, args);
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                                System.Text.StringBuilder sbmess = new System.Text.StringBuilder();
+                                sbmess.AppendLine("Language Converter - format failed.");
+                                sbmess.Append("key: ");
+                                sbmess.AppendLine(key);
+                                sbmess.Append("format: ");
+                                sbmess.AppendLine(format);
+                                sbmess.Append("args: cnt ");
+                                sbmess.AppendLine(args.Length.ToString());
+                                for (int i = 0; i < args.Length; ++i)
                                 {
-                                    result = string.Format(CapsLangFormatter.Instance, format, args);
+                                    sbmess.AppendLine((args[i] ?? "null").ToString());
                                 }
-                                catch (Exception e)
-                                {
-                                    PlatDependant.LogError(e);
-                                    System.Text.StringBuilder sbmess = new System.Text.StringBuilder();
-                                    sbmess.AppendLine("Language Converter - format failed.");
-                                    sbmess.Append("key: ");
-                                    sbmess.AppendLine(key);
-                                    sbmess.Append("format: ");
-                                    sbmess.AppendLine(format);
-                                    sbmess.Append("args: cnt ");
-                                    sbmess.AppendLine(args.Length.ToString());
-                                    for (int i = 0; i < args.Length; ++i)
-                                    {
-                                        sbmess.AppendLine((args[i] ?? "null").ToString());
-                                    }
-                                    PlatDependant.LogError(sbmess);
-                                }
+                                PlatDependant.LogError(sbmess);
                             }
                         }
                     }
@@ -203,13 +205,13 @@ namespace Capstones.UnityEngineEx
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void OnUnityStart()
-        {
-#if !UNITY_EDITOR
-            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
-#endif
-        }
+//        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+//        private static void OnUnityStart()
+//        {
+//#if !UNITY_EDITOR
+//            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
+//#endif
+//        }
 #endif
 
 #if UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER

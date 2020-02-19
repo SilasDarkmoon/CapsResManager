@@ -545,9 +545,8 @@ namespace Capstones.UnityEngineEx
         }
 #endif
 
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        public static void BeforeLoadFirstScene()
+        private static int _InitStatus = 0;
+        private static void DoResManagerInitPre()
         {
             ResLoader.BeforeLoadFirstScene();
             GarbageCollector.GarbageCollectorEvents[0] += CollectGarbageLite;
@@ -557,8 +556,7 @@ namespace Capstones.UnityEngineEx
             Application.lowMemory += StartGarbageCollectNorm;
 #endif
         }
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        public static void AfterLoadFirstScene()
+        private static void DoResManagerInitPost()
         {
             if (CapsUnityMainBehav.MainBehavInstance == null)
             {
@@ -569,6 +567,26 @@ namespace Capstones.UnityEngineEx
                 }
             }
             ResLoader.AfterLoadFirstScene();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static void BeforeLoadFirstScene()
+        {
+            if (_InitStatus == 0)
+            {
+                _InitStatus = 1;
+                DoResManagerInitPre();
+            }
+        }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        public static void AfterLoadFirstScene()
+        {
+            BeforeLoadFirstScene();
+            if (_InitStatus == 1)
+            {
+                _InitStatus = 2;
+                DoResManagerInitPost();
+            }
         }
     }
 }

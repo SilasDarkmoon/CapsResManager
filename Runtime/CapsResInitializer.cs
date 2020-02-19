@@ -49,6 +49,7 @@ public class CapsResInitializer : ScriptableObject
 
     public static void CheckInit()
     {
+        Capstones.UnityEngineEx.ResManager.AfterLoadFirstScene();
         Initializer.CheckInit();
     }
 }
