@@ -563,6 +563,10 @@ namespace Capstones.UnityEngineEx
                 var inititems = GetInitItems(int.MinValue, int.MaxValue);
                 for (int i = 0; i < inititems.Length; ++i)
                 {
+                    inititems[i].Prepare();
+                }
+                for (int i = 0; i < inititems.Length; ++i)
+                {
                     inititems[i].Init();
                 }
             }
