@@ -356,4 +356,139 @@ namespace Capstones.UnityEngineEx
             return null;
         }
     }
+
+    public static class ConfigManager
+    {
+        public static Dictionary<string, object> LoadConfig(string file)
+        {
+            return ResManager.LoadFullConfig(file);
+        }
+
+        public static bool ToBoolean(object config)
+        {
+            if (config == null)
+            {
+                return false;
+            }
+            if (config is bool)
+            {
+                return (bool)config;
+            }
+            if (config is string)
+            {
+                var str = (string)config;
+                str = str.ToLower().Trim();
+                if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (config is IntPtr)
+            {
+                return ((IntPtr)config) != IntPtr.Zero;
+            }
+            else if (config is UIntPtr)
+            {
+                return ((UIntPtr)config) != UIntPtr.Zero;
+            }
+            if (PlatDependant.IsObjIConvertible(config))
+            {
+                return Convert.ToBoolean(config);
+            }
+            return true;
+        }
+        public static string ToString(object config)
+        {
+            if (config == null)
+            {
+                return null;
+            }
+            if (config is string)
+            {
+                return (string)config;
+            }
+            return config.ToString();
+        }
+        public static int ToInt32(object config)
+        {
+            if (config == null)
+            {
+                return 0;
+            }
+            if (config is int)
+            {
+                return (int)config;
+            }
+            if (config is string)
+            {
+                var str = (string)config;
+                int rv;
+                int.TryParse(str, out rv);
+                return rv;
+            }
+            else if (config is IntPtr)
+            {
+                return (int)(IntPtr)config;
+            }
+            else if (config is UIntPtr)
+            {
+                return (int)(UIntPtr)config;
+            }
+            if (PlatDependant.IsObjIConvertible(config))
+            {
+                return Convert.ToInt32(config);
+            }
+            return 0;
+        }
+
+        public static object GetObject(this IDictionary<string, object> dict, string key)
+        {
+            if (dict != null)
+            {
+                object config;
+                if (dict.TryGetValue(key, out config))
+                {
+                    return config;
+                }
+            }
+            return null;
+        }
+        public static bool GetBoolean(this IDictionary<string, object> dict, string key)
+        {
+            if (dict != null)
+            {
+                object config;
+                if (dict.TryGetValue(key, out config))
+                {
+                    return ToBoolean(config);
+                }
+            }
+            return false;
+        }
+        public static string GetString(this IDictionary<string, object> dict, string key)
+        {
+            if (dict != null)
+            {
+                object config;
+                if (dict.TryGetValue(key, out config))
+                {
+                    return ToString(config);
+                }
+            }
+            return null;
+        }
+        public static int GetInt32(this IDictionary<string, object> dict, string key)
+        {
+            if (dict != null)
+            {
+                object config;
+                if (dict.TryGetValue(key, out config))
+                {
+                    return ToInt32(config);
+                }
+            }
+            return 0;
+        }
+    }
 }
