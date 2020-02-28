@@ -494,6 +494,13 @@ namespace Capstones.UnityEngineEx
         }
 #endregion
 
+        public T[] ToArray()
+        {
+            T[] arr = new T[_cnt];
+            CopyTo(arr, 0);
+            return arr;
+        }
+
         public override bool Equals(object obj)
         {
             if (obj is ValueList<T>)
