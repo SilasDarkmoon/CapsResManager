@@ -556,4 +556,45 @@ namespace Capstones.UnityEngineEx
             return code;
         }
     }
+
+    public static class EnumUtils
+    {
+        public static T ConvertToEnum<T>(ulong val) where T : struct
+        {
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
+            return (T)Enum.ToObject(typeof(T), val);
+#else
+            Span<ulong> span = stackalloc[] { val };
+            var tspan = System.Runtime.InteropServices.MemoryMarshal.Cast<ulong, T>(span);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                return tspan[0];
+            }
+            else
+            {
+                return tspan[8 / System.Runtime.InteropServices.Marshal.SizeOf(Enum.GetUnderlyingType(typeof(T))) - 1];
+            }
+#endif
+        }
+        public static ulong ConvertFromEnum<T>(T val) where T : struct
+        {
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
+            return Convert.ToUInt64(val);
+#else
+            Span<ulong> span = stackalloc ulong[1];
+            var tspan = System.Runtime.InteropServices.MemoryMarshal.Cast<ulong, T>(span);
+
+            if (BitConverter.IsLittleEndian)
+            {
+                tspan[0] = val;
+            }
+            else
+            {
+                tspan[8 / System.Runtime.InteropServices.Marshal.SizeOf(Enum.GetUnderlyingType(typeof(T))) - 1] = val;
+            }
+            return span[0];
+#endif
+        }
+    }
 }
