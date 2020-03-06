@@ -364,131 +364,48 @@ namespace Capstones.UnityEngineEx
             return ResManager.LoadFullConfig(file);
         }
 
-        public static bool ToBoolean(object config)
+        public static T Get<T>(this IDictionary<string, object> dict, string key)
         {
-            if (config == null)
+            if (dict == null)
             {
-                return false;
+                return default(T);
             }
-            if (config is bool)
+            else if (dict is IConvertibleDictionary)
             {
-                return (bool)config;
+                return ((IConvertibleDictionary)dict).Get<T>(key);
             }
-            if (config is string)
+            else
             {
-                var str = (string)config;
-                str = str.ToLower().Trim();
-                if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
+                object val;
+                if (dict.TryGetValue(key, out val))
                 {
-                    return false;
+                    return val.Convert<T>();
                 }
-                return true;
+                return default(T);
             }
-            else if (config is IntPtr)
-            {
-                return ((IntPtr)config) != IntPtr.Zero;
-            }
-            else if (config is UIntPtr)
-            {
-                return ((UIntPtr)config) != UIntPtr.Zero;
-            }
-            if (PlatDependant.IsObjIConvertible(config))
-            {
-                return Convert.ToBoolean(config);
-            }
-            return true;
         }
-        public static string ToString(object config)
+        public static void Set<T>(this IDictionary<string, object> dict, string key, T val)
         {
-            if (config == null)
+            if (dict == null)
             {
-                return null;
+                return;
             }
-            if (config is string)
+            else if (key == null)
             {
-                return (string)config;
+                return;
             }
-            return config.ToString();
-        }
-        public static int ToInt32(object config)
-        {
-            if (config == null)
+            else if (val == null)
             {
-                return 0;
+                dict.Remove(key);
             }
-            if (config is int)
+            else if (dict is IConvertibleDictionary)
             {
-                return (int)config;
+                ((IConvertibleDictionary)dict).Set<T>(key, val);
             }
-            if (config is string)
+            else
             {
-                var str = (string)config;
-                int rv;
-                int.TryParse(str, out rv);
-                return rv;
+                dict[key] = val;
             }
-            else if (config is IntPtr)
-            {
-                return (int)(IntPtr)config;
-            }
-            else if (config is UIntPtr)
-            {
-                return (int)(UIntPtr)config;
-            }
-            if (PlatDependant.IsObjIConvertible(config))
-            {
-                return Convert.ToInt32(config);
-            }
-            return 0;
-        }
-
-        public static object GetObject(this IDictionary<string, object> dict, string key)
-        {
-            if (dict != null)
-            {
-                object config;
-                if (dict.TryGetValue(key, out config))
-                {
-                    return config;
-                }
-            }
-            return null;
-        }
-        public static bool GetBoolean(this IDictionary<string, object> dict, string key)
-        {
-            if (dict != null)
-            {
-                object config;
-                if (dict.TryGetValue(key, out config))
-                {
-                    return ToBoolean(config);
-                }
-            }
-            return false;
-        }
-        public static string GetString(this IDictionary<string, object> dict, string key)
-        {
-            if (dict != null)
-            {
-                object config;
-                if (dict.TryGetValue(key, out config))
-                {
-                    return ToString(config);
-                }
-            }
-            return null;
-        }
-        public static int GetInt32(this IDictionary<string, object> dict, string key)
-        {
-            if (dict != null)
-            {
-                object config;
-                if (dict.TryGetValue(key, out config))
-                {
-                    return ToInt32(config);
-                }
-            }
-            return 0;
         }
     }
 }

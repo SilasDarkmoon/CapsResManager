@@ -558,7 +558,7 @@ namespace Capstones.UnityEngineEx
     }
 
     public static class EnumUtils
-    {
+    { // TODO: use ByRefUtils.dll to do the convert quickly
         public static T ConvertToEnum<T>(ulong val) where T : struct
         {
 #if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
@@ -595,6 +595,856 @@ namespace Capstones.UnityEngineEx
             }
             return span[0];
 #endif
+        }
+    }
+
+    public interface IConvertibleDictionary
+    {
+        T Get<T>(string key);
+        void Set<T>(string key, T val); 
+    }
+
+    public static class ConvertUtils
+    {
+        public static T As<T>(this object val)
+        {
+            return val is T ? (T)val : default(T);
+        }
+
+        private static HashSet<Type> NumericTypes = new HashSet<Type>()
+        {
+            typeof(bool),
+            typeof(byte),
+            typeof(decimal),
+            typeof(double),
+            typeof(short),
+            typeof(int),
+            typeof(long),
+            typeof(sbyte),
+            typeof(float),
+            typeof(ushort),
+            typeof(uint),
+            typeof(ulong),
+        };
+        private static HashSet<Type> ConvertibleTypes = new HashSet<Type>()
+        {
+            typeof(bool),
+            typeof(byte),
+            typeof(decimal),
+            typeof(double),
+            typeof(short),
+            typeof(int),
+            typeof(long),
+            typeof(sbyte),
+            typeof(float),
+            typeof(ushort),
+            typeof(uint),
+            typeof(ulong),
+
+            typeof(char),
+            typeof(string),
+            typeof(IntPtr),
+        };
+
+        public class TypedConverter
+        {
+            protected Type _ToType;
+            public Type ToType
+            {
+                get { return _ToType; }
+            }
+
+            public Func<object, object> ConvertFunc;
+            public object Convert(object obj)
+            {
+                var func = ConvertFunc;
+                if (func != null)
+                {
+                    return func(obj);
+                }
+                return null;
+            }
+        }
+        public class TypedConverter<T> : TypedConverter
+        { // TODO: unmanaged value type converter using ByRefUtils
+            public TypedConverter()
+            {
+                _ToType = typeof(T);
+            }
+            public TypedConverter(Func<object, T> convertFunc)
+                : this()
+            {
+                ConvertFunc = convertFunc;
+            }
+
+            public new Func<object, T> ConvertFunc;
+            public new T Convert(object obj)
+            {
+                var func = ConvertFunc;
+                if (func != null)
+                {
+                    return func(obj);
+                }
+                return default(T);
+            }
+        }
+        public static readonly Dictionary<Type, TypedConverter> _TypedConverters = new Dictionary<Type, TypedConverter>()
+        {
+            { typeof(bool), new TypedConverter<bool>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return false;
+                    }
+                    if (obj is bool)
+                    {
+                        return (bool)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        str = str.ToLower().Trim();
+                        if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
+                        {
+                            return false;
+                        }
+                        return true;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return ((IntPtr)obj) != IntPtr.Zero;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return ((UIntPtr)obj) != UIntPtr.Zero;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToBoolean(obj);
+                        }
+                        catch { }
+                    }
+                    return true;
+                })
+            },
+            { typeof(string), new TypedConverter<string>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return null;
+                    }
+                    if (obj is string)
+                    {
+                        return (string)obj;
+                    }
+                    return obj.ToString();
+                })
+            },
+            { typeof(byte), new TypedConverter<byte>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is byte)
+                    {
+                        return (byte)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        byte rv;
+                        byte.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (byte)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (byte)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToByte(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(sbyte), new TypedConverter<sbyte>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is sbyte)
+                    {
+                        return (sbyte)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        sbyte rv;
+                        sbyte.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (sbyte)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (sbyte)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToSByte(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(short), new TypedConverter<short>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is short)
+                    {
+                        return (short)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        short rv;
+                        short.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (short)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (short)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToInt16(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(ushort), new TypedConverter<ushort>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is ushort)
+                    {
+                        return (ushort)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        ushort rv;
+                        ushort.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (ushort)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (ushort)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToUInt16(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(int), new TypedConverter<int>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is int)
+                    {
+                        return (int)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        int rv;
+                        int.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (int)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (int)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToInt32(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(uint), new TypedConverter<uint>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is uint)
+                    {
+                        return (uint)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        uint rv;
+                        uint.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (uint)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (uint)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToUInt32(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(long), new TypedConverter<long>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is long)
+                    {
+                        return (long)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        long rv;
+                        long.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (long)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (long)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToInt64(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(ulong), new TypedConverter<ulong>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is ulong)
+                    {
+                        return (ulong)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        ulong rv;
+                        ulong.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (ulong)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (ulong)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToUInt64(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(char), new TypedConverter<char>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return default(char);
+                    }
+                    if (obj is char)
+                    {
+                        return (char)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        char rv;
+                        char.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (char)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (char)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToChar(obj);
+                        }
+                        catch { }
+                    }
+                    return default(char);
+                })
+            },
+            { typeof(IntPtr), new TypedConverter<IntPtr>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return default(IntPtr);
+                    }
+                    if (obj is IntPtr)
+                    {
+                        return (IntPtr)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        ulong rv;
+                        ulong.TryParse(str, out rv);
+                        return (IntPtr)rv;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (IntPtr)(ulong)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return (IntPtr)System.Convert.ToUInt64(obj);
+                        }
+                        catch { }
+                    }
+                    return default(IntPtr);
+                })
+            },
+            { typeof(UIntPtr), new TypedConverter<UIntPtr>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return default(UIntPtr);
+                    }
+                    if (obj is UIntPtr)
+                    {
+                        return (UIntPtr)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        ulong rv;
+                        ulong.TryParse(str, out rv);
+                        return (UIntPtr)rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (UIntPtr)(ulong)(IntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return (UIntPtr)System.Convert.ToUInt64(obj);
+                        }
+                        catch { }
+                    }
+                    return default(UIntPtr);
+                })
+            },
+            { typeof(float), new TypedConverter<float>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is float)
+                    {
+                        return (float)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        float rv;
+                        float.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (float)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (float)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToSingle(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(double), new TypedConverter<double>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is double)
+                    {
+                        return (double)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        double rv;
+                        double.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (double)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (double)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToDouble(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(decimal), new TypedConverter<decimal>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return 0;
+                    }
+                    if (obj is decimal)
+                    {
+                        return (decimal)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        decimal rv;
+                        decimal.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return (decimal)(IntPtr)obj;
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return (decimal)(UIntPtr)obj;
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToDecimal(obj);
+                        }
+                        catch { }
+                    }
+                    return 0;
+                })
+            },
+            { typeof(TimeSpan), new TypedConverter<TimeSpan>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return default(TimeSpan);
+                    }
+                    if (obj is TimeSpan)
+                    {
+                        return (TimeSpan)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        TimeSpan rv;
+                        TimeSpan.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return new TimeSpan((long)(IntPtr)obj);
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return new TimeSpan((long)(UIntPtr)obj);
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return new TimeSpan(System.Convert.ToInt64(obj));
+                        }
+                        catch { }
+                    }
+                    return default(TimeSpan);
+                })
+            },
+            { typeof(DateTime), new TypedConverter<DateTime>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return default(DateTime);
+                    }
+                    if (obj is DateTime)
+                    {
+                        return (DateTime)obj;
+                    }
+                    if (obj is string)
+                    {
+                        var str = (string)obj;
+                        DateTime rv;
+                        DateTime.TryParse(str, out rv);
+                        return rv;
+                    }
+                    else if (obj is IntPtr)
+                    {
+                        return new DateTime((long)(IntPtr)obj);
+                    }
+                    else if (obj is UIntPtr)
+                    {
+                        return new DateTime((long)(UIntPtr)obj);
+                    }
+                    if (PlatDependant.IsObjIConvertible(obj))
+                    {
+                        try
+                        {
+                            return System.Convert.ToDateTime(obj);
+                        }
+                        catch { }
+                    }
+                    return default(DateTime);
+                })
+            },
+        };
+        public static T Convert<T>(this object obj)
+        { // TODO: use typed delegate to do the convert.
+            TypedConverter converter;
+            if (_TypedConverters.TryGetValue(typeof(T), out converter))
+            {
+                TypedConverter<T> tconverter = converter as TypedConverter<T>;
+                if (tconverter != null)
+                {
+                    return tconverter.Convert(obj);
+                }
+            }
+            if (obj == null)
+                return default(T);
+            if (obj is T)
+                return (T)obj;
+            var type = typeof(T);
+            //if (typeof(T) == typeof(bool))
+            //{
+            //    if (obj is string)
+            //    {
+            //        var str = (string)obj;
+            //        str = str.ToLower().Trim();
+            //        if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
+            //        {
+            //            return (T)(object)false;
+            //        }
+            //        return (T)(object)true;
+            //    }
+            //}
+            if (type.IsEnum())
+            {
+                if (obj is string)
+                {
+                    return (T)Enum.Parse(type, obj as string);
+                }
+                else if (NumericTypes.Contains(obj.GetType()))
+                {
+                    return (T)Enum.ToObject(type, (object)System.Convert.ToUInt64(obj));
+                }
+                else if (obj is Enum)
+                {
+                    return (T)System.Convert.ChangeType(System.Convert.ToUInt64(obj), type);
+                }
+                else
+                {
+                    return default(T);
+                }
+            }
+            //else if (obj is Enum)
+            //{
+            //    if (type == typeof(string))
+            //    {
+            //        return (T)(object)obj.ToString();
+            //    }
+            //    else if (NumericTypes.Contains(type))
+            //    {
+            //        return (T)System.Convert.ChangeType(System.Convert.ToUInt64(obj), type);
+            //    }
+            //    else
+            //    {
+            //        return default(T);
+            //    }
+            //}
+            //else if (NumericTypes.Contains(type) && NumericTypes.Contains(obj.GetType()))
+            //{
+            //    try
+            //    {
+            //        return (T)System.Convert.ChangeType(obj, type);
+            //    }
+            //    catch
+            //    {
+            //        return default(T);
+            //    }
+            //}
+            //else if (type == typeof(IntPtr) && NumericTypes.Contains(obj.GetType()))
+            //{
+            //    try
+            //    {
+            //        long l = System.Convert.ToInt64(obj);
+            //        IntPtr p = (IntPtr)l;
+            //        return (T)(object)p;
+            //    }
+            //    catch
+            //    {
+            //        return default(T);
+            //    }
+            //}
+            //else if (obj is IntPtr && NumericTypes.Contains(type))
+            //{
+            //    IntPtr p = (IntPtr)obj;
+            //    long l = (long)p;
+            //    try
+            //    {
+            //        return (T)System.Convert.ChangeType(l, type);
+            //    }
+            //    catch
+            //    {
+            //        return default(T);
+            //    }
+            //}
+            //else if (ConvertibleTypes.Contains(type) && ConvertibleTypes.Contains(obj.GetType()))
+            //{
+            //    try
+            //    {
+            //        return (T)System.Convert.ChangeType(obj, type);
+            //    }
+            //    catch
+            //    {
+            //        return default(T);
+            //    }
+            //}
+            //else if (typeof(T) == typeof(string))
+            //{
+            //    return (T)(object)obj.ToString();
+            //}
+            return default(T);
         }
     }
 }
