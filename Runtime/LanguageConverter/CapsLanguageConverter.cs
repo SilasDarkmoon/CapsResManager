@@ -102,7 +102,9 @@ namespace Capstones.UnityEngineEx
 
         public static void Init()
         {
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             CapsResInitializer.CheckInit();
+#endif
             _LangDict = ResManager.TryLoadConfig(LanguageConverterConfig.JSONPATH) ?? new Dictionary<string, string>();
         }
 
