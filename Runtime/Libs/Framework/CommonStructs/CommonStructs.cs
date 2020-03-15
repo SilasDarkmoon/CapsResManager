@@ -1330,7 +1330,7 @@ namespace Capstones.UnityEngineEx
             },
         };
         public static T Convert<T>(this object obj)
-        { // TODO: use typed delegate to do the convert.
+        {
             TypedConverter converter;
             if (_TypedConverters.TryGetValue(typeof(T), out converter))
             {
