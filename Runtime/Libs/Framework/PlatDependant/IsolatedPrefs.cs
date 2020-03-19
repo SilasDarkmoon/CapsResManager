@@ -435,6 +435,16 @@ namespace Capstones.UnityEngineEx
 #if UNITY_EDITOR
             return "EditorOutput/Runtime";
 #elif UNITY_STANDALONE
+#if UNITY_STANDALONE_WIN
+            if (_InstanceHolder.InstanceID == 0)
+            {
+                return UnityEngine.Application.dataPath + "/runtime";
+            }
+            else
+            {
+                return UnityEngine.Application.dataPath + "/runtime/instance" + _InstanceHolder.InstanceID.ToString();
+            }
+#else
             if (_InstanceHolder.InstanceID == 0)
             {
                 return UnityEngine.Application.temporaryCachePath;
@@ -443,6 +453,7 @@ namespace Capstones.UnityEngineEx
             {
                 return UnityEngine.Application.temporaryCachePath + "/instance" + _InstanceHolder.InstanceID.ToString();
             }
+#endif
 #elif UNITY_ANDROID
             return UnityEngine.Application.persistentDataPath;
 #elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
