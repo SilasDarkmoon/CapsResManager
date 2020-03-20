@@ -98,7 +98,7 @@
 #endif
                 LogFilePath = file;
 
-                RunBackground(prog =>
+                RunBackgroundLongTime(prog =>
                 {
 #if UNITY_EDITOR
                     try
@@ -1043,6 +1043,60 @@
         }
 #endif
 
+#if NETFX_CORE
+        public static TaskProgress RunBackgroundLongTime(Action<TaskProgress> work)
+        {
+            var prog = new TaskProgress();
+            var task = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    work(prog);
+                }
+                catch (Exception e)
+                {
+                    LogError(e);
+                    prog.Error = e.Message;
+                }
+                finally
+                {
+                    prog.Done = true;
+                }
+            });
+            prog.Task = task;
+            return prog;
+        }
+#else
+        public static TaskProgress RunBackgroundLongTime(Action<TaskProgress> work)
+        {
+            var prog = new TaskProgress();
+            var thread = new System.Threading.Thread(state =>
+            {
+                var progress = state as TaskProgress;
+                try
+                {
+                    work(progress);
+                }
+#if UNITY_EDITOR
+                catch (System.Threading.ThreadAbortException) { }
+#endif
+                catch (Exception e)
+                {
+                    LogError(e);
+                    progress.Error = e.Message;
+                }
+                finally
+                {
+                    progress.Done = true;
+                }
+            });
+            thread.IsBackground = true;
+            thread.Start(prog);
+            prog.Task = thread;
+            return prog;
+        }
+#endif
+
         public static void Sleep(int milliseconds)
         {
 #if NETFX_CORE
@@ -1140,8 +1194,9 @@
     {
         public long Length = 0;
         public long Total = 0;
-        public bool Done = false;
+        public volatile bool Done = false;
         public string Error = null;
+        public object Task = null;
 
         public Action OnCancel = null;
         public void Cancel()
