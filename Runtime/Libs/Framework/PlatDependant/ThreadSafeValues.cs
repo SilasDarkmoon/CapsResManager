@@ -49,7 +49,7 @@ namespace Capstones.UnityEngineEx
 #endif
             _IsMainThread = true;
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR && (DEVELOPMENT_BUILD || DEBUG)
-            SetWindowTitle(System.Diagnostics.Process.GetCurrentProcess().Id.ToString());
+            SetWindowTitle(System.Diagnostics.Process.GetCurrentProcess().Id.ToString() + "-" + _cached_Capid);
 #endif
         }
 
