@@ -516,6 +516,170 @@
 #endif
         }
 
+        public static byte[] ReadAllBytes(this string path)
+        {
+            using (var src = OpenRead(path))
+            {
+                if (src != null)
+                {
+                    int len = -1;
+                    try
+                    {
+                        len = (int)src.Length;
+                    }
+                    catch (Exception e)
+                    {
+                        LogError(e);
+                    }
+                    if (len >= 0)
+                    {
+                        var result = new byte[len];
+                        src.Read(result, 0, len);
+                        return result;
+                    }
+                    else
+                    {
+                        List<byte> result = new List<byte>();
+                        byte[] buffer = CopyStreamBuffer;
+                        int readcnt = 0;
+                        while ((readcnt = src.Read(buffer, 0, buffer.Length)) != 0)
+                        {
+                            result.AddRange(new ArraySegment<byte>(buffer, 0, readcnt));
+                        }
+                        return result.ToArray();
+                    }
+                }
+            }
+            return null;
+        }
+        public static void WriteBytes(this string path, byte[] data, int offset, int count)
+        {
+            //if (data != null && offset >= 0 && count >= 0 && offset + count <= data.Length)
+            {
+                using (var stream = OpenWrite(path))
+                {
+                    if (stream != null)
+                    {
+                        stream.Write(data, offset, count);
+                    }
+                }
+            }
+        }
+        public static void WriteAllBytes(this string path, byte[] data)
+        {
+            WriteBytes(path, data, 0, data.Length);
+        }
+        public static void AppendBytes(this string path, byte[] data, int offset, int count)
+        {
+            //if (data != null && offset >= 0 && count >= 0 && offset + count <= data.Length)
+            {
+                using (var stream = OpenAppend(path))
+                {
+                    if (stream != null)
+                    {
+                        stream.Write(data, offset, count);
+                    }
+                }
+            }
+        }
+        public static void AppendAllBytes(this string path, byte[] data)
+        {
+            AppendBytes(path, data, 0, data.Length);
+        }
+        public static string ReadAllText(this string path)
+        {
+            using (var sr = OpenReadText(path))
+            {
+                if (sr != null)
+                {
+                    return sr.ReadToEnd();
+                }
+            }
+            return null;
+        }
+        public static void WriteAllText(this string path, string text)
+        {
+            using (var sw = OpenWriteText(path))
+            {
+                if (sw != null)
+                {
+                    sw.Write(text);
+                }
+            }
+        }
+        public static void AppendAllText(this string path, string text)
+        {
+            using (var sw = OpenAppendText(path))
+            {
+                if (sw != null)
+                {
+                    sw.Write(text);
+                }
+            }
+        }
+        public static string[] ReadAllLines(this string path)
+        {
+            using (var sr = OpenReadText(path))
+            {
+                if (sr != null)
+                {
+                    List<string> lines = new List<string>();
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        lines.Add(line);
+                    }
+                    // Trim tailing empty lines.
+                    while (lines.Count > 0 && lines[lines.Count - 1] == "")
+                    {
+                        lines.RemoveAt(lines.Count - 1);
+                    }
+                    return lines.ToArray();
+                }
+            }
+            return null;
+        }
+        public static void WriteAllLines(this string path, IList<string> lines)
+        {
+            using (var sw = OpenWriteText(path))
+            {
+                if (sw != null)
+                {
+                    if (lines != null)
+                    {
+                        for (int i = 0; i < lines.Count; ++i)
+                        {
+                            sw.WriteLine(lines[i]);
+                        }
+                    }
+                }
+            }
+        }
+        public static void WriteAllLines(this string path, params string[] lines)
+        {
+            WriteAllLines(path, (IList<string>)lines);
+        }
+        public static void AppendAllLines(this string path, IList<string> lines)
+        {
+            using (var sw = OpenAppendText(path))
+            {
+                if (sw != null)
+                {
+                    if (lines != null)
+                    {
+                        for (int i = 0; i < lines.Count; ++i)
+                        {
+                            sw.WriteLine(lines[i]);
+                        }
+                    }
+                }
+            }
+        }
+        public static void AppendAllLines(this string path, params string[] lines)
+        {
+            AppendAllLines(path, (IList<string>)lines);
+        }
+
         public static System.IO.StreamReader OpenReadText(this string path)
         {
             try

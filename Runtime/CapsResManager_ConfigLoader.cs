@@ -363,6 +363,36 @@ namespace Capstones.UnityEngineEx
         {
             return ResManager.LoadFullConfig(file);
         }
+        public static IDictionary<string, object> Merge(this IDictionary<string, object> dict, IDictionary<string, object> dict2)
+        {
+            if (dict == null)
+            {
+                return dict2;
+            }
+            if (dict2 != null)
+            {
+                foreach (var kvp in dict2)
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+            }
+            return dict;
+        }
+        public static IDictionary<TKey, TValue> Merge<TKey, TValue>(this IDictionary<TKey, TValue> dict, IDictionary<TKey, TValue> dict2)
+        {
+            if (dict == null)
+            {
+                return dict2;
+            }
+            if (dict2 != null)
+            {
+                foreach (var kvp in dict2)
+                {
+                    dict[kvp.Key] = kvp.Value;
+                }
+            }
+            return dict;
+        }
 
         public static T Get<T>(this IDictionary<string, object> dict, string key)
         {
