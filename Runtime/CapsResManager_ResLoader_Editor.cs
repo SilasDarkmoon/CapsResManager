@@ -19,6 +19,23 @@ namespace Capstones.UnityEngineEx
         public static Func<string, string> AssetNameToPath { set; private get; }
         public static Func<string, string> PathToAssetName { set; private get; }
 
+        public static string[] GetAllMods()
+        {
+            if (GetAllModsFunc != null)
+            {
+                return GetAllModsFunc();
+            }
+            return null;
+        }
+        public static bool IsModOptional(string mod)
+        {
+            if (CheckModOptionalFunc != null)
+            {
+                return CheckModOptionalFunc(mod);
+            }
+            return false;
+        }
+
         public static string[] GetCriticalMods()
         {
             List<string> mods = new List<string>();

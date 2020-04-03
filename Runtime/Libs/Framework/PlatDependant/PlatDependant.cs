@@ -1352,6 +1352,60 @@
             prog.Done = true;
             return prog;
         }
+
+#if UNITY_EDITOR
+        public static bool ExecuteProcess(System.Diagnostics.ProcessStartInfo si)
+        {
+            si.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            si.UseShellExecute = false;
+            si.RedirectStandardOutput = true;
+            si.RedirectStandardError = true;
+            si.CreateNoWindow = true;
+
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = si;
+
+            process.OutputDataReceived += (s, e) => WriteProcessOutput(s as System.Diagnostics.Process, e.Data, false);
+
+            process.ErrorDataReceived += (s, e) => WriteProcessOutput(s as System.Diagnostics.Process, e.Data, true);
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                LogError(string.Format("Error when execute process {0} {1}", si.FileName, si.Arguments));
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        private static void WriteProcessOutput(System.Diagnostics.Process p, string data, bool isError)
+        {
+            if (!string.IsNullOrEmpty(data))
+            {
+                string processName = System.IO.Path.GetFileName(p.StartInfo.FileName);
+#if UNITY_EDITOR_OSX
+                if (processName == "wine" || processName == "mono")
+                {
+                    processName = System.IO.Path.GetFileName(p.StartInfo.Arguments.Split(' ').FirstOrDefault());
+                }
+#endif
+                if (!isError)
+                {
+                    LogInfo(string.Format("[{0}] {1}", processName, data));
+                }
+                else
+                {
+                    LogError(string.Format("[{0} Error] {1}", processName, data));
+                }
+            }
+        }
+#endif
     }
 
     public class TaskProgress
