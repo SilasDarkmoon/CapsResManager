@@ -40,25 +40,9 @@ namespace Capstones.UnityEngineEx
                 var file = new System.Diagnostics.StackTrace(1, true).GetFrame(0).GetFileName();
                 var asset = GetAssetNameFromPath(file);
 
-                if (asset.StartsWith("Packages/", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    var index = asset.IndexOfAny(new[] { '/', '\\' }, "Packages/".Length);
-                    if (index > 0)
-                    {
-                        var package = asset.Substring("Packages/".Length, index - "Packages/".Length);
-                        return GetModNameFromPackageName(package);
-                    }
-                }
-                else if (asset.StartsWith("Assets/Mods/"))
-                {
-                    var index = asset.IndexOfAny(new[] { '/', '\\' }, "Assets/Mods/".Length);
-                    if (index > 0)
-                    {
-                        var mod = asset.Substring("Assets/Mods/".Length, index - "Assets/Mods/".Length);
-                        return mod;
-                    }
-                }
-                return null;
+                string assetType, mod, dist;
+                GetAssetNormPath(asset, out assetType, out mod, out dist);
+                return mod;
             }
         }
 
