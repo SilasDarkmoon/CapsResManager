@@ -399,10 +399,12 @@
         {
             Logger.SendLogEnd();
         }
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
         public static string[] CopyRecentLogMessages()
         {
             return Logger.CopyLogMessages();
         }
+#endif
 
         public static void LogInfo(this object obj)
         {
