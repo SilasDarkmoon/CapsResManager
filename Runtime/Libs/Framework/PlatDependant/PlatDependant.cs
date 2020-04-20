@@ -54,6 +54,24 @@
             public static readonly LogMessage[] LogMessages = new LogMessage[32];
             private static int _LogMessageIndex = 0;
             public static int LogMessageIndex { get { return _LogMessageIndex; } }
+            public static string[] CopyLogMessages()
+            {
+                string[] rv = new string[LogMessages.Length];
+                var start = _LogMessageIndex;
+                for (int i = 0; i < LogMessages.Length; ++i)
+                {
+                    var index = (start + i) % LogMessages.Length;
+                    var log = LogMessages[index];
+                    var message = string.Format("{0:HH\\:mm\\:ss.ff} ", log.Time);
+                    message += log.LogType;
+                    message += Environment.NewLine;
+                    message += log.Message;
+                    message += Environment.NewLine;
+                    message += log.StackTrace;
+                    rv[i] = message;
+                }
+                return rv;
+            }
 #endif
 
             static Logger()
@@ -380,6 +398,10 @@
         public static void SendLogEnd()
         {
             Logger.SendLogEnd();
+        }
+        public static string[] CopyRecentLogMessages()
+        {
+            return Logger.CopyLogMessages();
         }
 
         public static void LogInfo(this object obj)
