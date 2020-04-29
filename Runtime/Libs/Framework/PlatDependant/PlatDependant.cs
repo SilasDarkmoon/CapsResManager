@@ -18,6 +18,21 @@
 #endif
     public static class PlatDependant
     {
+        #region Logger
+        public static bool LogEnabled = true;
+        public static bool LogInfoEnabled = true;
+        public static bool LogWarningEnabled = true;
+        public static bool LogErrorEnabled = true;
+        public static bool _LogToConsoleEnabled = true;
+        public static bool LogToConsoleEnabled
+        {
+            get { return _LogToConsoleEnabled; }
+            set { _LogToConsoleEnabled = value; }
+        }
+        public static volatile bool LogToFileEnabled = true;
+        [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
+        public static string LogFilePath;
+
         private static class Logger
         {
 #if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
@@ -30,19 +45,6 @@
             private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
             private static System.Threading.AutoResetEvent LogFileDoneNotify = new System.Threading.AutoResetEvent(true);
 
-            public static bool LogEnabled = true;
-            public static bool LogInfoEnabled = true;
-            public static bool LogWarningEnabled = true;
-            public static bool LogErrorEnabled = true;
-            public static bool _LogToConsoleEnabled = true;
-            public static bool LogToConsoleEnabled
-            {
-                get { return _LogToConsoleEnabled; }
-                set { _LogToConsoleEnabled = value; }
-            }
-            public static volatile bool LogToFileEnabled = true;
-            [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
-            public static string LogFilePath;
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             public struct LogMessage
             {
@@ -260,6 +262,10 @@
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" I");
                     sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(Environment.StackTrace);
+                    }
                     EnqueueLog(sb);
                 }
             }
@@ -299,6 +305,10 @@
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" E");
                     sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(Environment.StackTrace);
+                    }
                     EnqueueLog(sb);
                 }
             }
@@ -338,10 +348,15 @@
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
                     sb.AppendLine(" W");
                     sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(Environment.StackTrace);
+                    }
                     EnqueueLog(sb);
                 }
             }
         }
+#endregion
 
         public static event Action PreQuitting = () => { };
         public static event Action Quitting = () => { };
