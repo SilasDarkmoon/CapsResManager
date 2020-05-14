@@ -46,6 +46,7 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
+
         [MenuItem("Res/Ping Asset in Clipboard &_c", priority = 200200)]
         public static void PingAssetInClipboard()
         {
@@ -104,7 +105,39 @@ namespace Capstones.UnityEditorEx
             Debug.Log("Can not find asset: " + path);
         }
 
-        [MenuItem("Res/Delete Empty Folders", priority = 200210)]
+        [MenuItem("Res/Find Asset", priority = 200210)]
+        public static void FindAssetInProject()
+        {
+            var file = EditorUtility.OpenFilePanel("Select File to Find", null, null);
+            if (!string.IsNullOrEmpty(file) && PlatDependant.IsFileExist(file))
+            {
+                var md5 = CapsEditorUtils.GetFileMD5(file);
+
+                string found = null;
+                foreach (var asset in AssetDatabase.GetAllAssetPaths())
+                {
+                    if (CapsEditorUtils.GetFileMD5(asset) == md5)
+                    {
+                        found = asset;
+                        break;
+                    }
+                }
+
+                if (found == null)
+                {
+                    EditorUtility.DisplayDialog("Result", "Not Found.", "OK");
+                }
+                else
+                {
+                    var asset = AssetDatabase.LoadMainAssetAtPath(found);
+                    EditorUtility.FocusProjectWindow();
+                    EditorGUIUtility.PingObject(asset);
+                    Selection.activeObject = asset;
+                }
+            }
+        }
+
+        [MenuItem("Res/Delete Empty Folders", priority = 200220)]
         public static void DeleteEmptyAssetFolders()
         {
             var assets = AssetDatabase.GetAllAssetPaths();
