@@ -242,6 +242,10 @@
                     var time = DateTime.Now;
                     Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        Console.WriteLine(Environment.StackTrace);
+                    }
 #endif
                 }
                 if (LogToFileEnabled)
@@ -284,6 +288,10 @@
                     var time = DateTime.Now;
                     Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        Console.WriteLine(Environment.StackTrace);
+                    }
                     Console.ResetColor();
 #endif
                 }
@@ -327,6 +335,10 @@
                     var time = DateTime.Now;
                     Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
                     Console.WriteLine(obj);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        Console.WriteLine(Environment.StackTrace);
+                    }
                     Console.ResetColor();
 #endif
                 }
@@ -381,6 +393,8 @@
             {
                 Logger.OnUnityLogReceived(condition, stackTrace, type);
             };
+#else
+            LogCSharpStackTraceEnabled = false;
 #endif
 
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
