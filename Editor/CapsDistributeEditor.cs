@@ -187,11 +187,12 @@ namespace Capstones.UnityEditorEx
             }
             offset2 = GUILayout.BeginScrollView(offset2);
             var node = DistributeFlagOrder.First;
-            LinkedListNode<string> nodeup = null, nodedown = null;
+            LinkedListNode<string> nodeup = null, nodedown = null, noderemove = null;
             while (node != null)
             {
                 var curnode = node;
                 GUILayout.BeginHorizontal();
+                if (GUILayout.Button("X", new GUIStyle(GUI.skin.button) { stretchWidth = false, fixedWidth = 25 })) noderemove = curnode;
                 if (GUILayout.Button("▲", new GUIStyle(GUI.skin.button) { stretchWidth = false, fixedWidth = 25 })) nodeup = curnode;
                 if (GUILayout.Button("▼", new GUIStyle(GUI.skin.button) { stretchWidth = false, fixedWidth = 25 })) nodedown = curnode;
                 EditorGUILayout.LabelField(node.Value, GUILayout.Width(GUI.skin.label.CalcSize(new GUIContent(node.Value)).x));
@@ -215,6 +216,10 @@ namespace Capstones.UnityEditorEx
                     DistributeFlagOrder.Remove(nodedown);
                     DistributeFlagOrder.AddAfter(noden, nodedown);
                 }
+            }
+            if (noderemove != null)
+            {
+                SelectDistributeFlag(noderemove.Value, false);
             }
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
