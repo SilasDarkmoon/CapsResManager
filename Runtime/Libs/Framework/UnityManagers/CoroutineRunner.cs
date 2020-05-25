@@ -13,11 +13,14 @@ namespace Capstones.UnityEngineEx
         {
             public MonoBehaviour behav;
             public IEnumerator work;
+            public Coroutine coroutine;
         }
         public static readonly HashSet<CoroutineInfo> RunningCoroutines = new HashSet<CoroutineInfo>();
 
         private static GameObject CoroutineRunnerObj;
         private static CoroutineRunnerBehav CoroutineRunnerBehav;
+
+        public static Coroutine CurrentCoroutine { get; private set; }
 
         public static Coroutine StartCoroutine(this IEnumerator work)
         {
@@ -36,15 +39,15 @@ namespace Capstones.UnityEngineEx
             {
                 CoroutineRunnerBehav = CoroutineRunnerObj.AddComponent<CoroutineRunnerBehav>();
             }
-            if (work is IDisposable)
+            //if (work is IDisposable)
             {
                 var info = new CoroutineInfo() { behav = CoroutineRunnerBehav, work = work };
-                return CoroutineRunnerBehav.StartCoroutine(SafeEnumerator(work, info));
+                return info.coroutine = CoroutineRunnerBehav.StartCoroutine(SafeEnumerator(work, info));
             }
-            else
-            {
-                return CoroutineRunnerBehav.StartCoroutine(work);
-            }
+            //else
+            //{
+            //    return CoroutineRunnerBehav.StartCoroutine(work);
+            //}
         }
         public static Coroutine StartCoroutine(this IEnumerable work)
         {
@@ -54,7 +57,7 @@ namespace Capstones.UnityEngineEx
             }
             return StartCoroutine(work.GetEnumerator());
         }
-        public static void StopCoroutine(Coroutine c)
+        public static void StopCoroutine(this Coroutine c)
         {
             if (CoroutineRunnerBehav)
             {
@@ -67,12 +70,49 @@ namespace Capstones.UnityEngineEx
             RunningCoroutines.Add(info);
             if (work != null)
             {
+                CurrentCoroutine = info.coroutine;
                 while (work.MoveNext())
                 {
-                    yield return work.Current;
+                    var result = work.Current;
+                    CurrentCoroutine = null;
+                    yield return result;
+                    CurrentCoroutine = info.coroutine;
                 }
             }
             RunningCoroutines.Remove(info);
+        }
+
+        public static Coroutine StartSafeCoroutine(this MonoBehaviour behav, IEnumerator work)
+        {
+            if (behav != null && behav.isActiveAndEnabled)
+            {
+                if (CoroutineRunnerObj != null && !CoroutineRunnerObj.activeInHierarchy)
+                {
+                    Object.Destroy(CoroutineRunnerObj);
+                    CoroutineRunnerObj = null;
+                }
+                if (!CoroutineRunnerObj)
+                {
+                    CoroutineRunnerObj = new GameObject();
+                    CoroutineRunnerObj.hideFlags = HideFlags.HideAndDontSave;
+                    Object.DontDestroyOnLoad(CoroutineRunnerObj);
+                }
+                if (!CoroutineRunnerBehav)
+                {
+                    CoroutineRunnerBehav = CoroutineRunnerObj.AddComponent<CoroutineRunnerBehav>();
+                }
+                var info = new CoroutineInfo() { behav = behav, work = work };
+                return info.coroutine = behav.StartCoroutine(SafeEnumerator(work, info));
+            }
+            return null;
+        }
+        public static void StopSafeCoroutine(this MonoBehaviour behav, Coroutine coroutine)
+        {
+            if (behav)
+            {
+                behav.StopCoroutine(coroutine);
+            }
+            DisposeDeadCoroutines();
         }
 
         public static void DisposeDeadCoroutines()
