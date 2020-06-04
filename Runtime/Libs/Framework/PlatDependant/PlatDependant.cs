@@ -32,7 +32,7 @@ namespace Capstones.UnityEngineEx
         public static volatile bool LogToFileEnabled = true;
         [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
         public static string LogFilePath;
-        public static event Action<StringBuilder> OnExLogger;
+        public static event Action<string> OnExLogger;
 
         private static class Logger
         {
@@ -133,13 +133,15 @@ namespace Capstones.UnityEngineEx
                                 StringBuilder sb;
                                 while (LogQueue.TryDequeue(out sb))
                                 {
-                                    sw.WriteLine(sb);
+                                    var str = sb.ToString();
+                                    ReturnStringBuilder(sb);
+
+                                    sw.WriteLine(str);
                                     var exlogger = OnExLogger;
                                     if (exlogger != null)
                                     {
-                                        exlogger(sb);
+                                        exlogger(str);
                                     }
-                                    ReturnStringBuilder(sb);
                                 }
                             }
                             SetLogFileDone();
@@ -246,7 +248,7 @@ namespace Capstones.UnityEngineEx
                     return;
 #else
                     var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} I", time);
                     Console.WriteLine(obj);
                     if (LogCSharpStackTraceEnabled)
                     {
@@ -292,7 +294,7 @@ namespace Capstones.UnityEngineEx
 #else
                     Console.ForegroundColor = ConsoleColor.Red;
                     var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} E", time);
                     Console.WriteLine(obj);
                     if (LogCSharpStackTraceEnabled)
                     {
@@ -339,7 +341,7 @@ namespace Capstones.UnityEngineEx
 #else
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff }", time);
+                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} W", time);
                     Console.WriteLine(obj);
                     if (LogCSharpStackTraceEnabled)
                     {
