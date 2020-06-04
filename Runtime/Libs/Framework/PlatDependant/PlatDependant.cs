@@ -1,4 +1,4 @@
-﻿namespace Capstones.UnityEngineEx
+namespace Capstones.UnityEngineEx
 {
     using System;
     using System.Linq;
@@ -32,6 +32,7 @@
         public static volatile bool LogToFileEnabled = true;
         [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
         public static string LogFilePath;
+        public static event Action<StringBuilder> OnExLogger;
 
         private static class Logger
         {
@@ -133,6 +134,11 @@
                                 while (LogQueue.TryDequeue(out sb))
                                 {
                                     sw.WriteLine(sb);
+                                    var exlogger = OnExLogger;
+                                    if (exlogger != null)
+                                    {
+                                        exlogger(sb);
+                                    }
                                     ReturnStringBuilder(sb);
                                 }
                             }
