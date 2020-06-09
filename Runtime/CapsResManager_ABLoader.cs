@@ -188,7 +188,7 @@ namespace Capstones.UnityEngineEx
                     if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
                     {
                         var realpath = "res/" + name;
-                        if (!SkipObb && _LoadAssetsFromObb && ObbEntryType(realpath) == ZipEntryType.Uncompressed)
+                        if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null && ObbEntryType(realpath) == ZipEntryType.Uncompressed)
                         {
                             string path = realpath;
                             int retryTimes = 10;
@@ -328,7 +328,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb)
+                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
                     {
                         int retryTimes = 3;
                         for (int i = 0; i < retryTimes; ++i)
@@ -336,7 +336,7 @@ namespace Capstones.UnityEngineEx
                             ZipArchive za = ObbZipArchive;
                             if (za == null)
                             {
-                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                PlatDependant.LogError("Obb Archive Cannot be read.");
                                 if (i != retryTimes - 1)
                                 {
                                     PlatDependant.LogInfo("Need Retry " + i);
@@ -436,7 +436,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb)
+                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
                     {
                         int retryTimes = 3;
                         for (int i = 0; i < retryTimes; ++i)
@@ -444,7 +444,7 @@ namespace Capstones.UnityEngineEx
                             ZipArchive za = ObbZipArchive;
                             if (za == null)
                             {
-                                PlatDependant.LogError("Apk Archive Cannot be read.");
+                                PlatDependant.LogError("Obb Archive Cannot be read.");
                                 if (i != retryTimes - 1)
                                 {
                                     PlatDependant.LogInfo("Need Retry " + i);
