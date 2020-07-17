@@ -128,22 +128,30 @@ namespace Capstones.UnityEngineEx
                         while (LogNotify.WaitOne())
                         {
                             WaitForLogFileDone();
-                            using (var sw = OpenAppendText(LogFilePath))
+                            try
                             {
-                                StringBuilder sb;
-                                while (LogQueue.TryDequeue(out sb))
+                                using (var sw = OpenAppendText(LogFilePath))
                                 {
-                                    var str = sb.ToString();
-                                    ReturnStringBuilder(sb);
-
-                                    sw.WriteLine(str);
-                                    var exlogger = OnExLogger;
-                                    if (exlogger != null)
+                                    StringBuilder sb;
+                                    while (LogQueue.TryDequeue(out sb))
                                     {
-                                        exlogger(str);
+                                        var str = sb.ToString();
+                                        ReturnStringBuilder(sb);
+
+                                        try
+                                        {
+                                            sw.WriteLine(str);
+                                        }
+                                        catch (Exception) { }
+                                        var exlogger = OnExLogger;
+                                        if (exlogger != null)
+                                        {
+                                            exlogger(str);
+                                        }
                                     }
                                 }
                             }
+                            catch (Exception) { }
                             SetLogFileDone();
                         }
 #if UNITY_EDITOR

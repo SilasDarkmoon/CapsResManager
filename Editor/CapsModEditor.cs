@@ -872,6 +872,13 @@ namespace Capstones.UnityEditorEx
                         Resources.UnloadAsset(desc);
                         return rv;
                     }
+                    else
+                    {
+                        if (TryParseModDesc(descpath, out inMain, out deps))
+                        {
+                            return !inMain || (deps != null && deps.Length > 0);
+                        }
+                    }
                 }
                 return false;
             }
@@ -889,11 +896,116 @@ namespace Capstones.UnityEditorEx
                 var desc = AssetDatabase.LoadAssetAtPath<CapsModDesc>(descpath);
                 if (desc == null)
                 {
+                    bool inMain;
+                    string[] deps;
+                    if (TryParseModDesc(descpath, out inMain, out deps))
+                    {
+                        return !inMain || (deps != null && deps.Length > 0);
+                    }
                     return false;
                 }
                 bool rv = desc.IsOptional;
                 Resources.UnloadAsset(desc);
                 return rv;
+            }
+        }
+        public static bool TryParseModDesc(string file, out bool InMain, out string[] deps)
+        {
+            Debug.LogWarning("Can not load mod desc: " + file + ", try parse it as text.");
+            bool success = false;
+            InMain = false;
+            deps = null;
+            try
+            {
+                if (!System.IO.File.Exists(file))
+                {
+                    return success;
+                }
+                try
+                {
+                    string[] lines = System.IO.File.ReadAllLines(file);
+                    if (lines == null || lines.Length <= 0)
+                    {
+                        return success;
+                    }
+                    success = true;
+                    for (int i = 0; i < lines.Length; ++i)
+                    {
+                        var line = lines[i].Trim();
+                        if (line.StartsWith("InMain:"))
+                        {
+                            var sub = line.Substring("InMain:".Length).Trim();
+                            if (!string.IsNullOrEmpty(sub) && sub != "0")
+                            {
+                                InMain = true;
+                            }
+                        }
+                        else if (line.StartsWith("Deps:"))
+                        {
+                            List<string> deplist = new List<string>();
+                            HashSet<string> depset = new HashSet<string>();
+                            var sub = line.Substring("Deps:".Length).Trim();
+                            if (string.IsNullOrEmpty(sub))
+                            {
+                                var pos = lines[i].IndexOf("Deps:");
+                                for (++i; i < lines.Length; ++i)
+                                {
+                                    var subline = lines[i].TrimStart();
+                                    if (!string.IsNullOrEmpty(subline) && lines[i].Length - subline.Length != pos)
+                                    {
+                                        --i;
+                                        break;
+                                    }
+                                    if (!subline.StartsWith("- "))
+                                    {
+                                        --i;
+                                        break;
+                                    }
+                                    var ritem = subline.Substring("- ".Length).Trim();
+                                    if (!string.IsNullOrEmpty(ritem))
+                                    {
+                                        if (depset.Add(ritem))
+                                        {
+                                            deplist.Add(ritem);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var items = sub.Split(new[] { ',', '[', ']', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (items != null)
+                                {
+                                    foreach (var item in items)
+                                    {
+                                        var ritem = item.Trim();
+                                        if (!string.IsNullOrEmpty(ritem))
+                                        {
+                                            if (depset.Add(ritem))
+                                            {
+                                                deplist.Add(ritem);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            deps = deplist.ToArray();
+                        }
+                    }
+                    return success;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return success;
+                }
+            }
+            finally
+            {
+                if (!success)
+                {
+                    Debug.LogError("Can not load mod desc: " + file + " as text.");
+                }
             }
         }
     }
