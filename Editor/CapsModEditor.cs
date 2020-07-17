@@ -874,6 +874,8 @@ namespace Capstones.UnityEditorEx
                     }
                     else
                     {
+                        bool inMain;
+                        string[] deps;
                         if (TryParseModDesc(descpath, out inMain, out deps))
                         {
                             return !inMain || (deps != null && deps.Length > 0);
