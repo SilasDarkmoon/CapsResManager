@@ -132,26 +132,29 @@ namespace Capstones.UnityEngineEx
                             {
                                 using (var sw = OpenAppendText(LogFilePath))
                                 {
-                                    StringBuilder sb;
-                                    while (LogQueue.TryDequeue(out sb))
+                                    if (sw != null)
                                     {
-                                        var str = sb.ToString();
-                                        ReturnStringBuilder(sb);
+                                        StringBuilder sb;
+                                        while (LogQueue.TryDequeue(out sb))
+                                        {
+                                            var str = sb.ToString();
+                                            ReturnStringBuilder(sb);
 
-                                        try
-                                        {
-                                            sw.WriteLine(str);
-                                        }
-                                        catch (Exception) { }
-                                        var exlogger = OnExLogger;
-                                        if (exlogger != null)
-                                        {
-                                            exlogger(str);
+                                            try
+                                            {
+                                                sw.WriteLine(str);
+                                            }
+                                            catch { }
+                                            var exlogger = OnExLogger;
+                                            if (exlogger != null)
+                                            {
+                                                exlogger(str);
+                                            }
                                         }
                                     }
                                 }
                             }
-                            catch (Exception) { }
+                            catch { }
                             SetLogFileDone();
                         }
 #if UNITY_EDITOR
