@@ -36,6 +36,7 @@ namespace Capstones.UnityEditorEx
                 var src = CapsModEditor.FindAssetInMods("DefaultDistributeFlags.txt", true);
                 if (src != null && System.IO.File.Exists(src))
                 {
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
                     System.IO.File.Copy(src, path);
                     AssetDatabase.ImportAsset(path);
                     return;
