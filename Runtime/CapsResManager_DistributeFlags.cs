@@ -35,6 +35,20 @@ namespace Capstones.UnityEngineEx
                             }
                         }
                     }
+#if UNITY_EDITOR
+                    else if (PlatDependant.IsFileExist("Assets/Resources/DistributeFlags.txt"))
+                    {
+                        var strflags = PlatDependant.ReadAllText("Assets/Resources/DistributeFlags.txt");
+                        if (!string.IsNullOrEmpty(strflags))
+                        {
+                            var cflags = strflags.Split(new[] { '<' }, System.StringSplitOptions.RemoveEmptyEntries);
+                            if (cflags != null)
+                            {
+                                _PreRuntimeDFlags.AddRange(cflags);
+                            }
+                        }
+                    }
+#endif
 #else
                     if (PlatDependant.IsFileExist("./DistributeFlags.txt"))
                     {
