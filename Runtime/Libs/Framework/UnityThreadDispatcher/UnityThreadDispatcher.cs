@@ -33,7 +33,7 @@ namespace Capstones.UnityEngineEx
         {
             if (act != null)
             {
-                if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
+                if (ThreadSafeValues.IsMainThread)
                 {
                     act();
                 }
@@ -54,7 +54,7 @@ namespace Capstones.UnityEngineEx
         {
             if (func != null)
             {
-                if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
+                if (ThreadSafeValues.IsMainThread)
                 {
                     return func();
                 }
@@ -84,10 +84,25 @@ namespace Capstones.UnityEngineEx
         private static bool _Inited = false;
         private static bool _UsingObjRunner = false;
         internal static GameObject _RunningObj = null;
+        private static System.Threading.SynchronizationContext _MainThreadSyncContext;
 #pragma warning restore
 
         private static void CheckAndInit()
         {
+#if UNITY_2017_1_OR_NEWER
+            try
+            {
+                _MainThreadSyncContext = System.Threading.SynchronizationContext.Current;
+            }
+            catch (Exception e)
+            {
+                PlatDependant.LogError(e);
+            }
+            if (_MainThreadSyncContext != null)
+            {
+                return;
+            }
+#endif
 #if UNITY_EDITOR
             if (!_Inited)
             {
@@ -119,8 +134,40 @@ namespace Capstones.UnityEngineEx
         }
         private static void AddEvent(Action act)
         {
+            if (_MainThreadSyncContext != null)
+            {
+                if (act != null)
+                {
+                    if (ThreadSafeValues.IsMainThread)
+                    {
+                        try
+                        {
+                            act();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
+                    else
+                    {
+                        _MainThreadSyncContext.Post(state =>
+                        {
+                            try
+                            {
+                                act();
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                            }
+                        }, null);
+                    }
+                }
+                return;
+            }
             ActionQueue.Enqueue(act);
-            if (ThreadLocalObj.GetThreadId() == ThreadSafeValues.UnityThreadID)
+            if (ThreadSafeValues.IsMainThread)
             {
                 HandleEvents();
                 return;
