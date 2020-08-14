@@ -87,7 +87,7 @@ namespace Capstones.UnityEngineEx
         }
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-#region WIN32API
+        #region WIN32API
         delegate bool EnumWindowsCallBack(IntPtr hwnd, IntPtr lParam);
         [System.Runtime.InteropServices.DllImport("user32", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         static extern bool SetWindowTextW(IntPtr hwnd, string title);
@@ -95,7 +95,7 @@ namespace Capstones.UnityEngineEx
         static extern int EnumWindows(EnumWindowsCallBack lpEnumFunc, IntPtr lParam);
         [System.Runtime.InteropServices.DllImport("user32")]
         static extern uint GetWindowThreadProcessId(IntPtr hWnd, ref IntPtr lpdwProcessId);
-#endregion
+        #endregion
         static IntPtr myWindowHandle;
         public static void SetWindowTitle(string title)
         {
@@ -103,6 +103,7 @@ namespace Capstones.UnityEngineEx
             EnumWindows(new EnumWindowsCallBack(EnumWindCallback), handle);     //枚举查找本窗口
             SetWindowTextW(myWindowHandle, title); //设置窗口标题
         }
+        [AOT.MonoPInvokeCallback(typeof(EnumWindowsCallBack))]
         static bool EnumWindCallback(IntPtr hwnd, IntPtr lParam)
         {
             IntPtr pid = IntPtr.Zero;
