@@ -21,7 +21,7 @@ namespace Capstones.UnityEngineEx
                 public Type MainType;
                 public Dictionary<Type, AssetRef> TypedAssets = new Dictionary<Type, AssetRef>();
 
-                private Object LoadMainAsset()
+                protected virtual Object LoadMainAsset()
                 {
                     if (MainType != null)
                     {
@@ -120,7 +120,7 @@ namespace Capstones.UnityEngineEx
                     return null;
                 }
 
-                private IEnumerator LoadMainAssetAsync(CoroutineTasks.CoroutineWork req)
+                protected virtual IEnumerator LoadMainAssetAsync(CoroutineTasks.CoroutineWork req)
                 {
                     if (ManiItem != null && DepBundles.Count > 0)
                     {

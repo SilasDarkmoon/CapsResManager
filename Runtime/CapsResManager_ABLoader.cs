@@ -65,6 +65,7 @@ namespace Capstones.UnityEngineEx
             public string RealName;
             public int RefCnt = 0;
             public bool Permanent = false;
+            public bool LeaveAssetOpen = false;
 
             public AssetBundleInfo(AssetBundle ab)
             {
@@ -82,14 +83,19 @@ namespace Capstones.UnityEngineEx
                 var rv = --RefCnt;
                 if (rv <= 0 && !Permanent)
                 {
-                    if (Bundle != null)
-                    {
-                        Bundle.Unload(true);
-                        //Bundle.Unload(false);
-                        Bundle = null;
-                    }
+                    UnloadBundle();
                 }
                 return rv;
+            }
+            public bool UnloadBundle()
+            {
+                if (Bundle != null)
+                {
+                    Bundle.Unload(!LeaveAssetOpen);
+                    Bundle = null;
+                    return true;
+                }
+                return false;
             }
         }
         public static Dictionary<string, AssetBundleInfo> LoadedAssetBundles = new Dictionary<string, AssetBundleInfo>();
@@ -524,6 +530,8 @@ namespace Capstones.UnityEngineEx
 
         public interface IAssetBundleLoaderEx
         {
+            void PreUnloadUnusedRes();
+            void PostUnloadUnusedRes();
             bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out AssetBundleInfo bi);
         }
         public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
@@ -985,11 +993,7 @@ namespace Capstones.UnityEngineEx
                 var abi = kvpb.Value;
                 if (abi != null && !abi.Permanent && abi.RefCnt <= 0)
                 {
-                    if (abi.Bundle != null)
-                    {
-                        abi.Bundle.Unload(true);
-                        abi.Bundle = null;
-                    }
+                    abi.UnloadBundle();
                 }
             }
         }
@@ -1018,10 +1022,9 @@ namespace Capstones.UnityEngineEx
             foreach (var kvpb in LoadedAssetBundles)
             {
                 var abi = kvpb.Value;
-                if (abi != null && abi.Bundle != null)
+                if (abi != null)
                 {
-                    abi.Bundle.Unload(true);
-                    abi.Bundle = null;
+                    abi.UnloadBundle();
                 }
             }
             LoadedAssetBundles.Clear();
@@ -1033,11 +1036,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (abi.Value != null && !abi.Value.Permanent)
                 {
-                    if (abi.Value.Bundle != null)
-                    {
-                        abi.Value.Bundle.Unload(true);
-                        abi.Value.Bundle = null;
-                    }
+                    abi.Value.UnloadBundle();
                 }
                 else if (abi.Value != null)
                 {

@@ -678,6 +678,20 @@ namespace Capstones.UnityEngineEx
                 CollapsedManifest.DiscardAllNodes();
                 DiscardUnityManifests();
             }
+            public void PreUnloadUnusedRes()
+            {
+                for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
+                {
+                    AssetBundleLoaderEx[i].PreUnloadUnusedRes();
+                }
+            }
+            public void PostUnloadUnusedRes()
+            {
+                for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
+                {
+                    AssetBundleLoaderEx[i].PostUnloadUnusedRes();
+                }
+            }
             public void UnloadUnusedRes()
             {
                 if (CollapsedManifest != null)
