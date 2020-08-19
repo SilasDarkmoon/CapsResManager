@@ -23,8 +23,6 @@ namespace Capstones.UnityEngineEx
             CoroutineWork LoadResAsync(string asset, Type type);
             IEnumerator LoadSceneAsync(string name, bool additive);
 
-            void PreUnloadUnusedRes();
-            void PostUnloadUnusedRes();
             void UnloadUnusedRes();
             void UnloadAllRes(bool unloadPermanentBundle);
             void MarkPermanent(string assetname);
@@ -428,17 +426,13 @@ namespace Capstones.UnityEngineEx
 
         public static void UnloadUnusedRes()
         {
-            ResLoader.PreUnloadUnusedRes();
             Resources.UnloadUnusedAssets();
             ResLoader.UnloadUnusedRes();
-            //ResLoader.PostUnloadUnusedRes(); // it is dangerous when Resources.UnloadUnusedAssets() undone.
         }
         public static IEnumerator UnloadUnusedResDeepAsync()
         {
-            ResLoader.PreUnloadUnusedRes();
             yield return Resources.UnloadUnusedAssets();
             ResLoader.UnloadUnusedRes();
-            ResLoader.PostUnloadUnusedRes();
         }
         public static IEnumerator UnloadUnusedResDeep()
         {
@@ -454,13 +448,11 @@ namespace Capstones.UnityEngineEx
         }
         public static IEnumerator UnloadUnusedResAsync()
         {
-            ResLoader.PreUnloadUnusedRes();
             yield return Resources.UnloadUnusedAssets();
         }
         public static void UnloadUnusedResLite()
         {
             ResLoader.UnloadUnusedRes();
-            ResLoader.PostUnloadUnusedRes();
         }
 
         public static IEnumerator UnloadUnusedResDeepStep()

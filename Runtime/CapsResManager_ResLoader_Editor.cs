@@ -666,12 +666,6 @@ namespace Capstones.UnityEngineEx
             public void Cleanup()
             {
             }
-            public void PreUnloadUnusedRes()
-            {
-            }
-            public void PostUnloadUnusedRes()
-            {
-            }
             public void UnloadUnusedRes()
             {
                 UnityEditor.EditorUtility.UnloadUnusedAssetsImmediate();

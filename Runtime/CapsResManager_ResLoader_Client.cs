@@ -678,20 +678,6 @@ namespace Capstones.UnityEngineEx
                 CollapsedManifest.DiscardAllNodes();
                 DiscardUnityManifests();
             }
-            public void PreUnloadUnusedRes()
-            {
-                for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
-                {
-                    AssetBundleLoaderEx[i].PreUnloadUnusedRes();
-                }
-            }
-            public void PostUnloadUnusedRes()
-            {
-                for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
-                {
-                    AssetBundleLoaderEx[i].PostUnloadUnusedRes();
-                }
-            }
             public void UnloadUnusedRes()
             {
                 if (CollapsedManifest != null)
@@ -723,14 +709,14 @@ namespace Capstones.UnityEngineEx
                     }
                     UnloadAllBundle();
 
-                    // sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
-                    // and then the sprite would rebuild itself when the atlas is loaded again.
-                    // so we do a force unload here.
-                    var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-                    for (int i = 0; i < sprites.Length; ++i)
-                    {
-                        Resources.UnloadAsset(sprites[i]);
-                    }
+                    //// sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
+                    //// and then the sprite would rebuild itself when the atlas is loaded again.
+                    //// so we do a force unload here.
+                    //var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+                    //for (int i = 0; i < sprites.Length; ++i)
+                    //{
+                    //    Resources.UnloadAsset(sprites[i]);
+                    //}
                 }
                 else
                 {
@@ -768,18 +754,18 @@ namespace Capstones.UnityEngineEx
                         UnloadNonPermanentBundle();
                     }
 
-                    // sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
-                    // and then the sprite would rebuild itself when the atlas is loaded again.
-                    // so we do a force unload here.
-                    var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
-                    for (int i = 0; i < sprites.Length; ++i)
-                    {
-                        var sprite = sprites[i];
-                        if (sprite && !sprite.texture)
-                        {
-                            Resources.UnloadAsset(sprites[i]);
-                        }
-                    }
+                    //// sometimes, the sprite whose atlas was unloaded, will remain alive to the next scene.
+                    //// and then the sprite would rebuild itself when the atlas is loaded again.
+                    //// so we do a force unload here.
+                    //var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+                    //for (int i = 0; i < sprites.Length; ++i)
+                    //{
+                    //    var sprite = sprites[i];
+                    //    if (sprite && !sprite.texture)
+                    //    {
+                    //        Resources.UnloadAsset(sprites[i]);
+                    //    }
+                    //}
                 }
             }
             public void MarkPermanent(string assetname)

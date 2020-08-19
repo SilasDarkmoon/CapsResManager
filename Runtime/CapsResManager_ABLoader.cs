@@ -530,8 +530,6 @@ namespace Capstones.UnityEngineEx
 
         public interface IAssetBundleLoaderEx
         {
-            void PreUnloadUnusedRes();
-            void PostUnloadUnusedRes();
             bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out AssetBundleInfo bi);
         }
         public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
