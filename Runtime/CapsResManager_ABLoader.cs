@@ -309,6 +309,36 @@ namespace Capstones.UnityEngineEx
                 return LoadAssetBundle("mod/" + mod + "/" + name, norm, false);
             }
         }
+        public static bool FindLoadedAssetBundle(string name, string norm, out AssetBundleInfo abi)
+        {
+            norm = norm ?? name;
+            if (string.IsNullOrEmpty(name))
+            {
+                abi = null;
+                return false;
+            }
+            abi = null;
+            if (LoadedAssetBundles.TryGetValue(norm, out abi))
+            {
+                if (abi == null || abi.Bundle != null)
+                {
+                    return true;
+                }
+            }
+            abi = null;
+            return false;
+        }
+        public static bool FindLoadedAssetBundle(string mod, string name, string norm, out AssetBundleInfo abi)
+        {
+            if (string.IsNullOrEmpty(mod))
+            {
+                return FindLoadedAssetBundle(name, norm, out abi);
+            }
+            else
+            {
+                return FindLoadedAssetBundle("mod/" + mod + "/" + name, norm, out abi);
+            }
+        }
 
         // TODO: 1、mod and dist? 2、in server?
         public static System.IO.Stream LoadFileInStreaming(string file)
@@ -535,9 +565,13 @@ namespace Capstones.UnityEngineEx
         public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
         public static AssetBundleInfo LoadAssetBundleEx(string mod, string name, bool isContainingBundle)
         {
+            AssetBundleInfo bi;
+            if (FindLoadedAssetBundle(mod, name, null, out bi))
+            {
+                return bi;
+            }
             for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
             {
-                AssetBundleInfo bi;
                 if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, isContainingBundle, out bi))
                 {
                     return bi;
