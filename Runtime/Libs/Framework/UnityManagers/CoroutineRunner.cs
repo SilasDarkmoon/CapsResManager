@@ -137,14 +137,28 @@ namespace Capstones.UnityEngineEx
         }
         public static void DisposeAllCoroutines(MonoBehaviour onbehav)
         {
+            LinkedList<IDisposable> toBeDisposed = new LinkedList<IDisposable>();
             foreach (var info in RunningCoroutines)
             {
                 if (info.work is IDisposable && info.behav == onbehav)
                 {
-                    ((IDisposable)info.work).Dispose();
+                    toBeDisposed.AddLast((IDisposable)info.work);
                 }
             }
             RunningCoroutines.RemoveWhere(info => info.behav == onbehav);
+            foreach (var work in toBeDisposed)
+            {
+                work.Dispose();
+            }
+        }
+        public static void DisposeAllCoroutines(CoroutineRunnerBehav onbehav)
+        {
+            if (onbehav == CoroutineRunnerBehav)
+            {
+                CoroutineRunnerObj = null;
+                CoroutineRunnerBehav = null;
+            }
+            DisposeAllCoroutines((MonoBehaviour)onbehav);
         }
 
         public static IEnumerable GetEnumerable(this IEnumerator work)
