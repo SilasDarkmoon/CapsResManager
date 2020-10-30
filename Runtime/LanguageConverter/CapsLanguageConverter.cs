@@ -26,6 +26,8 @@ namespace Capstones.UnityEngineEx
             {
                 if (format == null)
                 {
+                    if (arg == null)
+                        return "";
                     if (arg is IFormattable)
                         return ((IFormattable)arg).ToString(format, provider);
                     return arg.ToString();
