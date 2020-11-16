@@ -677,6 +677,33 @@ namespace Capstones.UnityEngineEx
             public void MarkPermanent(string assetname)
             {
             }
+
+            public static void UnloadAssets(Object[] objs)
+            {
+                foreach (var obj in objs)
+                {
+                    if (obj)
+                    {
+                        var path = UnityEditor.AssetDatabase.GetAssetPath(obj);
+                        if (string.IsNullOrEmpty(path))
+                        {
+                            if (obj is Component)
+                            {
+                                Object.DestroyImmediate(((Component)obj).transform.root.gameObject);
+                            }
+                            else
+                            {
+                                Object.DestroyImmediate(obj);
+                            }
+                        }
+                        else
+                        {
+                            // TODO: unload prefab parts by prefab root
+                            Resources.UnloadAsset(obj);
+                        }
+                    }
+                }
+            }
         }
         public static EditorResLoader EditorResLoaderInstance = new EditorResLoader();
 #endif
