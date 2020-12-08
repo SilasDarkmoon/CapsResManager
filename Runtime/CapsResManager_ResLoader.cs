@@ -33,6 +33,10 @@ namespace Capstones.UnityEngineEx
             get { return _ResLoader; }
             set
             {
+                if (_ResLoader != null)
+                {
+                    RemoveInitItem(_ResLoader);
+                }
                 _ResLoader = value;
                 AddInitItem(value);
             }

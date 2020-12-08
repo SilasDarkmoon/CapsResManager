@@ -97,9 +97,24 @@ namespace Capstones.UnityEngineEx
         {
             public EditorResLoader()
             {
-#if !FORCE_USE_CLIENT_RESLOADER
-                ResLoader = this;
+                bool useclientloader = false;
+#if FORCE_USE_CLIENT_RESLOADER
+                useclientloader = true;
 #endif
+                if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode || !useclientloader)
+                {
+                    ResLoader = this;
+                }
+                else
+                {
+                    UnityEditor.EditorApplication.playModeStateChanged += e =>
+                    {
+                        if (e == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+                        {
+                            ResLoader = this;
+                        }
+                    };
+                }
                 OnRebuildRuntimeResCache += RebuildRuntimeResCache;
             }
             //public void OnEnable() { }

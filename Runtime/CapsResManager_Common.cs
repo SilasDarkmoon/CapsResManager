@@ -196,6 +196,11 @@ namespace Capstones.UnityEngineEx
         {
             RemoveInitItem(order, order);
         }
+        public static void RemoveInitItem(ILifetime item)
+        {
+            var list = _InitList;
+            list.Remove(item);
+        }
         public static void Init()
         {
             var list = _InitList;

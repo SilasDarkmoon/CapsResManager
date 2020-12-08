@@ -13,9 +13,20 @@ namespace Capstones.UnityEngineEx
         {
             public ClientResLoader()
             {
+                bool useclientloader = false;
 #if !UNITY_EDITOR || FORCE_USE_CLIENT_RESLOADER
-                ResLoader = this;
+                useclientloader = true;
+#if UNITY_EDITOR
+                if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                {
+                    useclientloader = false;
+                }
 #endif
+#endif
+                if (useclientloader)
+                {
+                    ResLoader = this;
+                }
             }
             //public void OnEnable() { }
             public void BeforeLoadFirstScene() { }
