@@ -44,6 +44,65 @@ namespace Capstones.UnityEditorEx
         }
         public static readonly List<IResBuilderEx> ResBuilderEx = new List<IResBuilderEx>();
 
+        private static readonly HashSet<string> _IgnoreFiles = new HashSet<string>()
+        {
+            ".cginc",
+            ".hlsl",
+        };
+        public static void AddIgnoreFileExt(string ext)
+        {
+            if (ext != null && ext.StartsWith("."))
+            {
+                _IgnoreFiles.Add(ext);
+            }
+        }
+        public static bool IgnoreByExt(string asset)
+        {
+            var ext = System.IO.Path.GetExtension(asset);
+            return _IgnoreFiles.Contains(ext);
+        }
+        private static readonly HashSet<Type> _IgnoreScriptableAssets = new HashSet<Type>()
+        {
+            typeof(UnityEditor.LightingDataAsset),
+        };
+        public static void AddIgnoreScriptableAsset(Type type)
+        {
+            if (type != null)
+            {
+                _IgnoreScriptableAssets.Add(type);
+            }
+        }
+        public static bool IgnoreByScriptableAsset(string asset)
+        {
+            return asset.EndsWith(".asset") && _IgnoreScriptableAssets.Contains(AssetDatabase.GetMainAssetTypeAtPath(asset));
+        }
+        private static readonly List<Func<string, bool>> _AssetFilters = new List<Func<string, bool>>()
+        {
+            //asset => asset.EndsWith(".asset") && _IgnoreScriptableAssets.Contains(AssetDatabase.GetMainAssetTypeAtPath(asset)),
+        };
+        public static void AddIgnoreFilter(Func<string, bool> filter)
+        {
+            if (filter != null)
+            {
+                if (!_AssetFilters.Contains(filter))
+                {
+                    _AssetFilters.Add(filter);
+                }
+            }
+        }
+        public static bool IgnoreByFilter(string asset)
+        {
+            for (int i = 0; i < _AssetFilters.Count; ++i)
+            {
+                var filter = _AssetFilters[i];
+                if (filter(asset))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public class CapsResBuildWork
         {
             public AssetBundleBuild[] ABs;
@@ -104,6 +163,21 @@ namespace Capstones.UnityEditorEx
                     if (CapsResInfoEditor.IsAssetScript(asset))
                     {
                         logger.Log("Script.");
+                        continue;
+                    }
+                    if (IgnoreByExt(asset))
+                    {
+                        logger.Log("Ignored By Ext.");
+                        continue;
+                    }
+                    if (IgnoreByScriptableAsset(asset))
+                    {
+                        logger.Log("Ignored By Scriptable Asset (Editor Only).");
+                        continue;
+                    }
+                    if (IgnoreByFilter(asset))
+                    {
+                        logger.Log("Ignored By Filter.");
                         continue;
                     }
 
