@@ -172,7 +172,7 @@ namespace Capstones.UnityEditorEx
                     }
                     if (IgnoreByScriptableAsset(asset))
                     {
-                        logger.Log("Ignored By Scriptable Asset (Editor Only).");
+                        logger.Log("Ignored By Scriptable Asset.");
                         continue;
                     }
                     if (IgnoreByFilter(asset))
