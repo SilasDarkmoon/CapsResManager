@@ -1388,6 +1388,7 @@ namespace Capstones.UnityEngineEx
                                             catch (Exception e)
                                             {
                                                 LogError(e);
+                                                prog.Error = e.Message;
                                             }
 
                                             index = System.Threading.Interlocked.Increment(ref entryIndex) - 1;
