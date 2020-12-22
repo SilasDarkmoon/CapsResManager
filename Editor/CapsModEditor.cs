@@ -326,6 +326,7 @@ namespace Capstones.UnityEditorEx
             {
                 var asmguid = allasms[i];
                 var asmpath = AssetDatabase.GUIDToAssetPath(asmguid);
+                AssetDatabase.ImportAsset(asmpath, ImportAssetOptions.ForceUpdate);
                 if (!string.IsNullOrEmpty(asmpath))
                 {
                     asmdirs.Add(System.IO.Path.GetDirectoryName(asmpath));
