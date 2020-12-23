@@ -396,16 +396,20 @@ namespace Capstones.UnityEngineEx
                 }
                 else
                 {
-                    var guid = UnityEditor.AssetDatabase.AssetPathToGUID(found);
-                    if (string.IsNullOrEmpty(guid))
+                    try
                     {
-                        Debug.LogError("Unable to find asset (case error?): " + found);
+                        var guid = UnityEditor.AssetDatabase.AssetPathToGUID(found);
+                        if (string.IsNullOrEmpty(guid))
+                        {
+                            Debug.LogError("Unable to find asset (case error?): " + found);
+                        }
+                        var ondisk = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                        if (found != ondisk)
+                        {
+                            Debug.LogError("File name case error. Loading: " + found + "\nOnDisk: " + (ondisk ?? "??"));
+                        }
                     }
-                    var ondisk = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-                    if (found != ondisk)
-                    {
-                        Debug.LogError("File name case error. Loading: " + found + "\nOnDisk: " + (ondisk ?? "??"));
-                    }
+                    catch { } // If it is called inside ctor of MonoBehaviour, AssetPathToGUID will fail.
                 }
                 _RuntimeCache.Mapping[path] = found;
                 return found;
