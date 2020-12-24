@@ -7,6 +7,11 @@ using UnityEngine;
 using uobj = UnityEngine.Object;
 #endif
 
+#if (!UNITY_ENGINE && !UNITY_5_3_OR_NEWER && NETSTANDARD) || NET_STANDARD_2_0
+#else
+using ITuple = System.Runtime.CompilerServices.ITuple;
+#endif
+
 namespace Capstones.UnityEngineEx
 {
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
@@ -80,6 +85,18 @@ namespace Capstones.UnityEngineEx
             bool v1 = (val != 0);
             return v1.ToString();
         }
+    }
+
+#if (!UNITY_ENGINE && !UNITY_5_3_OR_NEWER && NETSTANDARD) || NET_STANDARD_2_0
+    public interface ITuple
+    {
+        object this[int index] { get; }
+        int Length { get; }
+    }
+#endif
+    public interface IWritableTuple
+    {
+        object this[int index] { get; set; }
     }
 
     public struct Pack<T1, T2>
@@ -253,6 +270,645 @@ namespace Capstones.UnityEngineEx
             t10 = p10;
         }
     }
+
+#region ValueArray
+    public interface IValueArray : ITuple, IWritableTuple//, IList // TODO: IList
+    {
+        //int Length { get; }
+        //object this[int index] { get; set; }
+        Type ElementType { get; }
+    }
+    public interface IValueArray<T> : IValueArray//, IList<T> // TODO: IList
+    {
+        new T this[int index] { get; set; }
+    }
+
+    public struct ValueArray : IValueArray
+    {
+        public object this[int index]
+        {
+            get { throw new IndexOutOfRangeException(); }
+            set { throw new IndexOutOfRangeException(); }
+        }
+        public int Length { get { return 0; } }
+        public Type ElementType { get { return typeof(object); } }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray(ValueTuple t)
+        {
+            return new ValueArray();
+        }
+        public static implicit operator ValueTuple(ValueArray t)
+        {
+            return new ValueTuple();
+        }
+#endif
+
+        public static ValueArray0<T> Arr<T>()
+        {
+            return new ValueArray0<T>();
+        }
+        public static ValueArray1<T> Arr<T>(T i0)
+        {
+            return new ValueArray1<T>(i0);
+        }
+        public static ValueArray2<T> Arr<T>(T i0, T i1)
+        {
+            return new ValueArray2<T>(i0, i1);
+        }
+        public static ValueArray3<T> Arr<T>(T i0, T i1, T i2)
+        {
+            return new ValueArray3<T>(i0, i1, i2);
+        }
+        public static ValueArray4<T> Arr<T>(T i0, T i1, T i2, T i3)
+        {
+            return new ValueArray4<T>(i0, i1, i2, i3);
+        }
+        public static ValueArray5<T> Arr<T>(T i0, T i1, T i2, T i3, T i4)
+        {
+            return new ValueArray5<T>(i0, i1, i2, i3, i4);
+        }
+        public static ValueArray6<T> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5)
+        {
+            return new ValueArray6<T>(i0, i1, i2, i3, i4, i5);
+        }
+        public static ValueArray7<T> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6)
+        {
+            return new ValueArray7<T>(i0, i1, i2, i3, i4, i5, i6);
+        }
+        public static ValueArray8<T> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7)
+        {
+            return new ValueArray8<T>(i0, i1, i2, i3, i4, i5, i6, i7);
+        }
+        public static ValueArrayEx<T, ValueArray1<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8)
+        {
+            return new ValueArrayEx<T, ValueArray1<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray1<T>(i8));
+        }
+        public static ValueArrayEx<T, ValueArray2<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9)
+        {
+            return new ValueArrayEx<T, ValueArray2<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray2<T>(i8, i9));
+        }
+        public static ValueArrayEx<T, ValueArray3<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10)
+        {
+            return new ValueArrayEx<T, ValueArray3<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray3<T>(i8, i9, i10));
+        }
+        public static ValueArrayEx<T, ValueArray4<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11)
+        {
+            return new ValueArrayEx<T, ValueArray4<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray4<T>(i8, i9, i10, i11));
+        }
+        public static ValueArrayEx<T, ValueArray5<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11, T i12)
+        {
+            return new ValueArrayEx<T, ValueArray5<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray5<T>(i8, i9, i10, i11, i12));
+        }
+        public static ValueArrayEx<T, ValueArray6<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11, T i12, T i13)
+        {
+            return new ValueArrayEx<T, ValueArray6<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray6<T>(i8, i9, i10, i11, i12, i13));
+        }
+        public static ValueArrayEx<T, ValueArray7<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11, T i12, T i13, T i14)
+        {
+            return new ValueArrayEx<T, ValueArray7<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray7<T>(i8, i9, i10, i11, i12, i13, i14));
+        }
+        public static ValueArrayEx<T, ValueArray8<T>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11, T i12, T i13, T i14, T i15)
+        {
+            return new ValueArrayEx<T, ValueArray8<T>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArray8<T>(i8, i9, i10, i11, i12, i13, i14, i15));
+        }
+        public static ValueArrayEx<T, ValueArrayEx<T, ValueArray1<T>>> Arr<T>(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, T i8, T i9, T i10, T i11, T i12, T i13, T i14, T i15, T i16)
+        {
+            return new ValueArrayEx<T, ValueArrayEx<T, ValueArray1<T>>>(i0, i1, i2, i3, i4, i5, i6, i7, new ValueArrayEx<T, ValueArray1<T>>(i8, i9, i10, i11, i12, i13, i14, i15, new ValueArray1<T>(i16)));
+        }
+    }
+    public struct ValueArrayIndexAccessor<T, TValueArray> where TValueArray : struct, IValueArray<T>
+    {
+        public delegate T DelGetter(ref TValueArray thiz);
+        public delegate void DelSetter(ref TValueArray thiz, T val);
+
+        public DelGetter Getter;
+        public DelSetter Setter;
+    }
+    public class ValueArrayIndexAccessorList<T, TValueArray> : List<ValueArrayIndexAccessor<T, TValueArray>> where TValueArray : struct, IValueArray<T>
+    {
+        public void Add(ValueArrayIndexAccessor<T, TValueArray>.DelGetter getter, ValueArrayIndexAccessor<T, TValueArray>.DelSetter setter)
+        {
+            Add(new ValueArrayIndexAccessor<T, TValueArray>() { Getter = getter, Setter = setter });
+        }
+        public T GetItem(ref TValueArray thiz, int index)
+        {
+            return this[index].Getter(ref thiz);
+        }
+        public void SetItem(ref TValueArray thiz, int index, T val)
+        {
+            this[index].Setter(ref thiz, val);
+        }
+    }
+    public struct ValueArray0<T> : IValueArray<T>
+    {
+        public T this[int index]
+        {
+            get { throw new IndexOutOfRangeException(); }
+            set { throw new IndexOutOfRangeException(); }
+        }
+        public int Length { get { return 0; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { throw new IndexOutOfRangeException(); }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { throw new IndexOutOfRangeException(); }
+            set { throw new IndexOutOfRangeException(); }
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray0<T>(ValueTuple t)
+        {
+            return new ValueArray0<T>();
+        }
+        public static implicit operator ValueTuple(ValueArray0<T> t)
+        {
+            return new ValueTuple();
+        }
+#endif
+    }
+    public struct ValueArray1<T> : IValueArray<T>
+    {
+        public T Item0;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray1<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray1<T>>()
+        {
+            { (ref ValueArray1<T> thiz) => thiz.Item0, (ref ValueArray1<T> thiz, T val) => thiz.Item0 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 1; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray1(T i0)
+        {
+            Item0 = i0;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray1<T>(ValueTuple<T> t)
+        {
+            return new ValueArray1<T>(t.Item1);
+        }
+        public static implicit operator ValueTuple<T>(ValueArray1<T> t)
+        {
+            return new ValueTuple<T>(t.Item0);
+        }
+#endif
+    }
+    public struct ValueArray2<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray2<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray2<T>>()
+        {
+            { (ref ValueArray2<T> thiz) => thiz.Item0, (ref ValueArray2<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray2<T> thiz) => thiz.Item1, (ref ValueArray2<T> thiz, T val) => thiz.Item1 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 2; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray2(T i0, T i1)
+        {
+            Item0 = i0;
+            Item1 = i1;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray2<T>(ValueTuple<T, T> t)
+        {
+            return new ValueArray2<T>(t.Item1, t.Item2);
+        }
+        public static implicit operator ValueTuple<T, T>(ValueArray2<T> t)
+        {
+            return new ValueTuple<T, T>(t.Item0, t.Item1);
+        }
+#endif
+    }
+    public struct ValueArray3<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray3<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray3<T>>()
+        {
+            { (ref ValueArray3<T> thiz) => thiz.Item0, (ref ValueArray3<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray3<T> thiz) => thiz.Item1, (ref ValueArray3<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray3<T> thiz) => thiz.Item2, (ref ValueArray3<T> thiz, T val) => thiz.Item2 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 3; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray3(T i0, T i1, T i2)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray3<T>(ValueTuple<T, T, T> t)
+        {
+            return new ValueArray3<T>(t.Item1, t.Item2, t.Item3);
+        }
+        public static implicit operator ValueTuple<T, T, T>(ValueArray3<T> t)
+        {
+            return new ValueTuple<T, T, T>(t.Item0, t.Item1, t.Item2);
+        }
+#endif
+    }
+    public struct ValueArray4<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+        public T Item3;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray4<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray4<T>>()
+        {
+            { (ref ValueArray4<T> thiz) => thiz.Item0, (ref ValueArray4<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray4<T> thiz) => thiz.Item1, (ref ValueArray4<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray4<T> thiz) => thiz.Item2, (ref ValueArray4<T> thiz, T val) => thiz.Item2 = val },
+            { (ref ValueArray4<T> thiz) => thiz.Item3, (ref ValueArray4<T> thiz, T val) => thiz.Item3 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 4; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray4(T i0, T i1, T i2, T i3)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+            Item3 = i3;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray4<T>(ValueTuple<T, T, T, T> t)
+        {
+            return new ValueArray4<T>(t.Item1, t.Item2, t.Item3, t.Item4);
+        }
+        public static implicit operator ValueTuple<T, T, T, T>(ValueArray4<T> t)
+        {
+            return new ValueTuple<T, T, T, T>(t.Item0, t.Item1, t.Item2, t.Item3);
+        }
+#endif
+    }
+    public struct ValueArray5<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+        public T Item3;
+        public T Item4;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray5<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray5<T>>()
+        {
+            { (ref ValueArray5<T> thiz) => thiz.Item0, (ref ValueArray5<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray5<T> thiz) => thiz.Item1, (ref ValueArray5<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray5<T> thiz) => thiz.Item2, (ref ValueArray5<T> thiz, T val) => thiz.Item2 = val },
+            { (ref ValueArray5<T> thiz) => thiz.Item3, (ref ValueArray5<T> thiz, T val) => thiz.Item3 = val },
+            { (ref ValueArray5<T> thiz) => thiz.Item4, (ref ValueArray5<T> thiz, T val) => thiz.Item4 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 5; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray5(T i0, T i1, T i2, T i3, T i4)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+            Item3 = i3;
+            Item4 = i4;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray5<T>(ValueTuple<T, T, T, T, T> t)
+        {
+            return new ValueArray5<T>(t.Item1, t.Item2, t.Item3, t.Item4, t.Item5);
+        }
+        public static implicit operator ValueTuple<T, T, T, T, T>(ValueArray5<T> t)
+        {
+            return new ValueTuple<T, T, T, T, T>(t.Item0, t.Item1, t.Item2, t.Item3, t.Item4);
+        }
+#endif
+    }
+    public struct ValueArray6<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+        public T Item3;
+        public T Item4;
+        public T Item5;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray6<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray6<T>>()
+        {
+            { (ref ValueArray6<T> thiz) => thiz.Item0, (ref ValueArray6<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray6<T> thiz) => thiz.Item1, (ref ValueArray6<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray6<T> thiz) => thiz.Item2, (ref ValueArray6<T> thiz, T val) => thiz.Item2 = val },
+            { (ref ValueArray6<T> thiz) => thiz.Item3, (ref ValueArray6<T> thiz, T val) => thiz.Item3 = val },
+            { (ref ValueArray6<T> thiz) => thiz.Item4, (ref ValueArray6<T> thiz, T val) => thiz.Item4 = val },
+            { (ref ValueArray6<T> thiz) => thiz.Item5, (ref ValueArray6<T> thiz, T val) => thiz.Item5 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 6; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray6(T i0, T i1, T i2, T i3, T i4, T i5)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+            Item3 = i3;
+            Item4 = i4;
+            Item5 = i5;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray6<T>(ValueTuple<T, T, T, T, T, T> t)
+        {
+            return new ValueArray6<T>(t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6);
+        }
+        public static implicit operator ValueTuple<T, T, T, T, T, T>(ValueArray6<T> t)
+        {
+            return new ValueTuple<T, T, T, T, T, T>(t.Item0, t.Item1, t.Item2, t.Item3, t.Item4, t.Item5);
+        }
+#endif
+    }
+    public struct ValueArray7<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+        public T Item3;
+        public T Item4;
+        public T Item5;
+        public T Item6;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray7<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray7<T>>()
+        {
+            { (ref ValueArray7<T> thiz) => thiz.Item0, (ref ValueArray7<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item1, (ref ValueArray7<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item2, (ref ValueArray7<T> thiz, T val) => thiz.Item2 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item3, (ref ValueArray7<T> thiz, T val) => thiz.Item3 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item4, (ref ValueArray7<T> thiz, T val) => thiz.Item4 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item5, (ref ValueArray7<T> thiz, T val) => thiz.Item5 = val },
+            { (ref ValueArray7<T> thiz) => thiz.Item6, (ref ValueArray7<T> thiz, T val) => thiz.Item6 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 7; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray7(T i0, T i1, T i2, T i3, T i4, T i5, T i6)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+            Item3 = i3;
+            Item4 = i4;
+            Item5 = i5;
+            Item6 = i6;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray7<T>(ValueTuple<T, T, T, T, T, T, T> t)
+        {
+            return new ValueArray7<T>(t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7);
+        }
+        public static implicit operator ValueTuple<T, T, T, T, T, T, T>(ValueArray7<T> t)
+        {
+            return new ValueTuple<T, T, T, T, T, T, T>(t.Item0, t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6);
+        }
+#endif
+    }
+    public struct ValueArray8<T> : IValueArray<T>
+    {
+        public T Item0;
+        public T Item1;
+        public T Item2;
+        public T Item3;
+        public T Item4;
+        public T Item5;
+        public T Item6;
+        public T Item7;
+
+        private static ValueArrayIndexAccessorList<T, ValueArray8<T>> _IndexAccessors = new ValueArrayIndexAccessorList<T, ValueArray8<T>>()
+        {
+            { (ref ValueArray8<T> thiz) => thiz.Item0, (ref ValueArray8<T> thiz, T val) => thiz.Item0 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item1, (ref ValueArray8<T> thiz, T val) => thiz.Item1 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item2, (ref ValueArray8<T> thiz, T val) => thiz.Item2 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item3, (ref ValueArray8<T> thiz, T val) => thiz.Item3 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item4, (ref ValueArray8<T> thiz, T val) => thiz.Item4 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item5, (ref ValueArray8<T> thiz, T val) => thiz.Item5 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item6, (ref ValueArray8<T> thiz, T val) => thiz.Item6 = val },
+            { (ref ValueArray8<T> thiz) => thiz.Item7, (ref ValueArray8<T> thiz, T val) => thiz.Item7 = val },
+        };
+
+        public T this[int index]
+        {
+            get { return _IndexAccessors.GetItem(ref this, index); }
+            set { _IndexAccessors.SetItem(ref this, index, value); }
+        }
+        public int Length { get { return 8; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArray8(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7)
+        {
+            Item0 = i0;
+            Item1 = i1;
+            Item2 = i2;
+            Item3 = i3;
+            Item4 = i4;
+            Item5 = i5;
+            Item6 = i6;
+            Item7 = i7;
+        }
+
+#if !UNITY_ENGINE && !UNITY_5_3_OR_NEWER || NET_4_6 || NET_STANDARD_2_0
+        public static implicit operator ValueArray8<T>((T, T, T, T, T, T, T, T) t)
+        {
+            return new ValueArray8<T>(t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7, t.Item8);
+        }
+        public static implicit operator (T, T, T, T, T, T, T, T)(ValueArray8<T> t)
+        {
+            return (t.Item0, t.Item1, t.Item2, t.Item3, t.Item4, t.Item5, t.Item6, t.Item7);
+        }
+#endif
+    }
+    public struct ValueArrayEx<T, TRest> : IValueArray<T> where TRest : struct, IValueArray<T>
+    {
+        public ValueArray8<T> ItemsLow;
+        public TRest ItemsRest;
+
+        public T this[int index]
+        {
+            get
+            {
+                if (index >= 0)
+                {
+                    if (index < ItemsLow.Length)
+                    {
+                        return ItemsLow[index];
+                    }
+                    else
+                    {
+                        return ItemsRest[index - ItemsLow.Length];
+                    }
+                }
+                throw new IndexOutOfRangeException();
+            }
+            set
+            {
+                if (index >= 0)
+                {
+                    if (index < ItemsLow.Length)
+                    {
+                        ItemsLow[index] = value;
+                        return;
+                    }
+                    else
+                    {
+                        ItemsRest[index - ItemsLow.Length] = value;
+                        return;
+                    }
+                }
+                throw new IndexOutOfRangeException();
+            }
+        }
+        public int Length { get { return ItemsLow.Length + ItemsRest.Length; } }
+        public Type ElementType { get { return typeof(T); } }
+        object ITuple.this[int index]
+        {
+            get { return this[index]; }
+        }
+        object IWritableTuple.this[int index]
+        {
+            get { return this[index]; }
+            set { this[index] = (T)value; }
+        }
+
+        public ValueArrayEx(T i0, T i1, T i2, T i3, T i4, T i5, T i6, T i7, TRest rest)
+        {
+            ItemsLow = new ValueArray8<T>(i0, i1, i2, i3, i4, i5, i6, i7);
+            ItemsRest = rest;
+        }
+    }
+    #endregion
 
     public struct ValueList<T> : IList<T>
     {
