@@ -21,7 +21,6 @@ public class CapsUnityMainBehav : MonoBehaviour
     private void Awake()
     {
         MainBehavInstance = this;
-        Input.multiTouchEnabled = false;
     }
     private void Start()
     {
