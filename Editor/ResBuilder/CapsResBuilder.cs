@@ -479,7 +479,7 @@ namespace Capstones.UnityEditorEx
                 }
             });
         }
-        public static IEnumerator MakeZipsBackground(List<Pack<string, string, IList<string>>> zips, IEditorWorkProgressShower winprog)
+        public static IEnumerator MakeZipsBackground(IList<Pack<string, string, IList<string>>> zips, IEditorWorkProgressShower winprog)
         {
             var logger = new EditorWorkProgressLogger() { Shower = winprog };
             if (zips != null)
