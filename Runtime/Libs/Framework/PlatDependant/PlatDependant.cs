@@ -33,6 +33,7 @@ namespace Capstones.UnityEngineEx
         [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
         public static string LogFilePath;
         public static event Action<string> OnExLogger;
+        public static Func<string, string> OnExStackTrace;
 
         private static class Logger
         {
@@ -45,6 +46,18 @@ namespace Capstones.UnityEngineEx
 #endif
             private static System.Threading.AutoResetEvent LogNotify = new System.Threading.AutoResetEvent(false);
             private static System.Threading.AutoResetEvent LogFileDoneNotify = new System.Threading.AutoResetEvent(true);
+
+            private static string GetStackTrace()
+            {
+                var stack = Environment.StackTrace;
+                var ex = OnExStackTrace;
+                if (ex != null)
+                {
+                    stack = ex(stack);
+                }
+                return stack;
+            }
+            [ThreadStatic] private static bool _ForbidStackTrace;
 
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             public struct LogMessage
@@ -171,6 +184,22 @@ namespace Capstones.UnityEngineEx
                 {
                     if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
                     {
+                        if (LogCSharpStackTraceEnabled && !_ForbidStackTrace)
+                        {
+                            if (ThreadSafeValues.IsMainThread)
+                            {
+                                var ex = OnExStackTrace;
+                                if (ex != null)
+                                {
+                                    stackTrace = ex(stackTrace);
+                                }
+                            }
+                            else
+                            {
+                                stackTrace = GetStackTrace();
+                            }
+                        }
+
                         var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                         var message = new LogMessage() { Message = condition, StackTrace = stackTrace, LogType = type, Time = DateTime.Now };
                         LogMessages[index] = message;
@@ -252,34 +281,47 @@ namespace Capstones.UnityEngineEx
             {
                 if (!LogEnabled) return;
                 if (!LogInfoEnabled) return;
+
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                    UnityEngine.Debug.Log(obj);
-                    return;
-#else
-                    var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} I", time);
-                    Console.WriteLine(obj);
-                    if (LogCSharpStackTraceEnabled)
+                    _ForbidStackTrace = true;
+                    var ex = OnExStackTrace;
+                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
                     {
-                        Console.WriteLine(Environment.StackTrace);
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(ex(null));
+                        UnityEngine.Debug.Log(sb);
+                        ReturnStringBuilder(sb);
                     }
-#endif
+                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
+                    {
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(GetStackTrace());
+                        UnityEngine.Debug.Log(sb);
+                        ReturnStringBuilder(sb);
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.Log(obj);
+                    }
+                    _ForbidStackTrace = false;
                 }
-                if (LogToFileEnabled)
+                else if (LogToFileEnabled)
                 {
                     var time = DateTime.Now;
                     var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                     var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Log, Time = time };
                     if (LogCSharpStackTraceEnabled)
                     {
-                        message.StackTrace = Environment.StackTrace;
+                        message.StackTrace = GetStackTrace();
                     }
                     LogMessages[index] = message;
-#endif
 
                     var sb = GetStringBuilder();
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
@@ -287,46 +329,84 @@ namespace Capstones.UnityEngineEx
                     sb.AppendLine(msg);
                     if (LogCSharpStackTraceEnabled)
                     {
-                        sb.AppendLine(Environment.StackTrace);
+                        sb.AppendLine(message.StackTrace);
                     }
                     EnqueueLog(sb);
                 }
+#else
+                if (LogToConsoleEnabled || LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
+                    sb.AppendLine(" I");
+                    sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(GetStackTrace());
+                    }
+                    if (LogToConsoleEnabled)
+                    {
+                        Console.WriteLine(sb);
+                    }
+                    if (LogToFileEnabled)
+                    {
+                        EnqueueLog(sb);
+                    }
+                    else
+                    {
+                        ReturnStringBuilder(sb);
+                    }
+                }
+#endif
             }
 
             public static void LogError(object obj)
             {
                 if (!LogEnabled) return;
                 if (!LogErrorEnabled) return;
+
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                    UnityEngine.Debug.LogError(obj);
-                    return;
-#else
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} E", time);
-                    Console.WriteLine(obj);
-                    if (LogCSharpStackTraceEnabled)
+                    _ForbidStackTrace = true;
+                    var ex = OnExStackTrace;
+                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
                     {
-                        Console.WriteLine(Environment.StackTrace);
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(ex(null));
+                        UnityEngine.Debug.LogError(sb);
+                        ReturnStringBuilder(sb);
                     }
-                    Console.ResetColor();
-#endif
+                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
+                    {
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(GetStackTrace());
+                        UnityEngine.Debug.LogError(sb);
+                        ReturnStringBuilder(sb);
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError(obj);
+                    }
+                    _ForbidStackTrace = false;
                 }
-                if (LogToFileEnabled)
+                else if (LogToFileEnabled)
                 {
                     var time = DateTime.Now;
                     var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                     var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Error, Time = time };
                     if (LogCSharpStackTraceEnabled)
                     {
-                        message.StackTrace = Environment.StackTrace;
+                        message.StackTrace = GetStackTrace();
                     }
                     LogMessages[index] = message;
-#endif
 
                     var sb = GetStringBuilder();
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
@@ -334,46 +414,86 @@ namespace Capstones.UnityEngineEx
                     sb.AppendLine(msg);
                     if (LogCSharpStackTraceEnabled)
                     {
-                        sb.AppendLine(Environment.StackTrace);
+                        sb.AppendLine(message.StackTrace);
                     }
                     EnqueueLog(sb);
                 }
+#else
+                if (LogToConsoleEnabled || LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
+                    sb.AppendLine(" E");
+                    sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(GetStackTrace());
+                    }
+                    if (LogToConsoleEnabled)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine(sb);
+                        Console.ResetColor();
+                    }
+                    if (LogToFileEnabled)
+                    {
+                        EnqueueLog(sb);
+                    }
+                    else
+                    {
+                        ReturnStringBuilder(sb);
+                    }
+                }
+#endif
             }
 
             public static void LogWarning(object obj)
             {
                 if (!LogEnabled) return;
                 if (!LogWarningEnabled) return;
+
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                    UnityEngine.Debug.LogWarning(obj);
-                    return;
-#else
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    var time = DateTime.Now;
-                    Console.WriteLine("{0:yy/MM/dd HH\\:mm\\:ss.ff} W", time);
-                    Console.WriteLine(obj);
-                    if (LogCSharpStackTraceEnabled)
+                    _ForbidStackTrace = true;
+                    var ex = OnExStackTrace;
+                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
                     {
-                        Console.WriteLine(Environment.StackTrace);
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(ex(null));
+                        UnityEngine.Debug.LogWarning(sb);
+                        ReturnStringBuilder(sb);
                     }
-                    Console.ResetColor();
-#endif
+                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
+                    {
+                        var msg = obj == null ? "nullptr" : obj.ToString();
+                        var sb = GetStringBuilder();
+                        sb.AppendLine(msg);
+                        sb.AppendLine(GetStackTrace());
+                        UnityEngine.Debug.LogWarning(sb);
+                        ReturnStringBuilder(sb);
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogWarning(obj);
+                    }
+                    _ForbidStackTrace = false;
                 }
-                if (LogToFileEnabled)
+                else if (LogToFileEnabled)
                 {
                     var time = DateTime.Now;
                     var msg = obj == null ? "nullptr" : obj.ToString();
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var index = (System.Threading.Interlocked.Increment(ref _LogMessageIndex) - 1) % LogMessages.Length;
                     var message = new LogMessage() { Message = msg, StackTrace = "(omitted)", LogType = UnityEngine.LogType.Warning, Time = time };
                     if (LogCSharpStackTraceEnabled)
                     {
-                        message.StackTrace = Environment.StackTrace;
+                        message.StackTrace = GetStackTrace();
                     }
                     LogMessages[index] = message;
-#endif
 
                     var sb = GetStringBuilder();
                     sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
@@ -381,10 +501,39 @@ namespace Capstones.UnityEngineEx
                     sb.AppendLine(msg);
                     if (LogCSharpStackTraceEnabled)
                     {
-                        sb.AppendLine(Environment.StackTrace);
+                        sb.AppendLine(message.StackTrace);
                     }
                     EnqueueLog(sb);
                 }
+#else
+                if (LogToConsoleEnabled || LogToFileEnabled)
+                {
+                    var time = DateTime.Now;
+                    var msg = obj == null ? "nullptr" : obj.ToString();
+                    var sb = GetStringBuilder();
+                    sb.AppendFormat("{0:HH\\:mm\\:ss.ff}", time);
+                    sb.AppendLine(" W");
+                    sb.AppendLine(msg);
+                    if (LogCSharpStackTraceEnabled)
+                    {
+                        sb.AppendLine(GetStackTrace());
+                    }
+                    if (LogToConsoleEnabled)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine(sb);
+                        Console.ResetColor();
+                    }
+                    if (LogToFileEnabled)
+                    {
+                        EnqueueLog(sb);
+                    }
+                    else
+                    {
+                        ReturnStringBuilder(sb);
+                    }
+                }
+#endif
             }
         }
 #endregion
