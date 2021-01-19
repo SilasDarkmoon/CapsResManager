@@ -1548,9 +1548,12 @@ namespace Capstones.UnityEngineEx
                                                 var dest = System.IO.Path.Combine(destdir, name);
                                                 using (var srcs = entry.Open())
                                                 {
-                                                    using (var dsts = PlatDependant.OpenWrite(dest))
+                                                    if (!dest.EndsWith("/") && !dest.EndsWith("\\"))
                                                     {
-                                                        srcs.CopyTo(dsts);
+                                                        using (var dsts = PlatDependant.OpenWrite(dest))
+                                                        {
+                                                            srcs.CopyTo(dsts);
+                                                        }
                                                     }
                                                 }
                                             }

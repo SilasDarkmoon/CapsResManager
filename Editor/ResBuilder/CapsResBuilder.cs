@@ -1027,6 +1027,7 @@ namespace Capstones.UnityEditorEx
                             }
                             if (entries.Count > 0)
                             {
+                                var reskey = "m-" + opmod.ToLower() + "-d-" + dist.ToLower();
                                 // unity build mani
                                 var umani = abdir + "/" + (string.IsNullOrEmpty(mod) ? "res" : mod);
                                 umani = umani.Substring(outputDir.Length + 1);
@@ -1041,8 +1042,12 @@ namespace Capstones.UnityEditorEx
                                 entries.Add("res/mani/mani.manifest");
                                 // version
                                 entries.Add("res/version.txt");
+                                // dversion
+                                var dversion = "res/version/" + reskey + ".txt";
+                                PlatDependant.CopyFile(outputDir + "/res/version.txt", outputDir + "/" + dversion);
+                                entries.Add(dversion);
 
-                                var zipfile = outzipdir + "m-" + opmod + "-d-" + dist + ".zip";
+                                var zipfile = outzipdir + reskey + ".zip";
                                 zips.Add(new Pack<string, string, IList<string>>(zipfile, outputDir, entries));
                                 //var workz = MakeZipAsync(zipfile, outputDir, entries, winprog);
                                 //while (workz.MoveNext())
