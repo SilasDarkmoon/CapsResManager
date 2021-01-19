@@ -31,6 +31,9 @@ namespace Capstones.UnityEngineEx
         }
         public static volatile bool LogToFileEnabled = true;
         [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+        [ThreadStatic] public static bool DisableLogTemp;
+#endif
         public static string LogFilePath;
         public static event Action<string> OnExLogger;
         public static Func<string, string> OnExStackTrace;
@@ -180,7 +183,7 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             public static void OnUnityLogReceived(string condition, string stackTrace, UnityEngine.LogType type)
             {
-                if (LogEnabled)
+                if (LogEnabled && !DisableLogTemp)
                 {
                     if (type == UnityEngine.LogType.Log && LogInfoEnabled || type == UnityEngine.LogType.Warning && LogWarningEnabled || type != UnityEngine.LogType.Log && type != UnityEngine.LogType.Warning && LogErrorEnabled)
                     {
@@ -197,6 +200,23 @@ namespace Capstones.UnityEngineEx
                             else
                             {
                                 stackTrace = GetStackTrace();
+                            }
+                            if (!string.IsNullOrEmpty(stackTrace))
+                            {
+                                DisableLogTemp = true;
+                                if (type == UnityEngine.LogType.Log)
+                                {
+                                    UnityEngine.Debug.Log("ex stack trace:\n" + stackTrace);
+                                }
+                                else if (type == UnityEngine.LogType.Warning)
+                                {
+                                    UnityEngine.Debug.LogWarning("ex stack trace:\n" + stackTrace);
+                                }
+                                else if (type == UnityEngine.LogType.Error)
+                                {
+                                    UnityEngine.Debug.LogError("ex stack trace:\n" + stackTrace);
+                                }
+                                DisableLogTemp = false;
                             }
                         }
 
