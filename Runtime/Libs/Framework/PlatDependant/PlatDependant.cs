@@ -56,7 +56,18 @@ namespace Capstones.UnityEngineEx
                 var ex = OnExStackTrace;
                 if (ex != null)
                 {
-                    stack = ex(stack);
+                    var exstack = ex(stack);
+                    if (!string.IsNullOrEmpty(exstack))
+                    {
+                        if (string.IsNullOrEmpty(stack))
+                        {
+                            stack = exstack;
+                        }
+                        else
+                        {
+                            stack = stack + "\n" + exstack;
+                        }
+                    }
                 }
                 return stack;
             }
@@ -189,34 +200,44 @@ namespace Capstones.UnityEngineEx
                     {
                         if (LogCSharpStackTraceEnabled && !_ForbidStackTrace)
                         {
-                            if (ThreadSafeValues.IsMainThread)
+                            string exstack = null;
+                            if (ThreadSafeValues.IsMainThread || !string.IsNullOrEmpty(stackTrace))
                             {
                                 var ex = OnExStackTrace;
                                 if (ex != null)
                                 {
-                                    stackTrace = ex(stackTrace);
+                                    exstack = ex(stackTrace);
                                 }
                             }
                             else
                             {
-                                stackTrace = GetStackTrace();
+                                exstack = GetStackTrace();
                             }
-                            if (!string.IsNullOrEmpty(stackTrace))
+                            if (!string.IsNullOrEmpty(exstack))
                             {
                                 DisableLogTemp = true;
                                 if (type == UnityEngine.LogType.Log)
                                 {
-                                    UnityEngine.Debug.Log("ex stack trace:\n" + stackTrace);
+                                    UnityEngine.Debug.Log(condition + "\nex stack trace:\n" + exstack);
                                 }
                                 else if (type == UnityEngine.LogType.Warning)
                                 {
-                                    UnityEngine.Debug.LogWarning("ex stack trace:\n" + stackTrace);
+                                    UnityEngine.Debug.LogWarning(condition + "\nex stack trace:\n" + exstack);
                                 }
                                 else if (type == UnityEngine.LogType.Error)
                                 {
-                                    UnityEngine.Debug.LogError("ex stack trace:\n" + stackTrace);
+                                    UnityEngine.Debug.LogError(condition + "\nex stack trace:\n" + exstack);
                                 }
                                 DisableLogTemp = false;
+
+                                if (string.IsNullOrEmpty(stackTrace))
+                                {
+                                    stackTrace = exstack;
+                                }
+                                else
+                                {
+                                    stackTrace = stackTrace + "\n" + exstack;
+                                }
                             }
                         }
 
@@ -305,31 +326,7 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-                    _ForbidStackTrace = true;
-                    var ex = OnExStackTrace;
-                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(ex(null));
-                        UnityEngine.Debug.Log(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(GetStackTrace());
-                        UnityEngine.Debug.Log(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.Log(obj);
-                    }
-                    _ForbidStackTrace = false;
+                    UnityEngine.Debug.Log(obj);
                 }
                 else if (LogToFileEnabled)
                 {
@@ -390,31 +387,7 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-                    _ForbidStackTrace = true;
-                    var ex = OnExStackTrace;
-                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(ex(null));
-                        UnityEngine.Debug.LogError(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(GetStackTrace());
-                        UnityEngine.Debug.LogError(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.LogError(obj);
-                    }
-                    _ForbidStackTrace = false;
+                    UnityEngine.Debug.LogError(obj);
                 }
                 else if (LogToFileEnabled)
                 {
@@ -477,31 +450,7 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (LogToConsoleEnabled)
                 {
-                    _ForbidStackTrace = true;
-                    var ex = OnExStackTrace;
-                    if (ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled && ex != null)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(ex(null));
-                        UnityEngine.Debug.LogWarning(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else if (!ThreadSafeValues.IsMainThread && LogCSharpStackTraceEnabled)
-                    {
-                        var msg = obj == null ? "nullptr" : obj.ToString();
-                        var sb = GetStringBuilder();
-                        sb.AppendLine(msg);
-                        sb.AppendLine(GetStackTrace());
-                        UnityEngine.Debug.LogWarning(sb);
-                        ReturnStringBuilder(sb);
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.LogWarning(obj);
-                    }
-                    _ForbidStackTrace = false;
+                    UnityEngine.Debug.LogWarning(obj);
                 }
                 else if (LogToFileEnabled)
                 {
