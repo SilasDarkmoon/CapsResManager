@@ -570,6 +570,18 @@ namespace Capstones.UnityEngineEx
         {
             return Logger.CopyLogMessages();
         }
+        public static void RePrintRecentLogs()
+        {
+            DisableLogTemp = true;
+            var logs = CopyRecentLogMessages();
+            UnityEngine.Debug.LogError("=================== ReShow Log Start ====================");
+            for (int i = 0; i < logs.Length; ++i)
+            {
+                UnityEngine.Debug.LogError(logs[i]);
+            }
+            UnityEngine.Debug.LogError("=================== ReShow Log Done ====================");
+            DisableLogTemp = false;
+        }
 #endif
 
         public static void LogInfo(this object obj)
