@@ -224,7 +224,7 @@ namespace Capstones.UnityEngineEx
                                 {
                                     UnityEngine.Debug.LogWarning(condition + "\nex stack trace:\n" + exstack);
                                 }
-                                else if (type == UnityEngine.LogType.Error)
+                                else
                                 {
                                     UnityEngine.Debug.LogError(condition + "\nex stack trace:\n" + exstack);
                                 }
