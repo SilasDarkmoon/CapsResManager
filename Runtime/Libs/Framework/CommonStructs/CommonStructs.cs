@@ -99,22 +99,59 @@ namespace Capstones.UnityEngineEx
         object this[int index] { get; set; }
     }
 
-    public struct Pack<T1, T2>
+    // TODO: Pack's ITuple, IWritableTuple, To ValueTuple and From Tuple, ==, !=
+    public struct Pack<T1, T2> : IEquatable<Pack<T1, T2>>
     {
         public T1 t1;
         public T2 t2;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
 
         public Pack(T1 p1, T2 p2)
         {
             t1 = p1;
             t2 = p2;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode() ^ t2.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2>)
+            {
+                return Equals((Pack<T1, T2>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3>
+    public struct Pack<T1, T2, T3> : IEquatable<Pack<T1, T2, T3>>
     {
         public T1 t1;
         public T2 t2;
         public T3 t3;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3)
         {
@@ -122,13 +159,53 @@ namespace Capstones.UnityEngineEx
             t2 = p2;
             t3 = p3;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3>)
+            {
+                return Equals((Pack<T1, T2, T3>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4>
+    public struct Pack<T1, T2, T3, T4> : IEquatable<Pack<T1, T2, T3, T4>>
     {
         public T1 t1;
         public T2 t2;
         public T3 t3;
         public T4 t4;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4)
         {
@@ -137,14 +214,59 @@ namespace Capstones.UnityEngineEx
             t3 = p3;
             t4 = p4;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4>)
+            {
+                return Equals((Pack<T1, T2, T3, T4>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5>
+    public struct Pack<T1, T2, T3, T4, T5> : IEquatable<Pack<T1, T2, T3, T4, T5>>
     {
         public T1 t1;
         public T2 t2;
         public T3 t3;
         public T4 t4;
         public T5 t5;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5)
         {
@@ -154,8 +276,51 @@ namespace Capstones.UnityEngineEx
             t4 = p4;
             t5 = p5;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5, T6>
+    public struct Pack<T1, T2, T3, T4, T5, T6> : IEquatable<Pack<T1, T2, T3, T4, T5, T6>>
     {
         public T1 t1;
         public T2 t2;
@@ -163,6 +328,13 @@ namespace Capstones.UnityEngineEx
         public T4 t4;
         public T5 t5;
         public T6 t6;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
+        private static EqualityComparer<T6> c6 = EqualityComparer<T6>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
         {
@@ -173,8 +345,55 @@ namespace Capstones.UnityEngineEx
             t5 = p5;
             t6 = p6;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ^ t6.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5, T6>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5, T6>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5, T6> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                && c6.Equals(t6, other.t6)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(", ");
+            sb.Append(t6.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5, T6, T7>
+    public struct Pack<T1, T2, T3, T4, T5, T6, T7> : IEquatable<Pack<T1, T2, T3, T4, T5, T6, T7>>
     {
         public T1 t1;
         public T2 t2;
@@ -183,6 +402,14 @@ namespace Capstones.UnityEngineEx
         public T5 t5;
         public T6 t6;
         public T7 t7;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
+        private static EqualityComparer<T6> c6 = EqualityComparer<T6>.Default;
+        private static EqualityComparer<T7> c7 = EqualityComparer<T7>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7)
         {
@@ -194,8 +421,59 @@ namespace Capstones.UnityEngineEx
             t6 = p6;
             t7 = p7;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ^ t6.GetHashCode()
+                ^ t7.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5, T6, T7>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5, T6, T7>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5, T6, T7> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                && c6.Equals(t6, other.t6)
+                && c7.Equals(t7, other.t7)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(", ");
+            sb.Append(t6.ToString());
+            sb.Append(", ");
+            sb.Append(t7.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8>
+    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8> : IEquatable<Pack<T1, T2, T3, T4, T5, T6, T7, T8>>
     {
         public T1 t1;
         public T2 t2;
@@ -205,6 +483,15 @@ namespace Capstones.UnityEngineEx
         public T6 t6;
         public T7 t7;
         public T8 t8;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
+        private static EqualityComparer<T6> c6 = EqualityComparer<T6>.Default;
+        private static EqualityComparer<T7> c7 = EqualityComparer<T7>.Default;
+        private static EqualityComparer<T8> c8 = EqualityComparer<T8>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7, T8 p8)
         {
@@ -217,8 +504,63 @@ namespace Capstones.UnityEngineEx
             t7 = p7;
             t8 = p8;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ^ t6.GetHashCode()
+                ^ t7.GetHashCode()
+                ^ t8.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5, T6, T7, T8>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5, T6, T7, T8>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5, T6, T7, T8> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                && c6.Equals(t6, other.t6)
+                && c7.Equals(t7, other.t7)
+                && c8.Equals(t8, other.t8)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(", ");
+            sb.Append(t6.ToString());
+            sb.Append(", ");
+            sb.Append(t7.ToString());
+            sb.Append(", ");
+            sb.Append(t8.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9>
+    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9> : IEquatable<Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9>>
     {
         public T1 t1;
         public T2 t2;
@@ -229,6 +571,16 @@ namespace Capstones.UnityEngineEx
         public T7 t7;
         public T8 t8;
         public T9 t9;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
+        private static EqualityComparer<T6> c6 = EqualityComparer<T6>.Default;
+        private static EqualityComparer<T7> c7 = EqualityComparer<T7>.Default;
+        private static EqualityComparer<T8> c8 = EqualityComparer<T8>.Default;
+        private static EqualityComparer<T9> c9 = EqualityComparer<T9>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7, T8 p8, T9 p9)
         {
@@ -242,8 +594,67 @@ namespace Capstones.UnityEngineEx
             t8 = p8;
             t9 = p9;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ^ t6.GetHashCode()
+                ^ t7.GetHashCode()
+                ^ t8.GetHashCode()
+                ^ t9.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                && c6.Equals(t6, other.t6)
+                && c7.Equals(t7, other.t7)
+                && c8.Equals(t8, other.t8)
+                && c9.Equals(t9, other.t9)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(", ");
+            sb.Append(t6.ToString());
+            sb.Append(", ");
+            sb.Append(t7.ToString());
+            sb.Append(", ");
+            sb.Append(t8.ToString());
+            sb.Append(", ");
+            sb.Append(t9.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
-    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>
+    public struct Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> : IEquatable<Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>
     {
         public T1 t1;
         public T2 t2;
@@ -255,6 +666,17 @@ namespace Capstones.UnityEngineEx
         public T8 t8;
         public T9 t9;
         public T10 t10;
+
+        private static EqualityComparer<T1> c1 = EqualityComparer<T1>.Default;
+        private static EqualityComparer<T2> c2 = EqualityComparer<T2>.Default;
+        private static EqualityComparer<T3> c3 = EqualityComparer<T3>.Default;
+        private static EqualityComparer<T4> c4 = EqualityComparer<T4>.Default;
+        private static EqualityComparer<T5> c5 = EqualityComparer<T5>.Default;
+        private static EqualityComparer<T6> c6 = EqualityComparer<T6>.Default;
+        private static EqualityComparer<T7> c7 = EqualityComparer<T7>.Default;
+        private static EqualityComparer<T8> c8 = EqualityComparer<T8>.Default;
+        private static EqualityComparer<T9> c9 = EqualityComparer<T9>.Default;
+        private static EqualityComparer<T10> c10 = EqualityComparer<T10>.Default;
 
         public Pack(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7, T8 p8, T9 p9, T10 p10)
         {
@@ -269,9 +691,72 @@ namespace Capstones.UnityEngineEx
             t9 = p9;
             t10 = p10;
         }
+
+        public override int GetHashCode()
+        {
+            return t1.GetHashCode()
+                ^ t2.GetHashCode()
+                ^ t3.GetHashCode()
+                ^ t4.GetHashCode()
+                ^ t5.GetHashCode()
+                ^ t6.GetHashCode()
+                ^ t7.GetHashCode()
+                ^ t8.GetHashCode()
+                ^ t9.GetHashCode()
+                ^ t10.GetHashCode()
+                ;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>)
+            {
+                return Equals((Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>)obj);
+            }
+            return false;
+        }
+        public bool Equals(Pack<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> other)
+        {
+            return c1.Equals(t1, other.t1)
+                && c2.Equals(t2, other.t2)
+                && c3.Equals(t3, other.t3)
+                && c4.Equals(t4, other.t4)
+                && c5.Equals(t5, other.t5)
+                && c6.Equals(t6, other.t6)
+                && c7.Equals(t7, other.t7)
+                && c8.Equals(t8, other.t8)
+                && c9.Equals(t9, other.t9)
+                && c10.Equals(t10, other.t10)
+                ;
+        }
+        public override string ToString()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("(");
+            sb.Append(t1.ToString());
+            sb.Append(", ");
+            sb.Append(t2.ToString());
+            sb.Append(", ");
+            sb.Append(t3.ToString());
+            sb.Append(", ");
+            sb.Append(t4.ToString());
+            sb.Append(", ");
+            sb.Append(t5.ToString());
+            sb.Append(", ");
+            sb.Append(t6.ToString());
+            sb.Append(", ");
+            sb.Append(t7.ToString());
+            sb.Append(", ");
+            sb.Append(t8.ToString());
+            sb.Append(", ");
+            sb.Append(t9.ToString());
+            sb.Append(", ");
+            sb.Append(t10.ToString());
+            sb.Append(")");
+            return sb.ToString();
+        }
     }
 
-#region ValueArray
+    #region ValueArray
     public interface IValueArray : ITuple, IWritableTuple//, IList // TODO: IList
     {
         //int Length { get; }
@@ -400,6 +885,7 @@ namespace Capstones.UnityEngineEx
             this[index].Setter(ref thiz, val);
         }
     }
+    // TODO: ValueArray's Equals, IEquatable<>, GetHashCode, ToString, ==, !=
     public struct ValueArray0<T> : IValueArray<T>
     {
         public T this[int index]
@@ -1085,6 +1571,62 @@ namespace Capstones.UnityEngineEx
                     tx = new List<T>(8);
                 }
                 tx.Add(item);
+            }
+        }
+        public void AddRange<ET>(ET list) where ET : IEnumerable<T>
+        {
+            foreach (var value in list)
+            {
+                Add(value);
+            }
+        }
+        public void AddRange(IEnumerable<T> list)
+        {
+            foreach (var value in list)
+            {
+                Add(value);
+            }
+        }
+        public void AddRange<ET>(ET list, int start, int count) where ET : IList<T>
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                Add(list[start + i]);
+            }
+        }
+        public void AddRange<ET>(ET list, int start) where ET : IList<T>
+        {
+            for (int i = start; i < list.Count; ++i)
+            {
+                Add(list[i]);
+            }
+        }
+        public void Merge<ET>(ET list) where ET : IList<T>
+        {
+            for (int i = 0; i < list.Count; ++i)
+            {
+                Add(list[i]);
+            }
+        }
+        public void AddRange(IList<T> list, int start, int count)
+        {
+            for (int i = 0; i < count; ++i)
+            {
+                Add(list[start + i]);
+            }
+        }
+        public void AddRange(IList<T> list, int start)
+        {
+            for (int i = start; i < list.Count; ++i)
+            {
+                Add(list[i]);
+            }
+        }
+        public void Merge(IList<T> list)
+        {
+            for (int i = 0; i < list.Count; ++i)
+            {
+                Add(list[i]);
             }
         }
 
