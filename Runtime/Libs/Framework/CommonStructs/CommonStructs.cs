@@ -2645,4 +2645,12 @@ namespace Capstones.UnityEngineEx
             return default(T);
         }
     }
+
+    public struct InitializedInitializer
+    {
+        public InitializedInitializer(Action init)
+        {
+            init();
+        }
+    }
 }
