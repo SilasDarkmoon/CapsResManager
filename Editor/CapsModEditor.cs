@@ -199,12 +199,12 @@ namespace Capstones.UnityEditorEx
                         }
                         else
                         {
-                            linkxmlpath = "Assets/Mods/" + mod + "/Link/link.xml";
+                            linkxmlpath = "Assets/Mods/" + mod + "/Link/mod.link.xml";
                         }
                     }
                     else
                     {
-                        linkxmlpath = "Assets/Mods/" + mod + "/Link/link.xml";
+                        linkxmlpath = "Assets/Mods/" + mod + "/Link/mod.link.xml"; // we do not use link.xml because it will be include in stripping even if it is hidden.
                     }
                     if (linkxmlPathExists || System.IO.File.Exists(linkxmlpath))
                     {
