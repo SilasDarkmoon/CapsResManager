@@ -2653,4 +2653,40 @@ namespace Capstones.UnityEngineEx
             init();
         }
     }
+
+    public class SafeDict<TK, TV> : Dictionary<TK, TV>, IDictionary<TK, TV>, IDictionary
+    {
+        public new TV this[TK key]
+        {
+            get { TV v; TryGetValue(key, out v); return v; }
+            set { base[key] = value; }
+        }
+        TV IDictionary<TK, TV>.this[TK key]
+        {
+            get { return this[key]; }
+            set { this[key] = value; }
+        }
+        object IDictionary.this[object key]
+        {
+            get { return this[(TK)key]; }
+            set { this[(TK)key] = (TV)key; }
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate, Inherited = true)]
+    public class InheritablePreserveAttribute
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+        : UnityEngine.Scripting.PreserveAttribute
+#else
+        : Attribute
+#endif
+    { }
+    [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate, Inherited = false)]
+    public class UnityPreserveAttribute
+#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
+        : UnityEngine.Scripting.PreserveAttribute
+#else
+        : Attribute
+#endif
+    { }
 }
