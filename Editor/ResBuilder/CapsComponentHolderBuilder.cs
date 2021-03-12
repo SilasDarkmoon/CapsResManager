@@ -39,11 +39,35 @@ namespace Capstones.UnityEditorEx
         public static void BuildComponentHolder()
         {
             UnityEditor.SceneManagement.EditorSceneManager.NewScene(UnityEditor.SceneManagement.NewSceneSetup.EmptyScene);
-            var allassets = AssetDatabase.GetAllAssetPaths();
+
             HashSet<Type> compTypes = new HashSet<Type>();
-            var tgo = new GameObject("ComponentHolder");
-            tgo.SetActive(false);
             compTypes.Add(typeof(Transform));
+            var phpath = "Assets/Mods/" + CapsEditorUtils.__MOD__ + "/Resources/ComponentHolder.prefab";
+            GameObject tgo = null;
+            if (PlatDependant.IsFileExist(phpath))
+            {
+                var old = AssetDatabase.LoadMainAssetAtPath(phpath) as GameObject;
+                if (old)
+                {
+                    tgo = GameObject.Instantiate(old);
+                    var oldcomps = tgo.GetComponentsInChildren(typeof(Component), true);
+                    for (int i = 0; i < oldcomps.Length; ++i)
+                    {
+                        var oldcomp = oldcomps[i];
+                        if (oldcomp != null)
+                        {
+                            compTypes.Add(oldcomp.GetType());
+                        }
+                    }
+                }
+            }
+            if (tgo == null)
+            {
+                tgo = new GameObject("ComponentHolder");
+                tgo.SetActive(false);
+            }
+
+            var allassets = AssetDatabase.GetAllAssetPaths();
             for (int i = 0; i < allassets.Length; ++i)
             {
                 var asset = allassets[i];
@@ -109,7 +133,6 @@ namespace Capstones.UnityEditorEx
                     UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
                 }
             }
-            var phpath = "Assets/Mods/" + CapsEditorUtils.__MOD__ + "/Resources/ComponentHolder.prefab";
             PlatDependant.CreateFolder(System.IO.Path.GetDirectoryName(phpath));
             PlatDependant.DeleteFile(phpath);
             PrefabUtility.SaveAsPrefabAsset(tgo, phpath);
