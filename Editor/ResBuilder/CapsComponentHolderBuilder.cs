@@ -32,7 +32,7 @@ namespace Capstones.UnityEditorEx
         }
 
         public void Prepare(string output)
-        {
+        { // TODO: if we do BuildComponentHolder() here, it will cost a lot of time, mostly useless.
         }
 
         [MenuItem("Res/Build Component Holder", priority = 202010)]
@@ -66,6 +66,13 @@ namespace Capstones.UnityEditorEx
                 tgo = new GameObject("ComponentHolder");
                 tgo.SetActive(false);
             }
+
+            var soroot = "Assets/Mods/" + CapsEditorUtils.__MOD__ + "/Resources/ScriptableObjects/";
+            if (System.IO.Directory.Exists(soroot))
+            {
+                System.IO.Directory.Delete(soroot, true);
+            }
+            PlatDependant.CreateFolder(soroot);
 
             var allassets = AssetDatabase.GetAllAssetPaths();
             for (int i = 0; i < allassets.Length; ++i)
@@ -131,6 +138,26 @@ namespace Capstones.UnityEditorEx
                         }
                     }
                     UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
+                }
+                else
+                {
+                    var type = AssetDatabase.GetMainAssetTypeAtPath(asset);
+                    if (type != null
+                        //&& type.Assembly.FullName != "Assembly-CSharp-firstpass"
+                        //&& type.Assembly.FullName != "Assembly-CSharp"
+                        && type.IsSubclassOf(typeof(ScriptableObject)))
+                    {
+                        try
+                        {
+                            var phso = ScriptableObject.CreateInstance(type);
+                            var target = soroot + type.Name + ".asset";
+                            AssetDatabase.CreateAsset(phso, target);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
                 }
             }
             PlatDependant.CreateFolder(System.IO.Path.GetDirectoryName(phpath));
