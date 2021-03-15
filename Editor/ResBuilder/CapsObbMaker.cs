@@ -115,5 +115,69 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
+        public static void MakeObbInFolder(string folder, string dest = null)
+        {
+            if (string.IsNullOrEmpty(dest))
+            {
+                dest = System.IO.Path.Combine(folder, "obb.zip");
+            }
+            if (!folder.EndsWith("/") && !folder.EndsWith("\\"))
+            {
+                folder = folder + "/";
+            }
+            var files = PlatDependant.GetAllFiles(folder);
+
+            int entry_count = 0;
+            using (var sd = PlatDependant.OpenWrite(dest))
+            {
+                using (var ad = new ZipArchive(sd, ZipArchiveMode.Create))
+                {
+                    for (int i = 0; i < files.Length; ++i)
+                    {
+                        var file = files[i];
+                        if (file.EndsWith(".meta"))
+                        {
+                            continue;
+                        }
+                        var part = file.Substring(folder.Length);
+                        if (part.StartsWith("res/") || part.StartsWith("spt/"))
+                        {
+                            try
+                            {
+                                using (var src = PlatDependant.OpenRead(file))
+                                {
+                                    var entry = ad.CreateEntry(part, CompressionLevel.NoCompression);
+                                    ++entry_count;
+                                    using (var dst = entry.Open())
+                                    {
+                                        src.CopyTo(dst);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Debug.LogException(e);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (entry_count == 0)
+            {
+                PlatDependant.DeleteFile(dest);
+            }
+        }
+
+        [MenuItem("Res/Build Obb (Default)", priority = 202020)]
+        public static void MakeNearestObbFull()
+        {
+            if (System.IO.Directory.Exists("Assets/StreamingAssets"))
+            {
+                MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/obb.zip");
+                System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
+                System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
+            }
+        }
     }
 }
