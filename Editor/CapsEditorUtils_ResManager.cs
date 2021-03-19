@@ -146,6 +146,23 @@ namespace Capstones.UnityEditorEx
 #endif
         }
 
+        public static void ZipFolderNoCompress(string folder, string dest)
+        {
+            if (System.IO.File.Exists(dest))
+            {
+                System.IO.File.Delete(dest);
+            }
+            var si = new System.Diagnostics.ProcessStartInfo();
+            si.WorkingDirectory = System.IO.Path.GetFullPath(folder);
+#if UNITY_EDITOR_OSX
+            si.FileName = "zip";
+#else
+            si.FileName = System.IO.Path.GetFullPath(CapsModEditor.GetPackageOrModRoot(__MOD__)) + "/~Tools~/zip.exe";
+#endif
+            si.Arguments = "-0 -r \"" + System.IO.Path.GetFullPath(dest) + "\" .";
+            ExecuteProcess(si);
+        }
+
         public static int __LINE__
         {
             get

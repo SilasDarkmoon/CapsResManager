@@ -34,7 +34,116 @@ namespace Capstones.UnityEngineEx
             {
                 if (Application.platform == RuntimePlatform.Android)
                 {
-                    _ObbPath = CrossEvent.TrigClrEvent<string>("GET_MAIN_OBB_PATH");
+#if DEBUG_TEST_OBB_IN_DOWNLOAD_PATH
+#if UNITY_ANDROID
+                    if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageRead))
+                    {
+                        UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.ExternalStorageRead);
+                    }
+                    if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageWrite))
+                    {
+                        UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.ExternalStorageWrite);
+                    }
+#endif
+                    _ObbPath = "/storage/emulated/0/Download/default.obb";
+                    var obb2path = "/storage/emulated/0/Download/obb2.obb";
+                    _AllObbPaths = new[] { _ObbPath, obb2path };
+                    _AllObbNames = new[] { "testobb", "testobb2" };
+#else
+                    bool hasobb = false;
+                    string mainobbpath = null;
+                    List<Pack<string, string>> obbs = new List<Pack<string, string>>();
+
+                    using (var stream = LoadFileInStreaming("hasobb.flag.txt"))
+                    {
+                        if (stream != null)
+                        {
+                            hasobb = true;
+
+                            string appid = Application.identifier;
+                            string obbroot = Application.persistentDataPath;
+                            int obbrootindex = obbroot.IndexOf(appid);
+                            if (obbrootindex > 0)
+                            {
+                                obbroot = obbroot.Substring(0, obbrootindex);
+                            }
+                            obbrootindex = obbroot.LastIndexOf("/Android");
+                            if (obbrootindex > 0)
+                            {
+                                obbroot = obbroot.Substring(0, obbrootindex);
+                            }
+                            if (!obbroot.EndsWith("/") && !obbroot.EndsWith("\\"))
+                            {
+                                obbroot += "/";
+                            }
+                            obbroot += "Android/obb/" + appid + "/";
+
+                            using (var sr = new System.IO.StreamReader(stream))
+                            {
+                                string line;
+                                while ((line = sr.ReadLine()) != null)
+                                {
+                                    var parts = line.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                                    if (parts != null && parts.Length > 0)
+                                    {
+                                        var obbname = parts[0];
+                                        string obbpath = null;
+                                        int obbver = 0;
+                                        if (parts.Length > 1)
+                                        {
+                                            var val = parts[1];
+                                            if (!int.TryParse(val, out obbver))
+                                            {
+                                                obbpath = val;
+                                            }
+                                        }
+                                        if (obbpath == null)
+                                        {
+                                            if (obbver <= 0)
+                                            {
+                                                obbver = AppVer;
+                                            }
+                                            obbpath = obbname + "." + obbver + "." + appid + ".obb";
+                                        }
+                                        if (!obbpath.Contains("/") && !obbpath.Contains("\\"))
+                                        {
+                                            obbpath = obbroot + obbpath;
+                                        }
+                                        obbs.Add(new Pack<string, string>(obbname, obbpath));
+                                        if (obbname == "main")
+                                        {
+                                            mainobbpath = obbpath;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (mainobbpath == null)
+                            {
+                                mainobbpath = obbroot + "main." + AppVer + "." + appid + ".obb";
+                                obbs.Insert(0, new Pack<string, string>("main", mainobbpath));
+                            }
+                        }
+                    }
+
+                    if (hasobb)
+                    {
+                        _ObbPath = mainobbpath;
+                        _AllObbPaths = new string[obbs.Count];
+                        _AllObbNames = new string[obbs.Count];
+                        for (int i = 0; i < obbs.Count; ++i)
+                        {
+                            _AllObbPaths[i] = obbs[i].t2;
+                            _AllObbNames[i] = obbs[i].t1;
+                        }
+                    }
+                    else
+                    {
+                        _ObbPath = null;
+                        _AllObbPaths = null;
+                        _AllObbNames = null;
+                    }
+#endif
                 }
             }
             public void Init() { }
@@ -194,56 +303,64 @@ namespace Capstones.UnityEngineEx
                     if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
                     {
                         var realpath = "res/" + name;
-                        if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null && ObbEntryType(realpath) == ZipEntryType.Uncompressed)
+                        if (!SkipObb && _LoadAssetsFromObb && ObbEntryType(realpath) == ZipEntryType.Uncompressed)
                         {
                             string path = realpath;
-                            int retryTimes = 10;
-                            long offset = -1;
-                            for (int i = 0; i < retryTimes; ++i)
+
+                            var allobbs = ResManager.AllObbZipArchives;
+                            for (int z = allobbs.Length - 1; z >= 0; --z)
                             {
-                                Exception error = null;
-                                do
+                                var zip = allobbs[z];
+
+                                int retryTimes = 10;
+                                long offset = -1;
+                                for (int i = 0; i < retryTimes; ++i)
                                 {
-                                    ZipArchive za = ObbZipArchive;
-                                    if (za == null)
+                                    Exception error = null;
+                                    do
                                     {
-                                        if (!ignoreError) PlatDependant.LogError("Obb Archive Cannot be read.");
-                                        break;
-                                    }
-                                    try
-                                    {
-                                        var entry = za.GetEntry(path);
-                                        using (var srcstream = entry.Open())
+                                        ZipArchive za = zip;
+                                        if (za == null)
                                         {
-                                            offset = ObbFileStream.Position;
+                                            if (!ignoreError) PlatDependant.LogError("Obb Archive Cannot be read.");
+                                            break;
                                         }
-                                    }
-                                    catch (Exception e)
+                                        try
+                                        {
+                                            var entry = za.GetEntry(path);
+                                            using (var srcstream = entry.Open())
+                                            {
+                                                offset = ResManager.AllObbFileStreams[z].Position;
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            error = e;
+                                            break;
+                                        }
+                                    } while (false);
+                                    if (error != null)
                                     {
-                                        error = e;
-                                        break;
-                                    }
-                                } while (false);
-                                if (error != null)
-                                {
-                                    if (i == retryTimes - 1)
-                                    {
-                                        if (!ignoreError) PlatDependant.LogError(error);
+                                        if (i == retryTimes - 1)
+                                        {
+                                            if (!ignoreError) PlatDependant.LogError(error);
+                                        }
+                                        else
+                                        {
+                                            if (!ignoreError) PlatDependant.LogError(error);
+                                            if (!ignoreError) PlatDependant.LogInfo("Need Retry " + i);
+                                        }
                                     }
                                     else
                                     {
-                                        if (!ignoreError) PlatDependant.LogError(error);
-                                        if (!ignoreError) PlatDependant.LogInfo("Need Retry " + i);
+                                        break;
                                     }
                                 }
-                                else
+                                if (offset >= 0)
                                 {
+                                    bundle = AssetBundle.LoadFromFile(ResManager.AllObbPaths[z], 0, (ulong)offset);
                                     break;
                                 }
-                            }
-                            if (offset >= 0)
-                            {
-                                bundle = AssetBundle.LoadFromFile(ObbPath, 0, (ulong)offset);
                             }
                         }
                         else if (!SkipPackage)
@@ -340,97 +457,194 @@ namespace Capstones.UnityEngineEx
             }
         }
 
-        // TODO: 1、mod and dist? 2、in server?
+        // TODO: in server?
         public static System.IO.Stream LoadFileInStreaming(string file)
         {
-            System.IO.Stream stream = null;
-            if (!SkipPending)
+            return LoadFileInStreaming("", file, false, false);
+        }
+        public static System.IO.Stream LoadFileInStreaming(string prefix, string file, bool variantModAndDist, bool ignoreHotUpdate)
+        {
+            List<string> allflags;
+            if (variantModAndDist)
             {
-                stream = PlatDependant.OpenRead(ThreadSafeValues.UpdatePath + "/pending/" + file);
-                if (stream != null)
+                var flags = ResManager.GetValidDistributeFlags();
+                allflags = new List<string>(flags.Length + 1);
+                allflags.Add(null);
+                allflags.AddRange(flags);
+            }
+            else
+            {
+                allflags = new List<string>(1) { null };
+            }
+
+            if (!SkipPending && !ignoreHotUpdate)
+            {
+                string root = ThreadSafeValues.UpdatePath + "/pending/";
+                for (int n = allflags.Count - 1; n >= 0; --n)
                 {
-                    return stream;
+                    var dist = allflags[n];
+                    for (int m = allflags.Count - 1; m >= 0; --m)
+                    {
+                        var mod = allflags[m];
+                        var moddir = "";
+                        if (mod != null)
+                        {
+                            moddir = "mod/" + mod + "/";
+                        }
+                        if (dist != null)
+                        {
+                            moddir += "dist/" + dist + "/";
+                        }
+                        var path = root + prefix + moddir + file;
+                        if (PlatDependant.IsFileExist(path))
+                        {
+                            return PlatDependant.OpenRead(path);
+                        }
+                    }
                 }
             }
-            if (!SkipUpdate)
+            if (!SkipUpdate && !ignoreHotUpdate)
             {
-                stream = PlatDependant.OpenRead(ThreadSafeValues.UpdatePath + "/" + file);
-                if (stream != null)
+                string root = ThreadSafeValues.UpdatePath + "/";
+                for (int n = allflags.Count - 1; n >= 0; --n)
                 {
-                    return stream;
+                    var dist = allflags[n];
+                    for (int m = allflags.Count - 1; m >= 0; --m)
+                    {
+                        var mod = allflags[m];
+                        var moddir = "";
+                        if (mod != null)
+                        {
+                            moddir = "mod/" + mod + "/";
+                        }
+                        if (dist != null)
+                        {
+                            moddir += "dist/" + dist + "/";
+                        }
+                        var path = root + prefix + moddir + file;
+                        if (PlatDependant.IsFileExist(path))
+                        {
+                            return PlatDependant.OpenRead(path);
+                        }
+                    }
                 }
             }
             if (ThreadSafeValues.AppStreamingAssetsPath.Contains("://"))
             {
                 if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
+                    var allobbs = AllObbZipArchives;
+                    if (!SkipObb && _LoadAssetsFromObb && allobbs != null)
                     {
-                        int retryTimes = 3;
-                        for (int i = 0; i < retryTimes; ++i)
+                        for (int n = allflags.Count - 1; n >= 0; --n)
                         {
-                            ZipArchive za = ObbZipArchive;
-                            if (za == null)
+                            var dist = allflags[n];
+                            for (int m = allflags.Count - 1; m >= 0; --m)
                             {
-                                PlatDependant.LogError("Obb Archive Cannot be read.");
-                                if (i != retryTimes - 1)
+                                var mod = allflags[m];
+                                var moddir = "";
+                                if (mod != null)
                                 {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    moddir = "mod/" + mod + "/";
                                 }
-                                continue;
-                            }
+                                if (dist != null)
+                                {
+                                    moddir += "dist/" + dist + "/";
+                                }
+                                var entryname = prefix + moddir + file;
 
-                            try
-                            {
-                                var entry = za.GetEntry(file);
-                                if (entry != null)
+                                for (int z = allobbs.Length - 1; z >= 0; --z)
                                 {
-                                    return entry.Open();
-                                }
-                                break;
-                            }
-                            catch (Exception e)
-                            {
-                                PlatDependant.LogError(e);
-                                if (i != retryTimes - 1)
-                                {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    var zip = allobbs[z];
+
+                                    int retryTimes = 3;
+                                    for (int i = 0; i < retryTimes; ++i)
+                                    {
+                                        ZipArchive za = zip;
+                                        if (za == null)
+                                        {
+                                            PlatDependant.LogError("Obb Archive Cannot be read.");
+                                            if (i != retryTimes - 1)
+                                            {
+                                                PlatDependant.LogInfo("Need Retry " + i);
+                                            }
+                                            continue;
+                                        }
+
+                                        try
+                                        {
+                                            var entry = za.GetEntry(entryname);
+                                            if (entry != null)
+                                            {
+                                                return entry.Open();
+                                            }
+                                            break;
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            PlatDependant.LogError(e);
+                                            if (i != retryTimes - 1)
+                                            {
+                                                PlatDependant.LogInfo("Need Retry " + i);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                     if (!SkipPackage)
                     {
-                        int retryTimes = 3;
-                        for (int i = 0; i < retryTimes; ++i)
+                        for (int n = allflags.Count - 1; n >= 0; --n)
                         {
-                            ZipArchive za = AndroidApkZipArchive;
-                            if (za == null)
+                            var dist = allflags[n];
+                            for (int m = allflags.Count - 1; m >= 0; --m)
                             {
-                                PlatDependant.LogError("Apk Archive Cannot be read.");
-                                if (i != retryTimes - 1)
+                                var mod = allflags[m];
+                                var moddir = "";
+                                if (mod != null)
                                 {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    moddir = "mod/" + mod + "/";
                                 }
-                                continue;
-                            }
+                                if (dist != null)
+                                {
+                                    moddir += "dist/" + dist + "/";
+                                }
+                                var entryname = prefix + moddir + file;
 
-                            try
-                            {
-                                var entry = za.GetEntry("assets/" + file);
-                                if (entry != null)
+                                int retryTimes = 3;
+                                for (int i = 0; i < retryTimes; ++i)
                                 {
-                                    return entry.Open();
+                                    ZipArchive za = AndroidApkZipArchive;
+                                    if (za == null)
+                                    {
+                                        PlatDependant.LogError("Apk Archive Cannot be read.");
+                                        if (i != retryTimes - 1)
+                                        {
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                        continue;
+                                    }
+
+                                    try
+                                    {
+                                        var entry = za.GetEntry("assets/" + entryname);
+                                        if (entry != null)
+                                        {
+                                            return entry.Open();
+                                        }
+                                        break;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        PlatDependant.LogError(e);
+                                        if (i != retryTimes - 1)
+                                        {
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                    }
                                 }
-                                break;
-                            }
-                            catch (Exception e)
-                            {
-                                PlatDependant.LogError(e);
-                                if (i != retryTimes - 1)
-                                {
-                                    PlatDependant.LogInfo("Need Retry " + i);
-                                }
+
                             }
                         }
                     }
@@ -440,105 +654,220 @@ namespace Capstones.UnityEngineEx
             {
                 if (!SkipPackage)
                 {
-                    stream = PlatDependant.OpenRead(ThreadSafeValues.AppStreamingAssetsPath + "/" + file);
-                    if (stream != null)
+                    string root = ThreadSafeValues.AppStreamingAssetsPath + "/";
+                    for (int n = allflags.Count - 1; n >= 0; --n)
                     {
-                        return stream;
+                        var dist = allflags[n];
+                        for (int m = allflags.Count - 1; m >= 0; --m)
+                        {
+                            var mod = allflags[m];
+                            var moddir = "";
+                            if (mod != null)
+                            {
+                                moddir = "mod/" + mod + "/";
+                            }
+                            if (dist != null)
+                            {
+                                moddir += "dist/" + dist + "/";
+                            }
+                            var path = root + prefix + moddir + file;
+                            if (PlatDependant.IsFileExist(path))
+                            {
+                                return PlatDependant.OpenRead(path);
+                            }
+                        }
                     }
                 }
             }
             return null;
         }
-
         public static string FindUrlInStreaming(string file)
         {
-            if (!SkipPending)
+            return FindUrlInStreaming("", file, false, false);
+        }
+        public static string FindUrlInStreaming(string prefix, string file, bool variantModAndDist, bool ignoreHotUpdate)
+        {
+            List<string> allflags;
+            if (variantModAndDist)
             {
-                var path = ThreadSafeValues.UpdatePath + "/pending/" + file;
-                if (PlatDependant.IsFileExist(path))
+                var flags = ResManager.GetValidDistributeFlags();
+                allflags = new List<string>(flags.Length + 1);
+                allflags.Add(null);
+                allflags.AddRange(flags);
+            }
+            else
+            {
+                allflags = new List<string>(1) { null };
+            }
+
+            if (!SkipPending && !ignoreHotUpdate)
+            {
+                string root = ThreadSafeValues.UpdatePath + "/pending/";
+                for (int n = allflags.Count - 1; n >= 0; --n)
                 {
-                    return path;
+                    var dist = allflags[n];
+                    for (int m = allflags.Count - 1; m >= 0; --m)
+                    {
+                        var mod = allflags[m];
+                        var moddir = "";
+                        if (mod != null)
+                        {
+                            moddir = "mod/" + mod + "/";
+                        }
+                        if (dist != null)
+                        {
+                            moddir += "dist/" + dist + "/";
+                        }
+                        var path = root + prefix + moddir + file;
+                        if (PlatDependant.IsFileExist(path))
+                        {
+                            return path;
+                        }
+                    }
                 }
             }
-            if (!SkipUpdate)
+            if (!SkipUpdate && !ignoreHotUpdate)
             {
-                var path = ThreadSafeValues.UpdatePath + "/" + file;
-                if (PlatDependant.IsFileExist(path))
+                string root = ThreadSafeValues.UpdatePath + "/";
+                for (int n = allflags.Count - 1; n >= 0; --n)
                 {
-                    return path;
+                    var dist = allflags[n];
+                    for (int m = allflags.Count - 1; m >= 0; --m)
+                    {
+                        var mod = allflags[m];
+                        var moddir = "";
+                        if (mod != null)
+                        {
+                            moddir = "mod/" + mod + "/";
+                        }
+                        if (dist != null)
+                        {
+                            moddir += "dist/" + dist + "/";
+                        }
+                        var path = root + prefix + moddir + file;
+                        if (PlatDependant.IsFileExist(path))
+                        {
+                            return path;
+                        }
+                    }
                 }
             }
             if (ThreadSafeValues.AppStreamingAssetsPath.Contains("://"))
             {
                 if (ThreadSafeValues.AppPlatform == RuntimePlatform.Android.ToString() && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
+                    var allobbs = AllObbZipArchives;
+                    if (!SkipObb && _LoadAssetsFromObb && allobbs != null)
                     {
-                        int retryTimes = 3;
-                        for (int i = 0; i < retryTimes; ++i)
+                        for (int n = allflags.Count - 1; n >= 0; --n)
                         {
-                            ZipArchive za = ObbZipArchive;
-                            if (za == null)
+                            var dist = allflags[n];
+                            for (int m = allflags.Count - 1; m >= 0; --m)
                             {
-                                PlatDependant.LogError("Obb Archive Cannot be read.");
-                                if (i != retryTimes - 1)
+                                var mod = allflags[m];
+                                var moddir = "";
+                                if (mod != null)
                                 {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    moddir = "mod/" + mod + "/";
                                 }
-                                continue;
-                            }
+                                if (dist != null)
+                                {
+                                    moddir += "dist/" + dist + "/";
+                                }
+                                var entryname = prefix + moddir + file;
 
-                            try
-                            {
-                                var entry = za.GetEntry(file);
-                                if (entry != null)
+                                for (int z = allobbs.Length - 1; z >= 0; --z)
                                 {
-                                    return "jar:file://" + ObbPath + "!/" + file;
-                                }
-                                break;
-                            }
-                            catch (Exception e)
-                            {
-                                PlatDependant.LogError(e);
-                                if (i != retryTimes - 1)
-                                {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    var zip = allobbs[z];
+
+                                    int retryTimes = 3;
+                                    for (int i = 0; i < retryTimes; ++i)
+                                    {
+                                        ZipArchive za = zip;
+                                        if (za == null)
+                                        {
+                                            PlatDependant.LogError("Obb Archive Cannot be read.");
+                                            if (i != retryTimes - 1)
+                                            {
+                                                PlatDependant.LogInfo("Need Retry " + i);
+                                            }
+                                            continue;
+                                        }
+
+                                        try
+                                        {
+                                            var entry = za.GetEntry(entryname);
+                                            if (entry != null)
+                                            {
+                                                return "jar:file://" + AllObbPaths[z] + "!/" + entryname;
+                                            }
+                                            break;
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            PlatDependant.LogError(e);
+                                            if (i != retryTimes - 1)
+                                            {
+                                                PlatDependant.LogInfo("Need Retry " + i);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                     if (!SkipPackage)
                     {
-                        int retryTimes = 3;
-                        for (int i = 0; i < retryTimes; ++i)
+                        for (int n = allflags.Count - 1; n >= 0; --n)
                         {
-                            ZipArchive za = AndroidApkZipArchive;
-                            if (za == null)
+                            var dist = allflags[n];
+                            for (int m = allflags.Count - 1; m >= 0; --m)
                             {
-                                PlatDependant.LogError("Apk Archive Cannot be read.");
-                                if (i != retryTimes - 1)
+                                var mod = allflags[m];
+                                var moddir = "";
+                                if (mod != null)
                                 {
-                                    PlatDependant.LogInfo("Need Retry " + i);
+                                    moddir = "mod/" + mod + "/";
                                 }
-                                continue;
-                            }
+                                if (dist != null)
+                                {
+                                    moddir += "dist/" + dist + "/";
+                                }
+                                var entryname = prefix + moddir + file;
 
-                            try
-                            {
-                                var entry = za.GetEntry("assets/" + file);
-                                if (entry != null)
+                                int retryTimes = 3;
+                                for (int i = 0; i < retryTimes; ++i)
                                 {
-                                    return ThreadSafeValues.AppStreamingAssetsPath + "/" + file;
+                                    ZipArchive za = AndroidApkZipArchive;
+                                    if (za == null)
+                                    {
+                                        PlatDependant.LogError("Apk Archive Cannot be read.");
+                                        if (i != retryTimes - 1)
+                                        {
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                        continue;
+                                    }
+
+                                    try
+                                    {
+                                        var entry = za.GetEntry("assets/" + entryname);
+                                        if (entry != null)
+                                        {
+                                            return ThreadSafeValues.AppStreamingAssetsPath + "/" + entryname;
+                                        }
+                                        break;
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        PlatDependant.LogError(e);
+                                        if (i != retryTimes - 1)
+                                        {
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                    }
                                 }
-                                break;
-                            }
-                            catch (Exception e)
-                            {
-                                PlatDependant.LogError(e);
-                                if (i != retryTimes - 1)
-                                {
-                                    PlatDependant.LogInfo("Need Retry " + i);
-                                }
+
                             }
                         }
                     }
@@ -548,10 +877,28 @@ namespace Capstones.UnityEngineEx
             {
                 if (!SkipPackage)
                 {
-                    var path = ThreadSafeValues.AppStreamingAssetsPath + "/" + file;
-                    if (PlatDependant.IsFileExist(path))
+                    string root = ThreadSafeValues.AppStreamingAssetsPath + "/";
+                    for (int n = allflags.Count - 1; n >= 0; --n)
                     {
-                        return path;
+                        var dist = allflags[n];
+                        for (int m = allflags.Count - 1; m >= 0; --m)
+                        {
+                            var mod = allflags[m];
+                            var moddir = "";
+                            if (mod != null)
+                            {
+                                moddir = "mod/" + mod + "/";
+                            }
+                            if (dist != null)
+                            {
+                                moddir += "dist/" + dist + "/";
+                            }
+                            var path = root + prefix + moddir + file;
+                            if (PlatDependant.IsFileExist(path))
+                            {
+                                return path;
+                            }
+                        }
                     }
                 }
             }
@@ -641,59 +988,68 @@ namespace Capstones.UnityEngineEx
             {
                 if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
+                    if (!SkipObb && _LoadAssetsFromObb)
                     {
-                        int retryTimes = 10;
-                        for (int i = 0; i < retryTimes; ++i)
+                        var allobbs = ResManager.AllObbZipArchives;
+                        if (allobbs != null)
                         {
-                            Exception error = null;
-                            do
+                            for (int z = 0; z < allobbs.Length; ++z)
                             {
-                                ZipArchive za = ObbZipArchive;
-                                if (za == null)
+                                var zip = allobbs[z];
+
+                                int retryTimes = 10;
+                                for (int i = 0; i < retryTimes; ++i)
                                 {
-                                    PlatDependant.LogError("Obb Archive Cannot be read.");
-                                    break;
-                                }
-                                try
-                                {
-                                    var entries = za.Entries;
-                                    foreach (var entry in entries)
+                                    Exception error = null;
+                                    do
                                     {
-                                        if (entry.CompressedLength == entry.Length)
+                                        ZipArchive za = zip;
+                                        if (za == null)
                                         {
-                                            var name = entry.FullName.Substring("res/".Length);
-                                            if (name.StartsWith(pre))
+                                            PlatDependant.LogError("Obb Archive Cannot be read.");
+                                            break;
+                                        }
+                                        try
+                                        {
+                                            var entries = za.Entries;
+                                            foreach (var entry in entries)
                                             {
-                                                if (foundSet.Add(name))
+                                                if (entry.CompressedLength == entry.Length)
                                                 {
-                                                    found.Add(name);
+                                                    var name = entry.FullName.Substring("res/".Length);
+                                                    if (name.StartsWith(pre))
+                                                    {
+                                                        if (foundSet.Add(name))
+                                                        {
+                                                            found.Add(name);
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
+                                        catch (Exception e)
+                                        {
+                                            error = e;
+                                            break;
+                                        }
+                                    } while (false);
+                                    if (error != null)
+                                    {
+                                        if (i == retryTimes - 1)
+                                        {
+                                            PlatDependant.LogError(error);
+                                        }
+                                        else
+                                        {
+                                            PlatDependant.LogError(error);
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        break;
                                     }
                                 }
-                                catch (Exception e)
-                                {
-                                    error = e;
-                                    break;
-                                }
-                            } while (false);
-                            if (error != null)
-                            {
-                                if (i == retryTimes - 1)
-                                {
-                                    PlatDependant.LogError(error);
-                                }
-                                else
-                                {
-                                    PlatDependant.LogError(error);
-                                    PlatDependant.LogInfo("Need Retry " + i);
-                                }
-                            }
-                            else
-                            {
-                                break;
                             }
                         }
                     }
@@ -824,88 +1180,97 @@ namespace Capstones.UnityEngineEx
             {
                 if (Application.platform == RuntimePlatform.Android && _LoadAssetsFromApk)
                 {
-                    if (!SkipObb && _LoadAssetsFromObb && ObbZipArchive != null)
+                    if (!SkipObb && _LoadAssetsFromObb)
                     {
-                        int retryTimes = 10;
-                        for (int i = 0; i < retryTimes; ++i)
+                        var allobbs = ResManager.AllObbZipArchives;
+                        if (allobbs != null)
                         {
-                            Exception error = null;
-                            do
+                            for (int z = 0; z < allobbs.Length; ++z)
                             {
-                                ZipArchive za = ObbZipArchive;
-                                if (za == null)
+                                var zip = allobbs[z];
+
+                                int retryTimes = 10;
+                                for (int i = 0; i < retryTimes; ++i)
                                 {
-                                    PlatDependant.LogError("Obb Archive Cannot be read.");
-                                    break;
-                                }
-                                try
-                                {
-                                    var indexentry = za.GetEntry("res/index.txt");
-                                    if (indexentry == null)
+                                    Exception error = null;
+                                    do
                                     {
-                                        var entries = za.Entries;
-                                        foreach (var entry in entries)
+                                        ZipArchive za = zip;
+                                        if (za == null)
                                         {
-                                            if (entry.CompressedLength == entry.Length)
+                                            PlatDependant.LogError("Obb Archive Cannot be read.");
+                                            break;
+                                        }
+                                        try
+                                        {
+                                            var indexentry = za.GetEntry("res/index.txt");
+                                            if (indexentry == null)
                                             {
-                                                var name = entry.FullName.Substring("res/".Length);
-                                                if (name.StartsWith(dir) && name.EndsWith(".m.ab"))
+                                                var entries = za.Entries;
+                                                foreach (var entry in entries)
                                                 {
-                                                    if (foundSet.Add(name))
+                                                    if (entry.CompressedLength == entry.Length)
                                                     {
-                                                        found.Add(name);
+                                                        var name = entry.FullName.Substring("res/".Length);
+                                                        if (name.StartsWith(dir) && name.EndsWith(".m.ab"))
+                                                        {
+                                                            if (foundSet.Add(name))
+                                                            {
+                                                                found.Add(name);
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        using (var stream = indexentry.Open())
-                                        {
-                                            using (var sr = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8))
+                                            else
                                             {
-                                                while (true)
+                                                using (var stream = indexentry.Open())
                                                 {
-                                                    var line = sr.ReadLine();
-                                                    if (line == null)
+                                                    using (var sr = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8))
                                                     {
-                                                        break;
-                                                    }
-                                                    if (line != "")
-                                                    {
-                                                        var name = dir + line.Trim() + ".m.ab";
-                                                        if (foundSet.Add(name))
+                                                        while (true)
                                                         {
-                                                            found.Add(name);
+                                                            var line = sr.ReadLine();
+                                                            if (line == null)
+                                                            {
+                                                                break;
+                                                            }
+                                                            if (line != "")
+                                                            {
+                                                                var name = dir + line.Trim() + ".m.ab";
+                                                                if (foundSet.Add(name))
+                                                                {
+                                                                    found.Add(name);
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
                                         }
+                                        catch (Exception e)
+                                        {
+                                            error = e;
+                                            break;
+                                        }
+                                    } while (false);
+                                    if (error != null)
+                                    {
+                                        if (i == retryTimes - 1)
+                                        {
+                                            PlatDependant.LogError(error);
+                                        }
+                                        else
+                                        {
+                                            PlatDependant.LogError(error);
+                                            PlatDependant.LogInfo("Need Retry " + i);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        break;
                                     }
                                 }
-                                catch (Exception e)
-                                {
-                                    error = e;
-                                    break;
-                                }
-                            } while (false);
-                            if (error != null)
-                            {
-                                if (i == retryTimes - 1)
-                                {
-                                    PlatDependant.LogError(error);
-                                }
-                                else
-                                {
-                                    PlatDependant.LogError(error);
-                                    PlatDependant.LogInfo("Need Retry " + i);
-                                }
-                            }
-                            else
-                            {
-                                break;
                             }
                         }
                     }
@@ -1078,6 +1443,37 @@ namespace Capstones.UnityEngineEx
             LoadedAssetBundles = newLoadedAssetBundles;
         }
 
+        public static int GetAppVer()
+        {
+            int versionCode = CrossEvent.TrigClrEvent<int>("SDK_GetAppVerCode");
+            if (versionCode <= 0)
+            { // the cross call failed. we parse it from the string like "1.0.0.25"
+                var vername = ThreadSafeValues.AppVerName;
+                if (!int.TryParse(vername, out versionCode))
+                {
+                    int split = vername.LastIndexOf(".");
+                    if (split > 0)
+                    {
+                        var verlastpart = vername.Substring(split + 1);
+                        int.TryParse(verlastpart, out versionCode);
+                    }
+                }
+            }
+            return versionCode;
+        }
+        private static int? _cached_AppVer;
+        public static int AppVer
+        {
+            get
+            {
+                if (_cached_AppVer == null)
+                {
+                    _cached_AppVer = GetAppVer();
+                }
+                return (int)_cached_AppVer;
+            }
+        }
+
         #region Zip Archive on Android APK
         [ThreadStatic] private static System.IO.Stream _AndroidApkFileStream;
         [ThreadStatic] private static ZipArchive _AndroidApkZipArchive;
@@ -1168,6 +1564,16 @@ namespace Capstones.UnityEngineEx
         public static string ObbPath
         {
             get { return _ObbPath; }
+        }
+        private static string[] _AllObbPaths;
+        public static string[] AllObbPaths
+        {
+            get { return _AllObbPaths; }
+        }
+        private static string[] _AllObbNames;
+        public static string[] AllObbNames
+        {
+            get { return _AllObbNames; }
         }
 
         [ThreadStatic] private static System.IO.Stream _ObbFileStream;
@@ -1268,6 +1674,119 @@ namespace Capstones.UnityEngineEx
                 return _ObbZipArchive;
             }
         }
+        [ThreadStatic] private static System.IO.Stream[] _AllObbFileStreams;
+        [ThreadStatic] private static ZipArchive[] _AllObbZipArchives;
+        public static System.IO.Stream[] AllObbFileStreams
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                if (_AllObbPaths != null)
+                {
+                    if (_AllObbFileStreams == null)
+                    {
+                        _AllObbFileStreams = new System.IO.Stream[_AllObbPaths.Length];
+                    }
+                    for (int i = 0; i < _AllObbFileStreams.Length; ++i)
+                    {
+                        try
+                        {
+                            bool disposed = false;
+                            try
+                            {
+                                if (_AllObbFileStreams[i] == null)
+                                {
+                                    disposed = true;
+                                }
+                                else if (!_AllObbFileStreams[i].CanSeek)
+                                {
+                                    disposed = true;
+                                }
+                            }
+                            catch
+                            {
+                                disposed = true;
+                            }
+                            if (disposed)
+                            {
+                                _AllObbFileStreams[i] = null;
+                                _AllObbFileStreams[i] = PlatDependant.OpenRead(_AllObbPaths[i]);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
+                }
+                else
+                {
+                    _AllObbFileStreams = null;
+                }
+#endif
+                return _AllObbFileStreams;
+            }
+        }
+        public static ZipArchive[] AllObbZipArchives
+        {
+            get
+            {
+                var filestreams = AllObbFileStreams;
+#if UNITY_ANDROID && !UNITY_EDITOR
+                if (_AllObbPaths != null && filestreams != null)
+                {
+                    if (_AllObbZipArchives == null)
+                    {
+                        _AllObbZipArchives = new ZipArchive[filestreams.Length];
+                    }
+                    for (int i = 0; i < _AllObbZipArchives.Length; ++i)
+                    {
+                        try
+                        {
+                            bool disposed = false;
+                            try
+                            {
+                                if (_AllObbZipArchives[i] == null)
+                                {
+                                    disposed = true;
+                                }
+                                else
+                                {
+#if !NET_4_6 && !NET_STANDARD_2_0
+                                    _AllObbZipArchives[i].ThrowIfDisposed();
+#else
+                                    { var entries = _AllObbZipArchives[i].Entries; }
+#endif
+                                    if (_AllObbZipArchives[i].Mode == ZipArchiveMode.Create)
+                                    {
+                                        disposed = true;
+                                    }
+                                }
+                            }
+                            catch
+                            {
+                                disposed = true;
+                            }
+                            if (disposed)
+                            {
+                                _AllObbZipArchives[i] = null;
+                                _AllObbZipArchives[i] = new ZipArchive(filestreams[i]);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
+                }
+                else
+                {
+                    _AllObbZipArchives = null;
+                }
+#endif
+                return _AllObbZipArchives;
+            }
+        }
 
         public enum ZipEntryType
         {
@@ -1278,53 +1797,63 @@ namespace Capstones.UnityEngineEx
         public static ZipEntryType ObbEntryType(string file)
         {
             ZipEntryType result = ZipEntryType.NonExist;
-            if (ObbZipArchive != null)
+            var allarchives = AllObbZipArchives;
+            if (allarchives != null)
             {
-                int retryTimes = 10;
-                for (int i = 0; i < retryTimes; ++i)
+                for (int n = allarchives.Length - 1; n >= 0; --n)
                 {
-                    Exception error = null;
-                    do
+                    var archive = allarchives[n];
+                    int retryTimes = 10;
+                    for (int i = 0; i < retryTimes; ++i)
                     {
-                        ZipArchive za = ObbZipArchive;
-                        if (za == null)
+                        Exception error = null;
+                        do
                         {
-                            error = new Exception("Apk Archive Cannot be read.");
-                            break;
-                        }
-
-                        try
-                        {
-                            var entry = za.GetEntry(file);
-                            if (entry != null)
+                            ZipArchive za = archive;
+                            if (za == null)
                             {
-                                result = ZipEntryType.Compressed;
-                                if (entry.CompressedLength == entry.Length)
+                                error = new Exception("Obb Archive Cannot be read.");
+                                break;
+                            }
+
+                            try
+                            {
+                                var entry = za.GetEntry(file);
+                                if (entry != null)
                                 {
-                                    result = ZipEntryType.Uncompressed;
+                                    result = ZipEntryType.Compressed;
+                                    if (entry.CompressedLength == entry.Length)
+                                    {
+                                        result = ZipEntryType.Uncompressed;
+                                    }
                                 }
                             }
-                        }
-                        catch (Exception e)
+                            catch (Exception e)
+                            {
+                                error = e;
+                                break;
+                            }
+                        } while (false);
+                        if (error != null)
                         {
-                            error = e;
-                            break;
-                        }
-                    } while (false);
-                    if (error != null)
-                    {
-                        if (i == retryTimes - 1)
-                        {
-                            PlatDependant.LogError(error);
-                            throw error;
+                            if (i == retryTimes - 1)
+                            {
+                                PlatDependant.LogError(error);
+                                throw error;
+                            }
+                            else
+                            {
+                                PlatDependant.LogError(error);
+                                PlatDependant.LogInfo("Need Retry " + i);
+                            }
                         }
                         else
                         {
-                            PlatDependant.LogError(error);
-                            PlatDependant.LogInfo("Need Retry " + i);
+                            break;
                         }
                     }
-                    else
+
+                    if (result != ZipEntryType.NonExist)
                     {
                         break;
                     }

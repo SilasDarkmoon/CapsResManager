@@ -128,55 +128,48 @@ namespace Capstones.UnityEditorEx
             var files = PlatDependant.GetAllFiles(folder);
 
             int entry_count = 0;
-            using (var sd = PlatDependant.OpenWrite(dest))
+            var tmpdir = dest + ".tmp/";
+            PlatDependant.CreateFolder(tmpdir);
+            for (int i = 0; i < files.Length; ++i)
             {
-                using (var ad = new ZipArchive(sd, ZipArchiveMode.Create))
+                var file = files[i];
+                if (file.EndsWith(".meta"))
                 {
-                    for (int i = 0; i < files.Length; ++i)
+                    continue;
+                }
+                var part = file.Substring(folder.Length);
+                if (part.StartsWith("res/") || part.StartsWith("spt/"))
+                {
+                    try
                     {
-                        var file = files[i];
-                        if (file.EndsWith(".meta"))
-                        {
-                            continue;
-                        }
-                        var part = file.Substring(folder.Length);
-                        if (part.StartsWith("res/") || part.StartsWith("spt/"))
-                        {
-                            try
-                            {
-                                using (var src = PlatDependant.OpenRead(file))
-                                {
-                                    var entry = ad.CreateEntry(part, CompressionLevel.NoCompression);
-                                    ++entry_count;
-                                    using (var dst = entry.Open())
-                                    {
-                                        src.CopyTo(dst);
-                                    }
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogException(e);
-                            }
-                        }
+                        var dst = tmpdir + part;
+                        PlatDependant.CopyFile(file, dst);
+                        ++entry_count;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
                     }
                 }
             }
 
-            if (entry_count == 0)
+            if (entry_count > 0)
             {
-                PlatDependant.DeleteFile(dest);
+                CapsEditorUtils.ZipFolderNoCompress(tmpdir, dest);
             }
+
+            System.IO.Directory.Delete(tmpdir, true);
         }
 
         [MenuItem("Res/Build Obb (Default)", priority = 202020)]
-        public static void MakeNearestObbFull()
+        public static void MakeDefaultObb()
         {
             if (System.IO.Directory.Exists("Assets/StreamingAssets"))
             {
-                MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/obb.zip");
+                MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/default.obb");
                 System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
                 System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
+                PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt").Dispose();
             }
         }
     }

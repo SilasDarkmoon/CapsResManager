@@ -1463,45 +1463,46 @@ namespace Capstones.UnityEngineEx
             }
 
             var obj = rv[0];
-            if (obj is T)
-            {
-                return (T)obj;
-            }
-            if (obj.IsObjIConvertible() && typeof(T).IsTypeIConvertible())
-            {
-                try
-                {
-                    return (T)Convert.ChangeType(obj, typeof(T));
-                }
-                catch (Exception e)
-                {
-                    PlatDependant.LogError(e);
-                }
-            }
-            //if (obj.IsObjIConvertible() && typeof(T) == typeof(IntPtr))
+            return obj.Convert<T>();
+            //if (obj is T)
+            //{
+            //    return (T)obj;
+            //}
+            //if (obj.IsObjIConvertible() && typeof(T).IsTypeIConvertible())
             //{
             //    try
             //    {
-            //        return (T)(object)(IntPtr)Convert.ToInt64(obj);
+            //        return (T)Convert.ChangeType(obj, typeof(T));
             //    }
             //    catch (Exception e)
             //    {
             //        PlatDependant.LogError(e);
             //    }
             //}
-            //if (obj is IntPtr && typeof(T).IsTypeIConvertible())
-            //{
-            //    try
-            //    {
-            //        return (T)Convert.ChangeType((long)(IntPtr)obj, typeof(T));
-            //    }
-            //    catch (Exception e)
-            //    {
-            //        PlatDependant.LogError(e);
-            //    }
-            //}
+            ////if (obj.IsObjIConvertible() && typeof(T) == typeof(IntPtr))
+            ////{
+            ////    try
+            ////    {
+            ////        return (T)(object)(IntPtr)Convert.ToInt64(obj);
+            ////    }
+            ////    catch (Exception e)
+            ////    {
+            ////        PlatDependant.LogError(e);
+            ////    }
+            ////}
+            ////if (obj is IntPtr && typeof(T).IsTypeIConvertible())
+            ////{
+            ////    try
+            ////    {
+            ////        return (T)Convert.ChangeType((long)(IntPtr)obj, typeof(T));
+            ////    }
+            ////    catch (Exception e)
+            ////    {
+            ////        PlatDependant.LogError(e);
+            ////    }
+            ////}
 
-            return default(T);
+            //return default(T);
         }
         public static bool IsList(List<EventParam> list)
         {

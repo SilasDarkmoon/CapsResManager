@@ -1006,6 +1006,18 @@ namespace Capstones.UnityEngineEx
                 return false;
             }
         }
+        public static bool IsFolderExist(this string path)
+        {
+            try
+            {
+                return System.IO.Directory.Exists(path);
+            }
+            catch (Exception e)
+            {
+                LogInfo(e);
+                return false;
+            }
+        }
 
         public static void DeleteFile(this string path)
         {

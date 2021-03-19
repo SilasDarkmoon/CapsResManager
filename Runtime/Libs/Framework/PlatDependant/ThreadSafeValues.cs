@@ -32,6 +32,7 @@ namespace Capstones.UnityEngineEx
             _cached_Application_temporaryCachePath = Application.temporaryCachePath;
             _cached_Application_persistentDataPath = Application.persistentDataPath;
             _cached_Application_dataPath = Application.dataPath;
+            _cached_AppVerName = Application.version;
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = ThreadLocalObj.GetThreadId();
 #else
@@ -44,6 +45,7 @@ namespace Capstones.UnityEngineEx
             _cached_Application_temporaryCachePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
             _cached_Application_persistentDataPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime");
             _cached_Application_dataPath = AppDomain.CurrentDomain.BaseDirectory;
+            _cached_AppVerName = typeof(ThreadSafeValues).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;
 #endif
@@ -60,6 +62,7 @@ namespace Capstones.UnityEngineEx
         private static string _cached_Application_temporaryCachePath;
         private static string _cached_Application_persistentDataPath;
         private static string _cached_Application_dataPath;
+        private static string _cached_AppVerName;
         private static string _cached_Capid;
         private static ulong _UnityThreadID;
         [ThreadStatic] private static bool _IsMainThread;
@@ -71,6 +74,7 @@ namespace Capstones.UnityEngineEx
         public static string AppTemporaryCachePath { get { return _cached_Application_temporaryCachePath; } }
         public static string AppPersistentDataPath { get { return _cached_Application_persistentDataPath; } }
         public static string AppDataPath { get { return _cached_Application_dataPath; } }
+        public static string AppVerName { get { return _cached_AppVerName; } }
         public static string Capid { get { return _cached_Capid; } }
         public static ulong UnityThreadID { get { return _UnityThreadID; } }
         public static bool IsMainThread { get { return _IsMainThread; } }

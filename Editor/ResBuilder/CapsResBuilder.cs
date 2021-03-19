@@ -1173,7 +1173,12 @@ namespace Capstones.UnityEditorEx
             {
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/res/index.txt"))
                 {
-                    var files = PlatDependant.GetAllFiles("Assets/StreamingAssets/res/mani/");
+                    string maniroot = "Assets/StreamingAssets/res/mani/";
+                    if (PlatDependant.IsFileExist("Assets/StreamingAssets/hasobb.flag.txt"))
+                    {
+                        maniroot = "EditorOutput/Build/Latest/res/mani/";
+                    }
+                    var files = PlatDependant.GetAllFiles(maniroot);
                     if (files != null)
                     {
                         for (int i = 0; i < files.Length; ++i)
@@ -1181,7 +1186,7 @@ namespace Capstones.UnityEditorEx
                             var file = files[i];
                             if (file.EndsWith(".m.ab"))
                             {
-                                var key = file.Substring("Assets/StreamingAssets/res/mani/".Length, file.Length - "Assets/StreamingAssets/res/mani/".Length - ".m.ab".Length);
+                                var key = file.Substring(maniroot.Length, file.Length - maniroot.Length - ".m.ab".Length);
                                 sw.WriteLine(key);
                             }
                         }
