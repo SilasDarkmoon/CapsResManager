@@ -132,6 +132,28 @@ namespace Capstones.UnityEditorEx
         {
             OnDistributeFlagsChanged.Handler();
         }
+
+        public static string[] FindAssetsInModsAndDists(string prefix, string file)
+        {
+            if (prefix == null)
+            {
+                prefix = "";
+            }
+            else if (prefix.Length > 0 && !prefix.EndsWith("/") && !prefix.EndsWith("\\"))
+            {
+                prefix += "/";
+            }
+            List<string> results = new List<string>();
+            var alldflags = GetAllDistributes();
+            for (int i = 0; i < alldflags.Length; ++i)
+            {
+                var dflag = alldflags[i];
+                var path = prefix + "dist/" + dflag + "/" + file;
+                results.AddRange(CapsModEditor.FindAssetsInMods(path));
+            }
+            results.AddRange(CapsModEditor.FindAssetsInMods(prefix + file));
+            return results.ToArray();
+        }
     }
 
     public class DistributeSelectWindow : EditorWindow, ISerializationCallbackReceiver

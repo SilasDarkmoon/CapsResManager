@@ -532,16 +532,28 @@ namespace Capstones.UnityEngineEx
             }
             public static string CheckDistributePathSafe(string path)
             {
-                string found = null;
-                string distFolderName = null;
-                for (int i = 0; i < _DistributeFolderNames.Length; ++i)
+                return CheckDistributePathSafe(null, path);
+            }
+            public static string CheckDistributePathSafe(string prefix, string file)
+            {
+                string distFolderName = prefix;
+                string normal = file;
+                if (distFolderName == null)
                 {
-                    var folder = _DistributeFolderNames[i];
-                    if (path.StartsWith(folder))
+                    for (int i = 0; i < _DistributeFolderNames.Length; ++i)
                     {
-                        distFolderName = folder;
-                        break;
+                        var folder = _DistributeFolderNames[i];
+                        if (file.StartsWith(folder))
+                        {
+                            distFolderName = folder;
+                            normal = file.Substring(distFolderName.Length);
+                            break;
+                        }
                     }
+                }
+                else if (distFolderName.Length > 0 && !distFolderName.EndsWith("/") && !distFolderName.EndsWith("/"))
+                {
+                    distFolderName += "/";
                 }
 
                 if (distFolderName != null)
@@ -550,7 +562,7 @@ namespace Capstones.UnityEngineEx
                     for (int i = dflags.Count - 1; i >= 0; --i)
                     {
                         var dflag = dflags[i];
-                        var realpath = distFolderName + "dist/" + dflag + path.Substring(distFolderName.Length - 1);
+                        var realpath = distFolderName + "dist/" + dflag + "/" + normal;
                         var dfound = CheckModPathSafe(realpath);
                         if (dfound != null)
                         {
@@ -559,7 +571,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
                 {
-                    var dfound = CheckModPathSafe(path);
+                    var dfound = CheckModPathSafe(normal);
                     if (dfound != null)
                     {
                         return dfound;

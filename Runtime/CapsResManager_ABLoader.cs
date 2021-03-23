@@ -34,7 +34,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (Application.platform == RuntimePlatform.Android)
                 {
-#if DEBUG_TEST_OBB_IN_DOWNLOAD_PATH
+#if DEBUG_OBB_IN_DOWNLOAD_PATH
 #if UNITY_ANDROID
                     if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageRead))
                     {
