@@ -15,8 +15,29 @@ using CompressionLevel = System.IO.Compression.CompressionLevel;
 
 namespace Capstones.UnityEditorEx
 {
+    [InitializeOnLoad]
+    public class CapsObbMaker_ResBuilderEx : CapsResBuilder.BaseResBuilderEx<CapsObbMaker_ResBuilderEx>
+    {
+        private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
+
+        public override void Prepare(string output)
+        {
+            if (PlatDependant.IsFileExist("Assets/StreamingAssets/hasobb.flag.txt"))
+            {
+                PlatDependant.DeleteFile("Assets/StreamingAssets/hasobb.flag.txt");
+            }
+        }
+    }
+
     public static class CapsObbMaker
     {
+        public struct ObbInfo
+        {
+            public string Key;
+            public string ObbFileName;
+            public long MaxSize;
+        }
+
         public static void MakeObb(string dest, params string[] subzips)
         {
             if (!string.IsNullOrEmpty(dest) && subzips != null && subzips.Length > 0)
@@ -115,50 +136,192 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
-        public static void MakeObbInFolder(string folder, string dest = null)
+        public static List<string> MakeObbInFolder(string folder, string dest, IList<ObbInfo> obbs, IList<string> blackList, bool deleteSrc)
         {
             if (string.IsNullOrEmpty(dest))
             {
-                dest = System.IO.Path.Combine(folder, "obb.zip");
+                dest = "EditorOutput/Build/Latest/";
             }
             if (!folder.EndsWith("/") && !folder.EndsWith("\\"))
             {
                 folder = folder + "/";
             }
             var files = PlatDependant.GetAllFiles(folder);
-
-            int entry_count = 0;
-            var tmpdir = dest + ".tmp/";
-            PlatDependant.CreateFolder(tmpdir);
-            for (int i = 0; i < files.Length; ++i)
+            int fileindex = 0;
+            System.IO.FileInfo curfile = null;
+            if (files.Length > 0)
             {
-                var file = files[i];
-                if (file.EndsWith(".meta"))
-                {
-                    continue;
-                }
-                var part = file.Substring(folder.Length);
-                if (part.StartsWith("res/") || part.StartsWith("spt/"))
-                {
-                    try
-                    {
-                        var dst = tmpdir + part;
-                        PlatDependant.CopyFile(file, dst);
-                        ++entry_count;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
-                }
+                curfile = new System.IO.FileInfo(files[fileindex]);
             }
 
-            if (entry_count > 0)
+            HashSet<string> builtKeys = new HashSet<string>();
+            List<string> builtKeysList = new List<string>();
+            for (int obbindex = 0; ; ++obbindex)
             {
-                CapsEditorUtils.ZipFolderNoCompress(tmpdir, dest);
-            }
+                ObbInfo curobb;
+                if (obbs != null && obbs.Count > 0)
+                {
+                    if (obbindex < obbs.Count)
+                    {
+                        curobb = obbs[obbindex];
+                    }
+                    else
+                    {
+                        curobb = obbs[obbs.Count - 1];
+                    }
+                }
+                else
+                {
+                    curobb = new ObbInfo();
+                }
+                if (string.IsNullOrEmpty(curobb.Key))
+                {
+                    curobb.Key = "main";
+                }
+                else
+                {
+                    curobb.Key = curobb.Key.ToLower();
+                }
+                if (builtKeys.Contains(curobb.Key) && curobb.Key == "main")
+                {
+                    curobb.Key = "patch";
+                }
+                if (builtKeys.Contains(curobb.Key))
+                {
+                    string ukey = curobb.Key + "-" + obbindex;
+                    if (builtKeys.Contains(ukey))
+                    {
+                        for (int i = 1; ; ++i)
+                        {
+                            ukey = curobb.Key + "-" + (obbindex + i);
+                            if (!builtKeys.Contains(ukey))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    curobb.Key = ukey;
+                }
+                builtKeys.Add(curobb.Key);
+                builtKeysList.Add(curobb.Key);
 
-            System.IO.Directory.Delete(tmpdir, true);
+                var obbpath = curobb.ObbFileName;
+                if (string.IsNullOrEmpty(obbpath))
+                {
+                    obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
+                }
+                if (!obbpath.EndsWith(".obb", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    obbpath += ".obb";
+                }
+                if (!System.IO.Path.IsPathRooted(obbpath))
+                {
+                    obbpath = System.IO.Path.Combine(dest, obbpath);
+                }
+
+                if (curobb.MaxSize <= 0)
+                {
+                    curobb.MaxSize = 1024L * 1024L * (1024L * 2L - 10L);
+                }
+
+                var tmpdir = obbpath + ".tmp/";
+                if (System.IO.Directory.Exists(tmpdir))
+                {
+                    System.IO.Directory.Delete(tmpdir, true);
+                }
+                PlatDependant.CreateFolder(tmpdir);
+                PlatDependant.CreateFolder(System.IO.Path.GetDirectoryName(obbpath));
+                if (PlatDependant.IsFileExist(obbpath))
+                {
+                    PlatDependant.DeleteFile(obbpath);
+                }
+
+                long curobbsize = 0;
+                System.IO.FileInfo fileinfo = null;
+                for (; fileindex < files.Length; ++fileindex)
+                {
+
+                    var file = files[fileindex];
+                    if (file.EndsWith(".meta", StringComparison.InvariantCultureIgnoreCase)
+                        || file.EndsWith(".manifest", StringComparison.InvariantCultureIgnoreCase)
+                        || file.EndsWith(".srcinfo", StringComparison.InvariantCultureIgnoreCase)
+                        )
+                    {
+                        continue;
+                    }
+
+                    var part = file.Substring(folder.Length);
+                    if (part.StartsWith("res/") || part.StartsWith("spt/"))
+                    {
+                        bool isValid = true;
+                        if (blackList != null)
+                        {
+                            for (int i = 0; i < blackList.Count; ++i)
+                            {
+                                var blackItem = blackList[i];
+                                if (part.StartsWith(blackItem, StringComparison.InvariantCultureIgnoreCase))
+                                {
+                                    isValid = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!isValid)
+                        {
+                            continue;
+                        }
+
+                        fileinfo = new System.IO.FileInfo(file);
+                        if (curobb.MaxSize - fileinfo.Length < curobbsize)
+                        {
+                            if (curobbsize == 0)
+                            { // big file - this single file is larger than obb's limit.
+                                continue;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        curobbsize += fileinfo.Length;
+
+                        try
+                        {
+                            var dst = tmpdir + part;
+                            if (deleteSrc)
+                            {
+                                PlatDependant.MoveFile(file, dst);
+                            }
+                            else
+                            {
+                                PlatDependant.CopyFile(file, dst);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                }
+
+                try
+                {
+                    if (curobbsize <= 0 || CapsEditorUtils.ZipFolderNoCompress(tmpdir, obbpath))
+                    {
+                        System.IO.Directory.Delete(tmpdir, true);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+
+                if (fileindex >= files.Length)
+                {
+                    break;
+                }
+            }
+            return builtKeysList;
         }
 
         [MenuItem("Res/Build Obb (Default)", priority = 202020)]
@@ -166,10 +329,16 @@ namespace Capstones.UnityEditorEx
         {
             if (System.IO.Directory.Exists("Assets/StreamingAssets"))
             {
-                MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/default.obb");
+                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, null, false);
                 System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
                 System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
-                PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt").Dispose();
+                using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
+                {
+                    foreach (var key in built)
+                    {
+                        sw.WriteLine(key);
+                    }
+                }
             }
         }
     }

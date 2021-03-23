@@ -146,7 +146,7 @@ namespace Capstones.UnityEditorEx
 #endif
         }
 
-        public static void ZipFolderNoCompress(string folder, string dest)
+        public static bool ZipFolderNoCompress(string folder, string dest)
         {
             if (System.IO.File.Exists(dest))
             {
@@ -160,7 +160,7 @@ namespace Capstones.UnityEditorEx
             si.FileName = System.IO.Path.GetFullPath(CapsModEditor.GetPackageOrModRoot(__MOD__)) + "/~Tools~/zip.exe";
 #endif
             si.Arguments = "-0 -r \"" + System.IO.Path.GetFullPath(dest) + "\" .";
-            ExecuteProcess(si);
+            return ExecuteProcess(si);
         }
 
         public static int __LINE__

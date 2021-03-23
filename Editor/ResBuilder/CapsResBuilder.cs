@@ -43,6 +43,41 @@ namespace Capstones.UnityEditorEx
             void OnSuccess();
         }
         public static readonly List<IResBuilderEx> ResBuilderEx = new List<IResBuilderEx>();
+        public abstract class BaseResBuilderEx<T> : IResBuilderEx where T : BaseResBuilderEx<T>, new()
+        {
+            public virtual void Cleanup()
+            {
+            }
+            public virtual bool CreateItem(CapsResManifestNode node)
+            {
+                return false;
+            }
+            public virtual string FormatBundleName(string asset, string mod, string dist, string norm)
+            {
+                return null;
+            }
+            public virtual void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
+            {
+            }
+            public virtual void ModifyItem(CapsResManifestItem item)
+            {
+            }
+            public virtual void OnSuccess()
+            {
+            }
+            public virtual void Prepare(string output)
+            {
+            }
+
+            protected static T _BuilderEx = new T();
+            protected struct HierarchicalInitializer
+            {
+                public HierarchicalInitializer(int preserved)
+                {
+                    ResBuilderEx.Add(_BuilderEx);
+                }
+            }
+        }
 
         private static readonly HashSet<string> _IgnoreFiles = new HashSet<string>()
         {
