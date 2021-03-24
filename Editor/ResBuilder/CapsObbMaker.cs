@@ -329,7 +329,25 @@ namespace Capstones.UnityEditorEx
         {
             if (System.IO.Directory.Exists("Assets/StreamingAssets"))
             {
-                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, null, false);
+                List<string> blacklist = null;
+                var blacklistfile = ResManager.EditorResLoader.CheckDistributePathSafe("~Config~/", "obb-except.txt");
+                if (blacklistfile != null)
+                {
+                    blacklist = new List<string>();
+                    using (var sr = PlatDependant.OpenReadText(blacklistfile))
+                    {
+                        string line;
+                        while ((line = sr.ReadLine()) != null)
+                        {
+                            if (line.Length > 0)
+                            {
+                                blacklist.Add(line);
+                            }
+                        }
+                    }
+                }
+
+                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, blacklist, false);
                 System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
                 System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
