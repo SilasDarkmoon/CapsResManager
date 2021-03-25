@@ -2657,11 +2657,19 @@ namespace Capstones.UnityEngineEx
                 }
                 else if (NumericTypes.Contains(obj.GetType()))
                 {
+#if CONVERT_ENUM_SAFELY
                     return (T)Enum.ToObject(type, (object)System.Convert.ToUInt64(obj));
+#else
+                    return EnumUtils.ConvertToEnumForcibly<T>(System.Convert.ToUInt64(obj));
+#endif
                 }
                 else if (obj is Enum)
                 {
+#if CONVERT_ENUM_SAFELY
                     return (T)System.Convert.ChangeType(System.Convert.ToUInt64(obj), type);
+#else
+                    return EnumUtils.ConvertToEnumForcibly<T>(System.Convert.ToUInt64(obj));
+#endif
                 }
                 else
                 {
