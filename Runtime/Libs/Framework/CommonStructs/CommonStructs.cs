@@ -1794,6 +1794,77 @@ namespace Capstones.UnityEngineEx
             return span[0];
 #endif
         }
+        public static T ConvertToEnum<T>(string str)
+        {
+            try
+            {
+                return (T)Enum.Parse(typeof(T), str);
+            }
+            catch
+            {
+                return default(T);
+            }
+        }
+
+        // Notice: below is very dangerouse, because of AOT compile.
+        private enum Enum8 : byte { }
+        private enum Enum16 : short { }
+        private enum Enum32 : int { }
+        private enum Enum64 : long { }
+        [UnityPreserve]
+        private static void AOTCompileEnumConverter()
+        {
+            {
+                var funcTo = EnumConverter<Enum8>.ConvertToEnum;
+                var funcFrom = EnumConverter<Enum8>.ConvertFromEnum;
+                funcTo = ConvertToEnum<Enum8>;
+                funcFrom = ConvertFromEnum<Enum8>;
+            }
+            {
+                var funcTo = EnumConverter<Enum16>.ConvertToEnum;
+                var funcFrom = EnumConverter<Enum16>.ConvertFromEnum;
+                funcTo = ConvertToEnum<Enum16>;
+                funcFrom = ConvertFromEnum<Enum16>;
+            }
+            {
+                var funcTo = EnumConverter<Enum32>.ConvertToEnum;
+                var funcFrom = EnumConverter<Enum32>.ConvertFromEnum;
+                funcTo = ConvertToEnum<Enum32>;
+                funcFrom = ConvertFromEnum<Enum32>;
+            }
+            {
+                var funcTo = EnumConverter<Enum64>.ConvertToEnum;
+                var funcFrom = EnumConverter<Enum64>.ConvertFromEnum;
+                funcTo = ConvertToEnum<Enum64>;
+                funcFrom = ConvertFromEnum<Enum64>;
+            }
+        }
+        internal static class EnumConverter<T>
+        {
+            public static readonly Func<ulong, T> ConvertToEnum;
+            public static readonly Func<T, ulong> ConvertFromEnum;
+
+            static EnumConverter()
+            {
+                Func<ulong, System.TypeCode> templateTo = ConvertToEnum<System.TypeCode>;
+                var templateToMethod = templateTo.Method;
+                var toMethod = templateToMethod.GetGenericMethodDefinition().MakeGenericMethod(typeof(T));
+                ConvertToEnum = (Func<ulong, T>)toMethod.CreateDelegate(typeof(Func<ulong, T>));
+
+                Func<System.TypeCode, ulong> templateFrom = ConvertFromEnum<System.TypeCode>;
+                var templateFromMethod = templateFrom.Method;
+                var fromMethod = templateFromMethod.GetGenericMethodDefinition().MakeGenericMethod(typeof(T));
+                ConvertFromEnum = (Func<T, ulong>)fromMethod.CreateDelegate(typeof(Func<T, ulong>));
+            }
+        }
+        public static T ConvertToEnumForcibly<T>(ulong val)
+        {
+            return EnumConverter<T>.ConvertToEnum(val);
+        }
+        public static ulong ConvertFromEnumForcibly<T>(T val)
+        {
+            return EnumConverter<T>.ConvertFromEnum(val);
+        }
     }
 
     public interface IConvertibleDictionary
@@ -1939,7 +2010,29 @@ namespace Capstones.UnityEngineEx
                     {
                         return (string)obj;
                     }
+                    else if (obj is byte[])
+                    {
+                        return System.Text.Encoding.UTF8.GetString(obj as byte[]);
+                    }
                     return obj.ToString();
+                })
+            },
+            { typeof(byte[]), new TypedConverter<byte[]>(
+                obj =>
+                {
+                    if (obj == null)
+                    {
+                        return null;
+                    }
+                    if (obj is byte[])
+                    {
+                        return (byte[])obj;
+                    }
+                    else if (obj is string)
+                    {
+                        return System.Text.Encoding.UTF8.GetBytes(obj as string);
+                    }
+                    return null;
                 })
             },
             { typeof(byte), new TypedConverter<byte>(
@@ -2560,7 +2653,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (obj is string)
                 {
-                    return (T)Enum.Parse(type, obj as string);
+                    return EnumUtils.ConvertToEnum<T>(obj as string);
                 }
                 else if (NumericTypes.Contains(obj.GetType()))
                 {
@@ -2643,6 +2736,310 @@ namespace Capstones.UnityEngineEx
             //    return (T)(object)obj.ToString();
             //}
             return default(T);
+        }
+
+        public abstract class TypedValueConverter
+        {
+            protected Type _FromType;
+            protected Type _ToType;
+        }
+        public class TypedValueConverter<F, T> : TypedValueConverter
+        {
+            public TypedValueConverter(Func<F, T> convFunc)
+            {
+                _FromType = typeof(F);
+                _ToType = typeof(T);
+                ConvertFunc = convFunc;
+            }
+            public Func<F, T> ConvertFunc;
+        }
+        public static readonly Dictionary<Pack<Type, Type>, TypedValueConverter> _TypedValueConverters = new Dictionary<Pack<Type, Type>, TypedValueConverter>()
+        {
+            { new Pack<Type, Type>(typeof(bool), typeof(bool)), new TypedValueConverter<bool, bool>(v => v) },
+            { new Pack<Type, Type>(typeof(bool), typeof(byte)), new TypedValueConverter<bool, byte>(v => v ? (byte)1 : (byte)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(sbyte)), new TypedValueConverter<bool, sbyte>(v => v ? (sbyte)1 : (sbyte)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(short)), new TypedValueConverter<bool, short>(v => v ? (short)1 : (short)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(ushort)), new TypedValueConverter<bool, ushort>(v => v ? (ushort)1 : (ushort)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(int)), new TypedValueConverter<bool, int>(v => v ? 1 : 0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(uint)), new TypedValueConverter<bool, uint>(v => v ? 1U : 0U) },
+            { new Pack<Type, Type>(typeof(bool), typeof(long)), new TypedValueConverter<bool, long>(v => v ? 1L : 0L) },
+            { new Pack<Type, Type>(typeof(bool), typeof(ulong)), new TypedValueConverter<bool, ulong>(v => v ? 1UL : 0UL) },
+            { new Pack<Type, Type>(typeof(bool), typeof(IntPtr)), new TypedValueConverter<bool, IntPtr>(v => v ? (IntPtr)1 : (IntPtr)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(UIntPtr)), new TypedValueConverter<bool, UIntPtr>(v => v ? (UIntPtr)1 : (UIntPtr)0) },
+            { new Pack<Type, Type>(typeof(bool), typeof(float)), new TypedValueConverter<bool, float>(v => v ? 1f : 0f) },
+            { new Pack<Type, Type>(typeof(bool), typeof(double)), new TypedValueConverter<bool, double>(v => v ? 1.0 : 0.0) },
+
+            { new Pack<Type, Type>(typeof(byte), typeof(bool)), new TypedValueConverter<byte, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(byte), typeof(byte)), new TypedValueConverter<byte, byte>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(sbyte)), new TypedValueConverter<byte, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(short)), new TypedValueConverter<byte, short>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(ushort)), new TypedValueConverter<byte, ushort>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(int)), new TypedValueConverter<byte, int>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(uint)), new TypedValueConverter<byte, uint>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(long)), new TypedValueConverter<byte, long>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(ulong)), new TypedValueConverter<byte, ulong>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(IntPtr)), new TypedValueConverter<byte, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(UIntPtr)), new TypedValueConverter<byte, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(float)), new TypedValueConverter<byte, float>(v => v) },
+            { new Pack<Type, Type>(typeof(byte), typeof(double)), new TypedValueConverter<byte, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(sbyte), typeof(bool)), new TypedValueConverter<sbyte, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(byte)), new TypedValueConverter<sbyte, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(sbyte)), new TypedValueConverter<sbyte, sbyte>(v => v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(short)), new TypedValueConverter<sbyte, short>(v => v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(ushort)), new TypedValueConverter<sbyte, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(int)), new TypedValueConverter<sbyte, int>(v => v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(uint)), new TypedValueConverter<sbyte, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(long)), new TypedValueConverter<sbyte, long>(v => v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(ulong)), new TypedValueConverter<sbyte, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(IntPtr)), new TypedValueConverter<sbyte, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(UIntPtr)), new TypedValueConverter<sbyte, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(float)), new TypedValueConverter<sbyte, float>(v => v) },
+            { new Pack<Type, Type>(typeof(sbyte), typeof(double)), new TypedValueConverter<sbyte, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(short), typeof(bool)), new TypedValueConverter<short, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(short), typeof(byte)), new TypedValueConverter<short, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(sbyte)), new TypedValueConverter<short, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(short)), new TypedValueConverter<short, short>(v => v) },
+            { new Pack<Type, Type>(typeof(short), typeof(ushort)), new TypedValueConverter<short, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(int)), new TypedValueConverter<short, int>(v => v) },
+            { new Pack<Type, Type>(typeof(short), typeof(uint)), new TypedValueConverter<short, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(long)), new TypedValueConverter<short, long>(v => v) },
+            { new Pack<Type, Type>(typeof(short), typeof(ulong)), new TypedValueConverter<short, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(IntPtr)), new TypedValueConverter<short, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(UIntPtr)), new TypedValueConverter<short, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(short), typeof(float)), new TypedValueConverter<short, float>(v => v) },
+            { new Pack<Type, Type>(typeof(short), typeof(double)), new TypedValueConverter<short, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(ushort), typeof(bool)), new TypedValueConverter<ushort, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(byte)), new TypedValueConverter<ushort, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(sbyte)), new TypedValueConverter<ushort, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(short)), new TypedValueConverter<ushort, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(ushort)), new TypedValueConverter<ushort, ushort>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(int)), new TypedValueConverter<ushort, int>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(uint)), new TypedValueConverter<ushort, uint>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(long)), new TypedValueConverter<ushort, long>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(ulong)), new TypedValueConverter<ushort, ulong>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(IntPtr)), new TypedValueConverter<ushort, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(UIntPtr)), new TypedValueConverter<ushort, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(float)), new TypedValueConverter<ushort, float>(v => v) },
+            { new Pack<Type, Type>(typeof(ushort), typeof(double)), new TypedValueConverter<ushort, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(int), typeof(bool)), new TypedValueConverter<int, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(int), typeof(byte)), new TypedValueConverter<int, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(sbyte)), new TypedValueConverter<int, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(short)), new TypedValueConverter<int, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(ushort)), new TypedValueConverter<int, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(int)), new TypedValueConverter<int, int>(v => v) },
+            { new Pack<Type, Type>(typeof(int), typeof(uint)), new TypedValueConverter<int, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(long)), new TypedValueConverter<int, long>(v => v) },
+            { new Pack<Type, Type>(typeof(int), typeof(ulong)), new TypedValueConverter<int, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(IntPtr)), new TypedValueConverter<int, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(UIntPtr)), new TypedValueConverter<int, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(int), typeof(float)), new TypedValueConverter<int, float>(v => v) },
+            { new Pack<Type, Type>(typeof(int), typeof(double)), new TypedValueConverter<int, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(uint), typeof(bool)), new TypedValueConverter<uint, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(uint), typeof(byte)), new TypedValueConverter<uint, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(sbyte)), new TypedValueConverter<uint, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(short)), new TypedValueConverter<uint, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(ushort)), new TypedValueConverter<uint, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(int)), new TypedValueConverter<uint, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(uint)), new TypedValueConverter<uint, uint>(v => v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(long)), new TypedValueConverter<uint, long>(v => v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(ulong)), new TypedValueConverter<uint, ulong>(v => v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(IntPtr)), new TypedValueConverter<uint, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(UIntPtr)), new TypedValueConverter<uint, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(float)), new TypedValueConverter<uint, float>(v => v) },
+            { new Pack<Type, Type>(typeof(uint), typeof(double)), new TypedValueConverter<uint, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(long), typeof(bool)), new TypedValueConverter<long, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(long), typeof(byte)), new TypedValueConverter<long, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(sbyte)), new TypedValueConverter<long, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(short)), new TypedValueConverter<long, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(ushort)), new TypedValueConverter<long, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(int)), new TypedValueConverter<long, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(uint)), new TypedValueConverter<long, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(long)), new TypedValueConverter<long, long>(v => v) },
+            { new Pack<Type, Type>(typeof(long), typeof(ulong)), new TypedValueConverter<long, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(IntPtr)), new TypedValueConverter<long, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(UIntPtr)), new TypedValueConverter<long, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(long), typeof(float)), new TypedValueConverter<long, float>(v => v) },
+            { new Pack<Type, Type>(typeof(long), typeof(double)), new TypedValueConverter<long, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(ulong), typeof(bool)), new TypedValueConverter<ulong, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(byte)), new TypedValueConverter<ulong, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(sbyte)), new TypedValueConverter<ulong, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(short)), new TypedValueConverter<ulong, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(ushort)), new TypedValueConverter<ulong, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(int)), new TypedValueConverter<ulong, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(uint)), new TypedValueConverter<ulong, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(long)), new TypedValueConverter<ulong, long>(v => (long)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(ulong)), new TypedValueConverter<ulong, ulong>(v => v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(IntPtr)), new TypedValueConverter<ulong, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(UIntPtr)), new TypedValueConverter<ulong, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(float)), new TypedValueConverter<ulong, float>(v => v) },
+            { new Pack<Type, Type>(typeof(ulong), typeof(double)), new TypedValueConverter<ulong, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(bool)), new TypedValueConverter<IntPtr, bool>(v => v != IntPtr.Zero) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(byte)), new TypedValueConverter<IntPtr, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(sbyte)), new TypedValueConverter<IntPtr, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(short)), new TypedValueConverter<IntPtr, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(ushort)), new TypedValueConverter<IntPtr, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(int)), new TypedValueConverter<IntPtr, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(uint)), new TypedValueConverter<IntPtr, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(long)), new TypedValueConverter<IntPtr, long>(v => (long)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(ulong)), new TypedValueConverter<IntPtr, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(IntPtr)), new TypedValueConverter<IntPtr, IntPtr>(v => v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(UIntPtr)), new TypedValueConverter<IntPtr, UIntPtr>(v => (UIntPtr)(ulong)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(float)), new TypedValueConverter<IntPtr, float>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(IntPtr), typeof(double)), new TypedValueConverter<IntPtr, double>(v => (ulong)v) },
+
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(bool)), new TypedValueConverter<UIntPtr, bool>(v => v != UIntPtr.Zero) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(byte)), new TypedValueConverter<UIntPtr, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(sbyte)), new TypedValueConverter<UIntPtr, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(short)), new TypedValueConverter<UIntPtr, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(ushort)), new TypedValueConverter<UIntPtr, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(int)), new TypedValueConverter<UIntPtr, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(uint)), new TypedValueConverter<UIntPtr, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(long)), new TypedValueConverter<UIntPtr, long>(v => (long)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(ulong)), new TypedValueConverter<UIntPtr, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(IntPtr)), new TypedValueConverter<UIntPtr, IntPtr>(v => (IntPtr)(ulong)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(UIntPtr)), new TypedValueConverter<UIntPtr, UIntPtr>(v => v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(float)), new TypedValueConverter<UIntPtr, float>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(UIntPtr), typeof(double)), new TypedValueConverter<UIntPtr, double>(v => (ulong)v) },
+
+            { new Pack<Type, Type>(typeof(float), typeof(bool)), new TypedValueConverter<float, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(float), typeof(byte)), new TypedValueConverter<float, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(sbyte)), new TypedValueConverter<float, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(short)), new TypedValueConverter<float, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(ushort)), new TypedValueConverter<float, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(int)), new TypedValueConverter<float, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(uint)), new TypedValueConverter<float, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(long)), new TypedValueConverter<float, long>(v => (long)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(ulong)), new TypedValueConverter<float, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(IntPtr)), new TypedValueConverter<float, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(UIntPtr)), new TypedValueConverter<float, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(float), typeof(float)), new TypedValueConverter<float, float>(v => v) },
+            { new Pack<Type, Type>(typeof(float), typeof(double)), new TypedValueConverter<float, double>(v => v) },
+
+            { new Pack<Type, Type>(typeof(double), typeof(bool)), new TypedValueConverter<double, bool>(v => v != 0) },
+            { new Pack<Type, Type>(typeof(double), typeof(byte)), new TypedValueConverter<double, byte>(v => (byte)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(sbyte)), new TypedValueConverter<double, sbyte>(v => (sbyte)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(short)), new TypedValueConverter<double, short>(v => (short)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(ushort)), new TypedValueConverter<double, ushort>(v => (ushort)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(int)), new TypedValueConverter<double, int>(v => (int)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(uint)), new TypedValueConverter<double, uint>(v => (uint)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(long)), new TypedValueConverter<double, long>(v => (long)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(ulong)), new TypedValueConverter<double, ulong>(v => (ulong)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(IntPtr)), new TypedValueConverter<double, IntPtr>(v => (IntPtr)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(UIntPtr)), new TypedValueConverter<double, UIntPtr>(v => (UIntPtr)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(float)), new TypedValueConverter<double, float>(v => (float)v) },
+            { new Pack<Type, Type>(typeof(double), typeof(double)), new TypedValueConverter<double, double>(v => v) },
+        };
+        internal static class FakeConverter<T>
+        {
+            public readonly static Func<T, T> Converter = v => v;
+        }
+        public static T FakeConvert<F, T>(F from)
+        {
+            Func<F, F> nonconverter = FakeConverter<F>.Converter;
+            Func<F, T> forciblyconverter = (Func<F, T>)(Delegate)nonconverter;
+            return forciblyconverter(from);
+        }
+        public static bool Convert<F, T>(this F from, out T to)
+        {
+            var ftype = typeof(F);
+            var ttype = typeof(T);
+            if (ftype == ttype)
+            {
+                to = FakeConvert<F, T>(from);
+                return true;
+            }
+            if (ttype.IsEnum())
+            {
+                if (ftype == typeof(string) || ftype == typeof(byte[]))
+                {
+                    string str;
+                    if (ftype == typeof(byte[]))
+                    {
+                        str = System.Text.Encoding.UTF8.GetString((byte[])(object)from);
+                    }
+                    else
+                    {
+                        str = (string)(object)from;
+                    }
+                    try
+                    {
+                        to = (T)Enum.Parse(typeof(T), str);
+                        return true;
+                    }
+                    catch
+                    {
+                        to = default(T);
+                        return false;
+                    }
+                }
+                else
+                {
+                    ulong val;
+                    if (Convert<F, ulong>(from, out val))
+                    {
+#if CONVERT_ENUM_SAFELY
+                        to = (T)Enum.ToObject(typeof(T), val);
+#else
+                        to = EnumUtils.ConvertToEnumForcibly<T>(val);
+#endif
+                        return true;
+                    }
+                    else
+                    {
+                        to = default(T);
+                        return false;
+                    }
+                }
+            }
+            if (ftype.IsValueType && ttype.IsValueType)
+            {
+                TypedValueConverter converter;
+                if (_TypedValueConverters.TryGetValue(new Pack<Type, Type>(ftype, ttype), out converter))
+                {
+                    var valueconverter = converter as TypedValueConverter<F, T>;
+                    to = valueconverter.ConvertFunc(from);
+                    return true;
+                }
+            }
+            // the non-generic logic
+            {
+                TypedConverter converter;
+                if (_TypedConverters.TryGetValue(typeof(T), out converter))
+                {
+                    TypedConverter<T> tconverter = converter as TypedConverter<T>;
+                    if (tconverter != null)
+                    {
+                        to = tconverter.Convert(from);
+                        return true;
+                    }
+                }
+                if (from == null)
+                {
+                    to = default(T);
+                    return false;
+                }
+                if (from is T)
+                {
+                    to = (T)(object)from;
+                    return true;
+                }
+            }
+            to = default(T);
+            return false;
+        }
+        public static T Convert<F, T>(F from)
+        {
+            T rv;
+            Convert<F, T>(from, out rv);
+            return rv;
         }
     }
 
