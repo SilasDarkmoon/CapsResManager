@@ -1806,7 +1806,6 @@ namespace Capstones.UnityEngineEx
             }
         }
 
-        // Notice: below is very dangerouse, because of AOT compile.
         private enum Enum8 : byte { }
         private enum Enum16 : short { }
         private enum Enum32 : int { }
