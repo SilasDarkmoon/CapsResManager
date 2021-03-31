@@ -141,21 +141,29 @@ namespace Capstones.UnityEditorEx
                 }
                 else
                 {
-                    var type = AssetDatabase.GetMainAssetTypeAtPath(asset);
-                    if (type != null
-                        //&& type.Assembly.FullName != "Assembly-CSharp-firstpass"
-                        //&& type.Assembly.FullName != "Assembly-CSharp"
-                        && type.IsSubclassOf(typeof(ScriptableObject)))
+                    string assettype, assetmod, assetdist;
+                    ResManager.GetAssetNormPath(asset, out assettype, out assetmod, out assetdist);
+                    if (assettype == "res")
                     {
-                        try
+                        var type = AssetDatabase.GetMainAssetTypeAtPath(asset);
+                        if (type != null
+                            //&& type.Assembly.FullName != "Assembly-CSharp-firstpass"
+                            //&& type.Assembly.FullName != "Assembly-CSharp"
+                            && type.IsSubclassOf(typeof(ScriptableObject)))
                         {
-                            var phso = ScriptableObject.CreateInstance(type);
-                            var target = soroot + type.Name + ".asset";
-                            AssetDatabase.CreateAsset(phso, target);
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.LogException(e);
+                            if (compTypes.Add(type))
+                            {
+                                try
+                                {
+                                    var phso = ScriptableObject.CreateInstance(type);
+                                    var target = soroot + "PH_" + type.Name + ".asset";
+                                    AssetDatabase.CreateAsset(phso, target);
+                                }
+                                catch (Exception e)
+                                {
+                                    Debug.LogException(e);
+                                }
+                            }
                         }
                     }
                 }
