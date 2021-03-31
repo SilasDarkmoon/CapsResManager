@@ -1794,16 +1794,17 @@ namespace Capstones.UnityEngineEx
             return span[0];
 #endif
         }
-        public static T ConvertToEnum<T>(string str)
+        public static bool TryConvertStrToEnum<T>(this string str, out T val)
         {
-            try
-            {
-                return (T)Enum.Parse(typeof(T), str);
-            }
-            catch
-            {
-                return default(T);
-            }
+            return EnumConverter<T>.TryConvertStrToEnum(str, out val);
+        }
+        public static T ConvertStrToEnum<T>(this string str)
+        {
+            return EnumConverter<T>.ConvertStrToEnum(str);
+        }
+        public static string ConvertEnumToStr<T>(this T val)
+        {
+            return EnumConverter<T>.ConvertEnumToStr(val);
         }
 
         private enum Enum8 : byte { }
@@ -1842,6 +1843,8 @@ namespace Capstones.UnityEngineEx
         {
             public static readonly Func<ulong, T> ConvertToEnum;
             public static readonly Func<T, ulong> ConvertFromEnum;
+            private static readonly Dictionary<T, string> _EnumToNameCache = new Dictionary<T, string>();
+            private static readonly Dictionary<string, T> _NameToEnumCache = new Dictionary<string, T>();
 
             static EnumConverter()
             {
@@ -1855,6 +1858,47 @@ namespace Capstones.UnityEngineEx
                 var fromMethod = templateFromMethod.GetGenericMethodDefinition().MakeGenericMethod(typeof(T));
                 ConvertFromEnum = (Func<T, ulong>)fromMethod.CreateDelegate(typeof(Func<T, ulong>));
             }
+
+            public static T ConvertStrToEnum(string str)
+            {
+                T val;
+                TryConvertStrToEnum(str, out val);
+                return val;
+            }
+            public static bool TryConvertStrToEnum(string str, out T val)
+            {
+                if (string.IsNullOrEmpty(str))
+                {
+                    val = default(T);
+                    return false;
+                }
+                if (!_NameToEnumCache.TryGetValue(str, out val))
+                {
+                    try
+                    {
+                        val = (T)Enum.Parse(typeof(T), str);
+                    }
+                    catch
+                    {
+                        val = default(T);
+                        return false;
+                    }
+                    _NameToEnumCache[str] = val;
+                    _EnumToNameCache[val] = str;
+                }
+                return true;
+            }
+            public static string ConvertEnumToStr(T val)
+            {
+                string name;
+                if (!_EnumToNameCache.TryGetValue(val, out name))
+                {
+                    name = val.ToString();
+                    _EnumToNameCache[val] = name;
+                    _NameToEnumCache[name] = val;
+                }
+                return name;
+            }
         }
         public static T ConvertToEnumForcibly<T>(ulong val)
         {
@@ -1865,7 +1909,6 @@ namespace Capstones.UnityEngineEx
             return EnumConverter<T>.ConvertFromEnum(val);
         }
     }
-
     public interface IConvertibleDictionary
     {
         T Get<T>(string key);
@@ -2652,7 +2695,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (obj is string)
                 {
-                    return EnumUtils.ConvertToEnum<T>(obj as string);
+                    return EnumUtils.ConvertStrToEnum<T>(obj as string);
                 }
                 else if (NumericTypes.Contains(obj.GetType()))
                 {
@@ -2976,16 +3019,7 @@ namespace Capstones.UnityEngineEx
                     {
                         str = (string)(object)from;
                     }
-                    try
-                    {
-                        to = (T)Enum.Parse(typeof(T), str);
-                        return true;
-                    }
-                    catch
-                    {
-                        to = default(T);
-                        return false;
-                    }
+                    return EnumUtils.TryConvertStrToEnum<T>(str, out to);
                 }
                 else
                 {
@@ -3006,7 +3040,34 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            if (ftype.IsValueType && ttype.IsValueType)
+            else if (ftype.IsEnum())
+            {
+                if (ttype == typeof(string) || ttype == typeof(byte[]))
+                {
+                    string str = EnumUtils.ConvertEnumToStr(from);
+                    if (ttype == typeof(string))
+                    {
+                        to = (T)(object)str;
+                        return true;
+                    }
+                    else
+                    {
+                        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(str);
+                        to = (T)(object)bytes;
+                        return true;
+                    }
+                }
+                else
+                {
+#if CONVERT_ENUM_SAFELY
+                    ulong val = System.Convert.ToUInt64(from);
+#else
+                    ulong val = EnumUtils.ConvertFromEnumForcibly(from);
+#endif
+                    return Convert<ulong, T>(val, out to);
+                }
+            }
+            else if (ftype.IsValueType && ttype.IsValueType)
             {
                 TypedValueConverter converter;
                 if (_TypedValueConverters.TryGetValue(new Pack<Type, Type>(ftype, ttype), out converter))
