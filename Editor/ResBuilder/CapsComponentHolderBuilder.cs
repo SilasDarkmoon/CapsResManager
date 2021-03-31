@@ -50,6 +50,7 @@ namespace Capstones.UnityEditorEx
                 if (old)
                 {
                     tgo = GameObject.Instantiate(old);
+                    DeleteMissingReference(tgo);
                     var oldcomps = tgo.GetComponentsInChildren(typeof(Component), true);
                     for (int i = 0; i < oldcomps.Length; ++i)
                     {
@@ -218,6 +219,24 @@ namespace Capstones.UnityEditorEx
             }
             SafeAddMissingComponent(go, compt);
             compTypes.Add(compt);
+        }
+        private static bool DeleteMissingReference(GameObject root)
+        {
+            //if (PrefabUtility.GetPrefabInstanceStatus(root) != PrefabInstanceStatus.NotAPrefab)
+            //{
+            //    return false;
+            //}
+
+            bool changed = GameObjectUtility.RemoveMonoBehavioursWithMissingScript(root) > 0;
+
+            var roottrans = root.transform;
+            for (int i = 0; i < roottrans.childCount; ++i)
+            {
+                var child = roottrans.GetChild(i);
+                changed |= DeleteMissingReference(child.gameObject);
+            }
+
+            return changed;
         }
     }
 
