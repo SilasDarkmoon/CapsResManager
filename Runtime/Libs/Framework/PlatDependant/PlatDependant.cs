@@ -505,7 +505,7 @@ namespace Capstones.UnityEngineEx
 #endif
             }
         }
-#endregion
+        #endregion
 
         public static event Action PreQuitting = () => { };
         public static event Action Quitting = () => { };
@@ -716,6 +716,65 @@ namespace Capstones.UnityEngineEx
 #else
             return del.Method;
 #endif
+        }
+
+        private readonly static char[] _FolderSeparators = new[] { '\\', '/' };
+        public static string GetRelativePath(string relativeTo, string path)
+        {
+            var fullrel = System.IO.Path.GetFullPath(relativeTo);
+            var fullpath = System.IO.Path.GetFullPath(path);
+            var partsrel = fullrel.Split(_FolderSeparators, StringSplitOptions.RemoveEmptyEntries);
+            var partspath = fullpath.Split(_FolderSeparators, StringSplitOptions.RemoveEmptyEntries);
+
+            int diffindex = 0;
+            for (; diffindex < partsrel.Length && diffindex < partspath.Length; ++diffindex)
+            {
+                var partrel = partsrel[diffindex];
+                var partpath = partspath[diffindex];
+                if (!string.Equals(partrel, partpath, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    break;
+                }
+            }
+            if (diffindex == 0)
+            {
+                // totally different.
+                return fullpath;
+            }
+            else
+            {
+                System.Text.StringBuilder sb = new StringBuilder();
+                if (diffindex == partsrel.Length)
+                {
+                    // fully based on relativeTo
+                    sb.Append(".");
+                }
+                else
+                {
+                    for (int i = diffindex; i < partsrel.Length; ++i)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append("/");
+                        }
+                        sb.Append("..");
+                    }
+                }
+
+                if (diffindex == partspath.Length)
+                {
+                    // path is a part of relativeTo
+                }
+                else
+                {
+                    for (int i = diffindex; i < partspath.Length; ++i)
+                    {
+                        sb.Append("/");
+                        sb.Append(partspath[i]);
+                    }
+                }
+                return sb.ToString();
+            }
         }
 
         public static byte[] ReadAllBytes(this string path)

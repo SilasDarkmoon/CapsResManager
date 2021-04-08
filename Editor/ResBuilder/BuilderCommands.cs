@@ -22,5 +22,16 @@ namespace Capstones.UnityEditorEx
             while (work.MoveNext()) ;
             CapsResBuilder.BuildingParams = null;
         }
+
+        #region Test
+        [MenuItem("Test/Res/Create Icon", priority = 500010)]
+        public static void TestCreateIcon()
+        {
+            IconMaker.WriteTextToImage(Random.Range(0, 1000).ToString(), "EditorOutput/temp.png");
+            IconMaker.ChangeImageToIco("EditorOutput/temp.png", null);
+            System.IO.Directory.CreateDirectory("EditorOutput/testfolder");
+            IconMaker.SetFolderIcon("EditorOutput/testfolder", "EditorOutput/temp.ico");
+        }
+        #endregion
     }
 }

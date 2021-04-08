@@ -130,6 +130,14 @@ namespace Capstones.UnityEngineEx
         public uint InitValue { get { return _Init; } }
         public int CrcLength { get { return _PolyLen; } }
 
+        public static bool IsPOT(uint n)
+        {
+            return n != 0 && ((n & (n - 1)) == 0);
+        }
+        public static bool IsPOT(ulong n)
+        {
+            return n != 0 && ((n & (n - 1)) == 0);
+        }
         public static uint GetNearestPOT(uint num)
         {
             num -= 1;
