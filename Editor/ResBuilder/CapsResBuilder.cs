@@ -934,6 +934,9 @@ namespace Capstones.UnityEditorEx
                     var outverdir = outputDir + "/res/version.txt";
                     int version = GetResVersion();
                     System.IO.File.WriteAllText(outverdir, version.ToString());
+                    // Make icon
+                    IconMaker.SetFolderIconToText(outputDir, version.ToString());
+                    IconMaker.SetFolderIconToText(outputDir + "/res", version.ToString());
                 }
 
                 logger.Log("(Phase) Copy.");
@@ -1106,6 +1109,9 @@ namespace Capstones.UnityEditorEx
                             }
                         }
                     }
+
+                    // Make icon
+                    IconMaker.SetFolderIconToFileContent("EditorOutput/Build/" + timetoken, outputDir + "/res/version.txt");
                 }
 
                 for (int i = 0; i < allExBuilders.Count; ++i)

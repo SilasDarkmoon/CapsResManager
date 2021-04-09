@@ -140,11 +140,15 @@ namespace Capstones.UnityEditorEx
                 System.IO.File.SetAttributes(
                     iniPath,
                     System.IO.File.GetAttributes(iniPath) | System.IO.FileAttributes.Hidden | System.IO.FileAttributes.System);
+                //set the folder as system -- without system attribute, windows will not apply desktop.ini of this folder.
+                System.IO.File.SetAttributes(
+                    folder,
+                    System.IO.File.GetAttributes(folder) | System.IO.FileAttributes.System);
 
+                // make the icon change instantly refreshed.
                 //var hstr = System.Runtime.InteropServices.Marshal.StringToHGlobalUni(System.IO.Path.GetFullPath(folder));
                 //SHChangeNotify(0x00002000 /*SHCNE_UPDATEITEM*/, 0x0005 /*SHCNF_PATH*/, hstr, IntPtr.Zero);
                 //System.Runtime.InteropServices.Marshal.FreeHGlobal(hstr);
-
                 var si = new System.Diagnostics.ProcessStartInfo("ie4uinit", "-ClearIconCache");
                 CapsEditorUtils.ExecuteProcess(si);
                 si = new System.Diagnostics.ProcessStartInfo("ie4uinit", "-show");
@@ -156,6 +160,45 @@ namespace Capstones.UnityEditorEx
                 return false;
             }
             return true;
+        }
+
+        public static bool SetFolderIconToText(string folder, string text)
+        {
+            var iconimg = System.IO.Path.Combine(folder, "icon.png");
+            var iconico = System.IO.Path.Combine(folder, "icon.ico");
+            if (IconMaker.WriteTextToImage(text, iconimg))
+            {
+                if (IconMaker.ChangeImageToIco(iconimg, null))
+                {
+                    return IconMaker.SetFolderIcon(folder, iconico);
+                }
+                else
+                {
+                    return IconMaker.SetFolderIcon(folder, iconimg);
+                }
+            }
+            return false;
+        }
+        public static bool SetFolderIconToFileContent(string folder, string file)
+        {
+            if (!System.IO.File.Exists(file))
+            {
+                return false;
+            }
+            string content;
+            try
+            {
+                content = System.IO.File.ReadAllText(file);
+                if (!string.IsNullOrEmpty(content))
+                {
+                    SetFolderIconToText(folder, content);
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+            return false;
         }
     }
 }
