@@ -1396,7 +1396,7 @@ namespace Capstones.UnityEngineEx
     }
     #endregion
 
-    public struct ValueList<T> : IList<T>
+    public struct ValueList<T> : IList<T>, IEquatable<ValueList<T>>
     {
         private T t0;
         private T t1;
@@ -1718,17 +1718,25 @@ namespace Capstones.UnityEngineEx
             }
             return false;
         }
+        private static IEqualityComparer<T> _Comparer = EqualityComparer<T>.Default;
+        public bool Equals(ValueList<T> other)
+        {
+            if (other._cnt == _cnt)
+            {
+                for (int i = 0; i < _cnt; ++i)
+                {
+                    if (!_Comparer.Equals(this[i], other[i]))
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
         internal static bool OpEquals(ValueList<T> source, ValueList<T> other)
         {
-            if (!object.ReferenceEquals(source, null))
-            {
-                return source.Equals(other);
-            }
-            else if (!object.ReferenceEquals(other, null))
-            {
-                return other.Equals(source);
-            }
-            return true;
+            return source.Equals(other);
         }
         public static bool operator ==(ValueList<T> source, ValueList<T> other)
         {
