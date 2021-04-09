@@ -28,9 +28,15 @@ namespace Capstones.UnityEditorEx
         public static void TestCreateIcon()
         {
             IconMaker.WriteTextToImage(Random.Range(0, 1000).ToString(), "EditorOutput/temp.png");
-            IconMaker.ChangeImageToIco("EditorOutput/temp.png", null);
             System.IO.Directory.CreateDirectory("EditorOutput/testfolder");
-            IconMaker.SetFolderIcon("EditorOutput/testfolder", "EditorOutput/temp.ico");
+            if (IconMaker.ChangeImageToIco("EditorOutput/temp.png", null))
+            {
+                IconMaker.SetFolderIcon("EditorOutput/testfolder", "EditorOutput/temp.ico");
+            }
+            else
+            {
+                IconMaker.SetFolderIcon("EditorOutput/testfolder", "EditorOutput/temp.png");
+            }
         }
         #endregion
     }

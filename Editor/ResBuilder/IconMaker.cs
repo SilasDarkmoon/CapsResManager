@@ -113,6 +113,7 @@ namespace Capstones.UnityEditorEx
                 return false;
             }
 
+#if UNITY_EDITOR_WIN
             try
             {
                 var iniPath = System.IO.Path.Combine(folder, "desktop.ini");
@@ -160,6 +161,22 @@ namespace Capstones.UnityEditorEx
                 return false;
             }
             return true;
+#elif UNITY_EDITOR_OSX
+            try
+            {
+                var si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = System.IO.Path.GetFullPath(CapsModEditor.GetPackageOrModRoot(CapsEditorUtils.__MOD__)) + "/~Tools~/fileicon";
+                si.Arguments = "set \"" + folder + "\" \"" + icopath + "\"";
+                return CapsEditorUtils.ExecuteProcess(si);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+                return false;
+            }
+#else
+            return false;
+#endif
         }
 
         public static bool SetFolderIconToText(string folder, string text)
