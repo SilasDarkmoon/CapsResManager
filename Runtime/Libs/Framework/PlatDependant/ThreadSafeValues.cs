@@ -41,10 +41,17 @@ namespace Capstones.UnityEngineEx
 #else
             _cached_Application_platform = "DotNet";
 #endif
+#if USE_CURRENT_FOLDER_AS_DATAPATH
+            _cached_Application_streamingAssetsPath = "./streaming";
+            _cached_Application_temporaryCachePath = "./cache";
+            _cached_Application_persistentDataPath = "./runtime";
+            _cached_Application_dataPath = ".";
+#else
             _cached_Application_streamingAssetsPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "streaming");
             _cached_Application_temporaryCachePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
             _cached_Application_persistentDataPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime");
             _cached_Application_dataPath = AppDomain.CurrentDomain.BaseDirectory;
+#endif
             _cached_AppVerName = typeof(ThreadSafeValues).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;

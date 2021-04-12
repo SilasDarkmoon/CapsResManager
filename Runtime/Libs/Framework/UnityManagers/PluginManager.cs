@@ -89,11 +89,11 @@ namespace Capstones.UnityEngineEx
             PlatDependant.Quitting += UnloadAllLibs;
         }
 
-        public static void LoadLib(string lib)
+        public static void LoadLib(string libname)
         {
-            if (!string.IsNullOrEmpty(lib))
+            if (!string.IsNullOrEmpty(libname))
             {
-                _LoadedLibs.GetOrAdd(lib, lib =>
+                _LoadedLibs.GetOrAdd(libname, lib =>
                 {
                     var info = new LibEntryPointInfo();
 
@@ -138,7 +138,7 @@ namespace Capstones.UnityEngineEx
                     }
                     return info;
                 });
-                _LoadedLibsSeq.Push(lib);
+                _LoadedLibsSeq.Push(libname);
             }
         }
         public static void UnloadLib(string lib)

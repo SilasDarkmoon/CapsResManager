@@ -50,11 +50,16 @@ namespace Capstones.UnityEngineEx
                     }
 #endif
 #else
-                    if (PlatDependant.IsFileExist("./DistributeFlags.txt"))
+#if USE_CURRENT_FOLDER_AS_DATAPATH
+                    string dflagfile = "./DistributeFlags.txt";
+#else
+                    string dflagfile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DistributeFlags.txt");
+#endif
+                    if (PlatDependant.IsFileExist(dflagfile))
                     {
                         try
                         {
-                            var strflags = System.IO.File.ReadAllText("./DistributeFlags.txt");
+                            var strflags = System.IO.File.ReadAllText(dflagfile);
                             if (!string.IsNullOrEmpty(strflags))
                             {
                                 var cflags = strflags.Split(new[] { '<' }, System.StringSplitOptions.RemoveEmptyEntries);

@@ -39,8 +39,13 @@ namespace Capstones.UnityEngineEx
                     var file = Application.persistentDataPath + "/iid.txt";
                     var fileh = Application.persistentDataPath + "/iidh.txt";
 #else
+#if USE_CURRENT_FOLDER_AS_DATAPATH
                     var file = "./runtime/iid.txt";
                     var fileh = "./runtime/iidh.txt";
+#else
+                    var file = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iid.txt");
+                    var fileh = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iidh.txt");
+#endif
 #endif
                     if (PlatDependant.IsFileExist(fileh))
                     {
@@ -120,7 +125,11 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                     var file = Application.persistentDataPath + "/iid.txt";
 #else
+#if USE_CURRENT_FOLDER_AS_DATAPATH
                     var file = "./runtime/iid.txt";
+#else
+                    var file = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iid.txt");
+#endif
 #endif
                     int instanceid = 0;
                     if (PlatDependant.IsFileExist(file))
@@ -461,11 +470,19 @@ namespace Capstones.UnityEngineEx
 #else
             if (_InstanceHolder.InstanceID == 0)
             {
+#if USE_CURRENT_FOLDER_AS_DATAPATH
                 return "./cache";
+#else
+                return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
+#endif
             }
             else
             {
+#if USE_CURRENT_FOLDER_AS_DATAPATH
                 return "./cache/instance" + _InstanceHolder.InstanceID.ToString();
+#else
+                return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache/instance" + _InstanceHolder.InstanceID.ToString());
+#endif
             }
 #endif
         }
@@ -481,7 +498,11 @@ namespace Capstones.UnityEngineEx
 #elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
             return UnityEngine.Application.temporaryCachePath;
 #else
+#if USE_CURRENT_FOLDER_AS_DATAPATH
             return "./cache";
+#else
+            return System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
+#endif
 #endif
         }
 
