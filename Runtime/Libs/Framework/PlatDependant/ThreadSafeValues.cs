@@ -52,6 +52,14 @@ namespace Capstones.UnityEngineEx
             _cached_Application_persistentDataPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime");
             _cached_Application_dataPath = AppDomain.CurrentDomain.BaseDirectory;
 #endif
+            if (ResManager.IsInUnityFolder)
+            {
+                _cached_Application_streamingAssetsPath = ResManager.UnityRoot + "/Assets/StreamingAssets";
+                _cached_Application_temporaryCachePath = ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/cache";
+                _cached_Application_persistentDataPath = ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/runtime";
+                _cached_Application_dataPath = ResManager.UnityRoot;
+            }
+
             _cached_AppVerName = typeof(ThreadSafeValues).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
             _cached_Capid = IsolatedPrefs.IsolatedID;
             _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;

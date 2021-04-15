@@ -55,6 +55,10 @@ namespace Capstones.UnityEngineEx
 #else
                     string dflagfile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DistributeFlags.txt");
 #endif
+                    if (IsInUnityFolder)
+                    {
+                        dflagfile = UnityRoot + "/Assets/Resources/DistributeFlags.txt";
+                    }
                     if (PlatDependant.IsFileExist(dflagfile))
                     {
                         try

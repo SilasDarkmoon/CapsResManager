@@ -1327,7 +1327,8 @@ namespace Capstones.UnityEngineEx
                     return false;
                 }
 
-                if (System.IO.Path.GetFullPath(src) == System.IO.Path.GetFullPath(dst))
+                if (string.Equals(System.IO.Path.GetFullPath(src), System.IO.Path.GetFullPath(dst), StringComparison.InvariantCultureIgnoreCase))
+                //if (System.IO.Path.GetFullPath(src) == System.IO.Path.GetFullPath(dst))
                 {
                     return true;
                 }

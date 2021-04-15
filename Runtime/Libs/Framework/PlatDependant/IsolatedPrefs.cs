@@ -46,6 +46,11 @@ namespace Capstones.UnityEngineEx
                     var file = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iid.txt");
                     var fileh = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iidh.txt");
 #endif
+                    if (ResManager.IsInUnityFolder)
+                    {
+                        file = ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/runtime/iid.txt";
+                        fileh = ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/runtime/iidh.txt";
+                    }
 #endif
                     if (PlatDependant.IsFileExist(fileh))
                     {
@@ -130,6 +135,10 @@ namespace Capstones.UnityEngineEx
 #else
                     var file = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/iid.txt");
 #endif
+                    if (ResManager.IsInUnityFolder)
+                    {
+                        file = ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/runtime/iid.txt";
+                    }
 #endif
                     int instanceid = 0;
                     if (PlatDependant.IsFileExist(file))
@@ -330,7 +339,15 @@ namespace Capstones.UnityEngineEx
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             string capidfile = "EditorOutput/Runtime/capid.txt";
 #else
+#if USE_CURRENT_FOLDER_AS_DATAPATH
             string capidfile = "./runtime/capid.txt";
+#else
+            string capidfile = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "runtime/capid.txt");
+#endif
+            if (ResManager.IsInUnityFolder)
+            {
+                capidfile = ResManager.UnityRoot + "/EditorOutput/Runtime/capid.txt";
+            }
 #endif
             if (PlatDependant.IsFileExist(capidfile))
             {
@@ -470,6 +487,10 @@ namespace Capstones.UnityEngineEx
 #else
             if (_InstanceHolder.InstanceID == 0)
             {
+                if (ResManager.IsInUnityFolder)
+                {
+                    return ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/instance0";
+                }
 #if USE_CURRENT_FOLDER_AS_DATAPATH
                 return "./cache";
 #else
@@ -478,6 +499,10 @@ namespace Capstones.UnityEngineEx
             }
             else
             {
+                if (ResManager.IsInUnityFolder)
+                {
+                    return ResManager.UnityRoot + "/EditorOutput/CapsLuaStandalone/instance" + _InstanceHolder.InstanceID.ToString();
+                }
 #if USE_CURRENT_FOLDER_AS_DATAPATH
                 return "./cache/instance" + _InstanceHolder.InstanceID.ToString();
 #else
@@ -498,6 +523,10 @@ namespace Capstones.UnityEngineEx
 #elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
             return UnityEngine.Application.temporaryCachePath;
 #else
+            if (ResManager.IsInUnityFolder)
+            {
+                return ResManager.UnityRoot + "/EditorOutput/Runtime";
+            }
 #if USE_CURRENT_FOLDER_AS_DATAPATH
             return "./cache";
 #else
