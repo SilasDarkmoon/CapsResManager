@@ -744,7 +744,7 @@ namespace Capstones.UnityEngineEx
                             if (ai != null)
                             {
                                 var bundles = ai.DepBundles;
-                                if (bundles == null || !bundles[bundles.Count - 1].Permanent)
+                                if (bundles == null || (bundles.Count > 0 && !bundles[bundles.Count - 1].Permanent))
                                 {
                                     ai.Unload();
                                 }
