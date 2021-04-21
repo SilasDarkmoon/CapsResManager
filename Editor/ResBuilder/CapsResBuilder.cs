@@ -952,6 +952,14 @@ namespace Capstones.UnityEditorEx
                         PlatDependant.DeleteFile(allexistfiles[i]);
                     }
                 }
+                HashSet<string> nocopyfiles = new HashSet<string>()
+                {
+                    "mani/mani",
+                    "icon.png",
+                    "icon.ico",
+                    "desktop.ini",
+                    "Icon?",
+                };
                 for (int i = 0; i < allbuildfiles.Length; ++i)
                 {
                     if (winprog != null && AsyncWorkTimer.Check()) yield return null;
@@ -961,7 +969,7 @@ namespace Capstones.UnityEditorEx
                         continue;
                     }
                     var part = srcfile.Substring(outresdir.Length);
-                    if (part == "mani/mani")
+                    if (nocopyfiles.Contains(part))
                     {
                         continue;
                     }
