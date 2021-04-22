@@ -958,7 +958,7 @@ namespace Capstones.UnityEditorEx
                     "icon.png",
                     "icon.ico",
                     "desktop.ini",
-                    "Icon?",
+                    "Icon\r",
                 };
                 for (int i = 0; i < allbuildfiles.Length; ++i)
                 {
