@@ -144,6 +144,17 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
+            private class RuntimeCachePostprocessor : UnityEditor.AssetPostprocessor
+            {
+                public override int GetPostprocessOrder()
+                {
+                    return int.MinValue;
+                }
+                private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+                {
+                    RebuildRuntimeResCache();
+                }
+            }
             private static RuntimeCache _RuntimeCache = new RuntimeCache();
             public static RuntimeCache ResRuntimeCache { get { return _RuntimeCache; } }
             public static void RebuildRuntimeResCache()
