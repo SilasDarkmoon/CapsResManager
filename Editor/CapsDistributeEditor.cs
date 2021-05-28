@@ -205,7 +205,6 @@ namespace Capstones.UnityEditorEx
                 }
                 SelectDistributeFlag(selflags[i], true);
             }
-            SaveDistributeFlags(configIndex);
         }
 
         void OnGUI()
