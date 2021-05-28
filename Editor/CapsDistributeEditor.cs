@@ -181,7 +181,32 @@ namespace Capstones.UnityEditorEx
         public Dictionary<string, bool> DistributeFlags = new Dictionary<string, bool>();
         public LinkedList<string> DistributeFlagOrder = new LinkedList<string>();
 
+        string[] OptionConfigs = new string[] { "0", "1", "2", "3" };
+        int OptionConfigIndex = 0;
+
         public Vector2 offset1, offset2;
+
+        private void RefreshConfig(string config, int configIndex)
+        {
+            DistributeFlags = new Dictionary<string, bool>();
+            DistributeFlagOrder = new LinkedList<string>();
+
+            var allflags = CapsDistributeEditor.GetOptionalDistributes();
+            for (int i = 0; i < allflags.Length; ++i)
+            {
+                DistributeFlags[allflags[i]] = false;
+            }
+            var selflags = config.Split('<');
+            for (int i = 0; i < selflags.Length; ++i)
+            {
+                if (string.IsNullOrEmpty(selflags[i]))
+                {
+                    continue;
+                }
+                SelectDistributeFlag(selflags[i], true);
+            }
+            SaveDistributeFlags(configIndex);
+        }
 
         void OnGUI()
         {
@@ -205,9 +230,24 @@ namespace Capstones.UnityEditorEx
             GUILayout.BeginVertical();
             if (GUILayout.Button("Apply"))
             {
-                SaveDistributeFlags();
+                SaveDistributeFlags(OptionConfigIndex);
                 Close();
             }
+
+            //abcd配置
+            GUILayout.BeginHorizontal();
+            var _index = GUILayout.SelectionGrid(OptionConfigIndex, OptionConfigs, 10);
+            if (_index != OptionConfigIndex)
+            {
+                OptionConfigIndex = _index;
+                if (PlayerPrefs.HasKey("DistributeFlags_" + OptionConfigIndex))
+                {
+                    RefreshConfig(PlayerPrefs.GetString("DistributeFlags_" + OptionConfigIndex), OptionConfigIndex);
+                    return;
+                }
+            }
+            GUILayout.EndHorizontal();
+
             offset2 = GUILayout.BeginScrollView(offset2);
             var node = DistributeFlagOrder.First;
             LinkedListNode<string> nodeup = null, nodedown = null, noderemove = null;
@@ -266,7 +306,7 @@ namespace Capstones.UnityEditorEx
             }
         }
 
-        public void SaveDistributeFlags()
+        public void SaveDistributeFlags(int configIndex = 0)
         {
             var old = ResManager.PreRuntimeDFlags;
             bool changed = old.Count != DistributeFlagOrder.Count;
@@ -295,6 +335,8 @@ namespace Capstones.UnityEditorEx
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
                 System.IO.File.WriteAllText(path, sbflags.ToString());
                 AssetDatabase.ImportAsset(CapsModEditor.GetAssetNameFromPath(path));
+
+                PlayerPrefs.SetString("DistributeFlags_" + configIndex, sbflags.ToString());
 
                 ResManager.PreRuntimeDFlags = new List<string>(DistributeFlagOrder);
                 CapsDistributeEditor.FireOnDistributeFlagsChanged();
