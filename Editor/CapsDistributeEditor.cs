@@ -196,7 +196,7 @@ namespace Capstones.UnityEditorEx
             {
                 DistributeFlags[allflags[i]] = false;
             }
-            var selflags = config.Split('<');
+            var selflags = configIndex == 0 ? ResManager.PreRuntimeDFlags.ToArray() : config.Split('<');
             for (int i = 0; i < selflags.Length; ++i)
             {
                 if (string.IsNullOrEmpty(selflags[i]))
