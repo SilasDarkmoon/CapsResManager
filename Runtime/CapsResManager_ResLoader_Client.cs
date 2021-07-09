@@ -688,6 +688,7 @@ namespace Capstones.UnityEngineEx
                 UnloadAllRes(true);
                 CollapsedManifest.DiscardAllNodes();
                 DiscardUnityManifests();
+                StartGarbageCollectDeep();
             }
             public void UnloadUnusedRes()
             {
