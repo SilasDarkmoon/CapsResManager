@@ -130,10 +130,7 @@ namespace Capstones.UnityEngineEx
 #endif
 #endif
 
-                string logdir = Capstones.UnityEngineEx.ThreadSafeValues.IsolatedPath;
-#if UNITY_IOS && !UNITY_EDITOR && (LOG_TO_DOCUMENT_FOLDER || DEVELOPMENT_BUILD || ALWAYS_SHOW_LOG || DEBUG)
-                logdir = Capstones.UnityEngineEx.ThreadSafeValues.AppPersistentDataPath;
-#endif
+                string logdir = Capstones.UnityEngineEx.ThreadSafeValues.LogPath;
                 var file = logdir + "/log/cs/log" + DateTime.Now.ToString("MMdd") + ".txt";
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
                 if (!IsFileExist(file))

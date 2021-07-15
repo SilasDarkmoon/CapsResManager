@@ -26,6 +26,11 @@ namespace Capstones.UnityEngineEx
         {
             _UpdatePath = IsolatedPrefs.GetUpdatePath();
             _IsolatedPath = IsolatedPrefs.GetIsolatedPath();
+#if UNITY_IOS && !UNITY_EDITOR && (LOG_TO_DOCUMENT_FOLDER || DEVELOPMENT_BUILD || ALWAYS_SHOW_LOG || DEBUG)
+            _LogPath = Application.persistentDataPath;
+#else
+            _LogPath = _IsolatedPath;
+#endif
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             _cached_Application_platform = Application.platform.ToString();
             _cached_Application_streamingAssetsPath = Application.streamingAssetsPath;
@@ -71,6 +76,7 @@ namespace Capstones.UnityEngineEx
         }
 
         private static string _UpdatePath;
+        private static string _LogPath;
         private static string _IsolatedPath;
         private static string _cached_Application_platform;
         private static string _cached_Application_streamingAssetsPath;
@@ -83,6 +89,7 @@ namespace Capstones.UnityEngineEx
         [ThreadStatic] private static bool _IsMainThread;
 
         public static string UpdatePath { get { return _UpdatePath; } }
+        public static string LogPath { get { return _LogPath; } }
         public static string IsolatedPath { get { return _IsolatedPath; } }
         public static string AppPlatform { get { return _cached_Application_platform; } }
         public static string AppStreamingAssetsPath { get { return _cached_Application_streamingAssetsPath; } }
@@ -106,7 +113,7 @@ namespace Capstones.UnityEngineEx
         }
 
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        #region WIN32API
+#region WIN32API
         delegate bool EnumWindowsCallBack(IntPtr hwnd, IntPtr lParam);
         [System.Runtime.InteropServices.DllImport("user32", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
         static extern bool SetWindowTextW(IntPtr hwnd, string title);
@@ -114,7 +121,7 @@ namespace Capstones.UnityEngineEx
         static extern int EnumWindows(EnumWindowsCallBack lpEnumFunc, IntPtr lParam);
         [System.Runtime.InteropServices.DllImport("user32")]
         static extern uint GetWindowThreadProcessId(IntPtr hWnd, ref IntPtr lpdwProcessId);
-        #endregion
+#endregion
         static IntPtr myWindowHandle;
         public static void SetWindowTitle(string title)
         {
