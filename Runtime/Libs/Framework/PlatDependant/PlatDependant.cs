@@ -596,6 +596,62 @@ namespace Capstones.UnityEngineEx
             Logger.LogWarning(obj);
         }
 
+        public static string FormatBuffer<T>(T buffer) where T : IList<byte>
+        {
+            StringBuilder result = new StringBuilder();
+            int cnt = buffer.Count;
+            for (int i = 0; i < cnt; ++i)
+            {
+                result.Append(buffer[i].ToString("X2"));
+                if (i % 16 == 15)
+                {
+                    result.Append("\n");
+                }
+                else if (i % 8 == 7)
+                {
+                    result.Append("    ");
+                }
+                else if (i % 4 == 3)
+                {
+                    result.Append("  ");
+                }
+                else
+                {
+                    result.Append(" ");
+                }
+            }
+            return result.ToString();
+        }
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
+#else
+        public static string FormatBuffer(Span<byte> buffer)
+        {
+            StringBuilder result = new StringBuilder();
+            int cnt = buffer.Length;
+            for (int i = 0; i < cnt; ++i)
+            {
+                result.Append(buffer[i].ToString("X2"));
+                if (i % 16 == 15)
+                {
+                    result.Append("\n");
+                }
+                else if (i % 8 == 7)
+                {
+                    result.Append("    ");
+                }
+                else if (i % 4 == 3)
+                {
+                    result.Append("  ");
+                }
+                else
+                {
+                    result.Append(" ");
+                }
+            }
+            return result.ToString();
+        }
+#endif
+
         public static bool IsValueType(this Type type)
         {
 #if NETFX_CORE
