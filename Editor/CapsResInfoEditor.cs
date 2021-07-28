@@ -147,13 +147,17 @@ namespace Capstones.UnityEditorEx
             for (int i = 0; i < assets.Length; ++i)
             {
                 var path = assets[i];
-                if (System.IO.Directory.Exists(path) && !nonEmptyFolders.Contains(path))
+                if (!CapsEditorUtils.IsDirLink(path) && System.IO.Directory.Exists(path) && !nonEmptyFolders.Contains(path))
                 {
-                    dirty = true;
-                    Debug.LogError("Delete: " + path);
-                    System.IO.Directory.Delete(path, true);
+                    try
+                    {
+                        System.IO.Directory.Delete(path, true);
+                        dirty = true;
+                        Debug.LogError("Delete: " + path);
+                        continue;
+                    }
+                    catch { }
                 }
-                else
                 {
                     var dir = System.IO.Path.GetDirectoryName(path).Replace('\\', '/');
                     nonEmptyFolders.Add(dir);
