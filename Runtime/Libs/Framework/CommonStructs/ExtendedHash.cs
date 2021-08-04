@@ -454,6 +454,11 @@ namespace Capstones.UnityEngineEx
         {
             return GetHashCodeEx(str, 0, 0, 0, 0);
         }
+        public static int GetHashCodeExShort(long hash)
+        {
+            int hash_short = (int)((hash & 0xFFFFFFFFL) ^ (long)Crc.Reverse(((ulong)hash) & (0xFFFFFFFFUL << 32)));
+            return hash_short;
+        }
     }
 }
 
@@ -470,6 +475,7 @@ namespace Capstones.Test
         public static void CheckHashConflictInMemberList()
         {
             Dictionary<long, string> map = new Dictionary<long, string>();
+            Dictionary<int, string> map_short = new Dictionary<int, string>();
             var memberlist = PlatDependant.ReadAllLines("EditorOutput/LuaPrecompile/MemberList.txt");
             foreach (var str in memberlist)
             {
@@ -480,6 +486,7 @@ namespace Capstones.Test
                     {
                         var real = parts[3] + " " + parts[4];
                         var hash = real.GetHashCodeEx(0, 1, -1, (byte)parts[4][0]);
+                        int hash_short = ExtendedStringHash.GetHashCodeExShort(hash);
                         if (map.ContainsKey(hash) && map[hash] != real)
                         {
                             Debug.LogError($"Duplicated Hash: {hash:X}, {real}, {map[hash]}");
@@ -487,6 +494,14 @@ namespace Capstones.Test
                         else
                         {
                             map[hash] = real;
+                        }
+                        if (map_short.ContainsKey(hash_short) && map_short[hash_short] != real)
+                        {
+                            Debug.LogError($"Duplicated Short Hash: {hash:X}, {real}, {map_short[hash_short]}");
+                        }
+                        else
+                        {
+                            map_short[hash_short] = real;
                         }
                     }
                 }
