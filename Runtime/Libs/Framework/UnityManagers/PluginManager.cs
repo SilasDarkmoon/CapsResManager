@@ -106,8 +106,20 @@ namespace Capstones.UnityEngineEx
                     var dllname = lib;
                     if (Environment.OSVersion.Platform == PlatformID.Unix)
                     {
+#if DLLIMPORT_NAME_FULL
+                        //var ext = System.IO.Path.GetExtension(dllname).ToLower();
+                        //if (ext != ".so" && ext != ".dylib" && ext != ".bundle")
+                        //{
+                        //    dllname = dllname + ".so";
+                        //}
+                        //if (!dllname.StartsWith("lib", StringComparison.InvariantCultureIgnoreCase))
+                        //{
+                        //    dllname = "lib" + dllname;
+                        //}
+#else
                         // TODO: on higher version .NET Core, we should consider MacOS X.
                         dllname = AppDomain.CurrentDomain.BaseDirectory + "/lib" + lib + ".so";
+#endif
                     }
 //#if UNITY_EDITOR_OSX
 //                    var epLoad = "CapsPluginLoad";
