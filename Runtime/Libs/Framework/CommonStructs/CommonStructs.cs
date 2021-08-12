@@ -99,6 +99,46 @@ namespace Capstones.UnityEngineEx
         object this[int index] { get; set; }
     }
 
+    internal static class PackUtils
+    {
+        public static int GetHashCode<T>(T t)
+        {
+            if (typeof(T).IsValueType)
+            {
+                return t.GetHashCode();
+            }
+            else
+            {
+                if (t == null)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return t.GetHashCode();
+                }
+            }
+        }
+        public static string ToString<T>(T t)
+        {
+            if (typeof(T).IsValueType)
+            {
+                return t.ToString();
+            }
+            else
+            {
+                if (t == null)
+                {
+                    //return "(" + typeof(T).ToString() + ")null";
+                    return "null";
+                }
+                else
+                {
+                    return t.ToString();
+                }
+            }
+        }
+    }
     // TODO: Pack's ITuple, IWritableTuple, To ValueTuple and From Tuple, ==, !=
     public struct Pack<T1, T2> : IEquatable<Pack<T1, T2>>
     {
@@ -116,7 +156,7 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode() ^ t2.GetHashCode();
+            return PackUtils.GetHashCode(t1) ^ PackUtils.GetHashCode(t2);
         }
         public override bool Equals(object obj)
         {
@@ -136,9 +176,9 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(")");
             return sb.ToString();
         }
@@ -162,9 +202,9 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
                 ;
         }
         public override bool Equals(object obj)
@@ -186,11 +226,11 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(")");
             return sb.ToString();
         }
@@ -217,10 +257,10 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
                 ;
         }
         public override bool Equals(object obj)
@@ -243,13 +283,13 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(")");
             return sb.ToString();
         }
@@ -279,11 +319,11 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
                 ;
         }
         public override bool Equals(object obj)
@@ -307,15 +347,15 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(")");
             return sb.ToString();
         }
@@ -348,12 +388,12 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
-                ^ t6.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
+                ^ PackUtils.GetHashCode(t6)
                 ;
         }
         public override bool Equals(object obj)
@@ -378,17 +418,17 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(", ");
-            sb.Append(t6.ToString());
+            sb.Append(PackUtils.ToString(t6));
             sb.Append(")");
             return sb.ToString();
         }
@@ -424,13 +464,13 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
-                ^ t6.GetHashCode()
-                ^ t7.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
+                ^ PackUtils.GetHashCode(t6)
+                ^ PackUtils.GetHashCode(t7)
                 ;
         }
         public override bool Equals(object obj)
@@ -456,19 +496,19 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(", ");
-            sb.Append(t6.ToString());
+            sb.Append(PackUtils.ToString(t6));
             sb.Append(", ");
-            sb.Append(t7.ToString());
+            sb.Append(PackUtils.ToString(t7));
             sb.Append(")");
             return sb.ToString();
         }
@@ -507,14 +547,14 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
-                ^ t6.GetHashCode()
-                ^ t7.GetHashCode()
-                ^ t8.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
+                ^ PackUtils.GetHashCode(t6)
+                ^ PackUtils.GetHashCode(t7)
+                ^ PackUtils.GetHashCode(t8)
                 ;
         }
         public override bool Equals(object obj)
@@ -541,21 +581,21 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(", ");
-            sb.Append(t6.ToString());
+            sb.Append(PackUtils.ToString(t6));
             sb.Append(", ");
-            sb.Append(t7.ToString());
+            sb.Append(PackUtils.ToString(t7));
             sb.Append(", ");
-            sb.Append(t8.ToString());
+            sb.Append(PackUtils.ToString(t8));
             sb.Append(")");
             return sb.ToString();
         }
@@ -597,15 +637,15 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
-                ^ t6.GetHashCode()
-                ^ t7.GetHashCode()
-                ^ t8.GetHashCode()
-                ^ t9.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
+                ^ PackUtils.GetHashCode(t6)
+                ^ PackUtils.GetHashCode(t7)
+                ^ PackUtils.GetHashCode(t8)
+                ^ PackUtils.GetHashCode(t9)
                 ;
         }
         public override bool Equals(object obj)
@@ -633,23 +673,23 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(", ");
-            sb.Append(t6.ToString());
+            sb.Append(PackUtils.ToString(t6));
             sb.Append(", ");
-            sb.Append(t7.ToString());
+            sb.Append(PackUtils.ToString(t7));
             sb.Append(", ");
-            sb.Append(t8.ToString());
+            sb.Append(PackUtils.ToString(t8));
             sb.Append(", ");
-            sb.Append(t9.ToString());
+            sb.Append(PackUtils.ToString(t9));
             sb.Append(")");
             return sb.ToString();
         }
@@ -694,16 +734,16 @@ namespace Capstones.UnityEngineEx
 
         public override int GetHashCode()
         {
-            return t1.GetHashCode()
-                ^ t2.GetHashCode()
-                ^ t3.GetHashCode()
-                ^ t4.GetHashCode()
-                ^ t5.GetHashCode()
-                ^ t6.GetHashCode()
-                ^ t7.GetHashCode()
-                ^ t8.GetHashCode()
-                ^ t9.GetHashCode()
-                ^ t10.GetHashCode()
+            return PackUtils.GetHashCode(t1)
+                ^ PackUtils.GetHashCode(t2)
+                ^ PackUtils.GetHashCode(t3)
+                ^ PackUtils.GetHashCode(t4)
+                ^ PackUtils.GetHashCode(t5)
+                ^ PackUtils.GetHashCode(t6)
+                ^ PackUtils.GetHashCode(t7)
+                ^ PackUtils.GetHashCode(t8)
+                ^ PackUtils.GetHashCode(t9)
+                ^ PackUtils.GetHashCode(t10)
                 ;
         }
         public override bool Equals(object obj)
@@ -732,25 +772,25 @@ namespace Capstones.UnityEngineEx
         {
             var sb = new System.Text.StringBuilder();
             sb.Append("(");
-            sb.Append(t1.ToString());
+            sb.Append(PackUtils.ToString(t1));
             sb.Append(", ");
-            sb.Append(t2.ToString());
+            sb.Append(PackUtils.ToString(t2));
             sb.Append(", ");
-            sb.Append(t3.ToString());
+            sb.Append(PackUtils.ToString(t3));
             sb.Append(", ");
-            sb.Append(t4.ToString());
+            sb.Append(PackUtils.ToString(t4));
             sb.Append(", ");
-            sb.Append(t5.ToString());
+            sb.Append(PackUtils.ToString(t5));
             sb.Append(", ");
-            sb.Append(t6.ToString());
+            sb.Append(PackUtils.ToString(t6));
             sb.Append(", ");
-            sb.Append(t7.ToString());
+            sb.Append(PackUtils.ToString(t7));
             sb.Append(", ");
-            sb.Append(t8.ToString());
+            sb.Append(PackUtils.ToString(t8));
             sb.Append(", ");
-            sb.Append(t9.ToString());
+            sb.Append(PackUtils.ToString(t9));
             sb.Append(", ");
-            sb.Append(t10.ToString());
+            sb.Append(PackUtils.ToString(t10));
             sb.Append(")");
             return sb.ToString();
         }
