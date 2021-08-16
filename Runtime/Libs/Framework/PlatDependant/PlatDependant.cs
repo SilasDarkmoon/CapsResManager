@@ -1777,10 +1777,12 @@ namespace Capstones.UnityEngineEx
                                                 {
                                                     if (!dest.EndsWith("/") && !dest.EndsWith("\\"))
                                                     {
-                                                        using (var dsts = PlatDependant.OpenWrite(dest))
+                                                        var desttmp = dest + ".tmp";
+                                                        using (var dsts = PlatDependant.OpenWrite(desttmp))
                                                         {
                                                             srcs.CopyTo(dsts);
                                                         }
+                                                        PlatDependant.MoveFile(desttmp, dest);
                                                     }
                                                 }
                                             }
