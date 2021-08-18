@@ -209,13 +209,13 @@ namespace Capstones.UnityEngineEx
             }
         }
 
-//        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-//        private static void OnUnityStart()
-//        {
-//#if !UNITY_EDITOR
-//            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
-//#endif
-//        }
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void OnUnityStart()
+        {
+#if !UNITY_EDITOR
+            ResManager.AddInitItem(ResManager.LifetimeOrders.PostResLoader - 5, Init);
+#endif
+        }
 #endif
 
 #if UNITY_EDITOR || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER
