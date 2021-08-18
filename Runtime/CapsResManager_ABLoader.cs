@@ -281,18 +281,21 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            if (!SkipUpdate)
+            if (bundle == null)
             {
-                string path = ThreadSafeValues.UpdatePath + "/res/" + name;
-                if (PlatDependant.IsFileExist(path))
+                if (!SkipUpdate)
                 {
-                    try
+                    string path = ThreadSafeValues.UpdatePath + "/res/" + name;
+                    if (PlatDependant.IsFileExist(path))
                     {
-                        bundle = AssetBundle.LoadFromFile(path);
-                    }
-                    catch (Exception e)
-                    {
-                        if (!ignoreError) PlatDependant.LogError(e);
+                        try
+                        {
+                            bundle = AssetBundle.LoadFromFile(path);
+                        }
+                        catch (Exception e)
+                        {
+                            if (!ignoreError) PlatDependant.LogError(e);
+                        }
                     }
                 }
             }
