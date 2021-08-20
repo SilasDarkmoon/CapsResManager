@@ -353,6 +353,7 @@ namespace Capstones.UnityEngineEx
                     }
 
                     var cabi = LoadAssetBundleEx(mod, bundle, true);
+                    Debug.LogFormat("ResLoader_Client.Preload step 1 mod = {0}, bundle = {1}", mod, bundle);
                     if (cabi != null)
                     {
                         AssetBundleManifest umani;
@@ -365,6 +366,7 @@ namespace Capstones.UnityEngineEx
                                 {
                                     var dep = deps[i];
                                     var bi = LoadAssetBundleEx(mod, dep, false);
+                                    Debug.LogFormat("ResLoader_Client.Preload step 2 mod = {0}, dep = {1}, bi = {2}", mod, dep, bi);
                                     if (bi != null)
                                     {
                                         bi.AddRef();
