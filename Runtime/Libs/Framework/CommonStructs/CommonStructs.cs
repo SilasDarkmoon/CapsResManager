@@ -2037,6 +2037,11 @@ namespace Capstones.UnityEngineEx
             if (obj is string)
             {
                 var str = (string)obj;
+                float f;
+                if (float.TryParse(str, out f))
+                {
+                    return f != 0.0f;
+                }
                 str = str.ToLower().Trim();
                 if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
                 {
