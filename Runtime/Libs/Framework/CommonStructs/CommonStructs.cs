@@ -2024,6 +2024,44 @@ namespace Capstones.UnityEngineEx
                 return null;
             }
         }
+        public static bool ToBoolean(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+            if (obj is bool)
+            {
+                return (bool)obj;
+            }
+            if (obj is string)
+            {
+                var str = (string)obj;
+                str = str.ToLower().Trim();
+                if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
+                {
+                    return false;
+                }
+                return true;
+            }
+            else if (obj is IntPtr)
+            {
+                return ((IntPtr)obj) != IntPtr.Zero;
+            }
+            else if (obj is UIntPtr)
+            {
+                return ((UIntPtr)obj) != UIntPtr.Zero;
+            }
+            if (PlatDependant.IsObjIConvertible(obj))
+            {
+                try
+                {
+                    return System.Convert.ToBoolean(obj);
+                }
+                catch { }
+            }
+            return true;
+        }
         public class TypedConverter<T> : TypedConverter
         { // TODO: unmanaged value type converter using ByRefUtils
             public TypedConverter()
@@ -2049,46 +2087,7 @@ namespace Capstones.UnityEngineEx
         }
         public static readonly Dictionary<Type, TypedConverter> _TypedConverters = new Dictionary<Type, TypedConverter>()
         {
-            { typeof(bool), new TypedConverter<bool>(
-                obj =>
-                {
-                    if (obj == null)
-                    {
-                        return false;
-                    }
-                    if (obj is bool)
-                    {
-                        return (bool)obj;
-                    }
-                    if (obj is string)
-                    {
-                        var str = (string)obj;
-                        str = str.ToLower().Trim();
-                        if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
-                        {
-                            return false;
-                        }
-                        return true;
-                    }
-                    else if (obj is IntPtr)
-                    {
-                        return ((IntPtr)obj) != IntPtr.Zero;
-                    }
-                    else if (obj is UIntPtr)
-                    {
-                        return ((UIntPtr)obj) != UIntPtr.Zero;
-                    }
-                    if (PlatDependant.IsObjIConvertible(obj))
-                    {
-                        try
-                        {
-                            return System.Convert.ToBoolean(obj);
-                        }
-                        catch { }
-                    }
-                    return true;
-                })
-            },
+            { typeof(bool), new TypedConverter<bool>(ToBoolean) },
             { typeof(string), new TypedConverter<string>(
                 obj =>
                 {
