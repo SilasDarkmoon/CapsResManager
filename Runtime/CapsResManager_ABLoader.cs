@@ -409,6 +409,7 @@ namespace Capstones.UnityEngineEx
                 Debug.LogFormat("ABLoader.LoadAssetBundle step 1 name = {0}", name);
             }
             LoadedAssetBundles[norm] = abi;
+            Debug.LogFormat("ABLoader.LoadAssetBundle step 2 norm = {0}, abi.name = {1}", norm, abi != null ? abi.RealName : null);
             return abi;
         }
         public static AssetBundleInfo LoadAssetBundle(string name)
