@@ -208,7 +208,8 @@ namespace Capstones.UnityEditorEx
                 var obbpath = curobb.ObbFileName;
                 if (string.IsNullOrEmpty(obbpath))
                 {
-                    obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
+                    //obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
+                    obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + ".obb";
                 }
                 if (!obbpath.EndsWith(".obb", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -347,9 +348,9 @@ namespace Capstones.UnityEditorEx
                     }
                 }
 
-                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, blacklist, false);
-                System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
-                System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
+                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, blacklist, true);
+                //System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
+                //System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
                 {
                     foreach (var key in built)
