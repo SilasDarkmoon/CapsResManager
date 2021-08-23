@@ -109,6 +109,12 @@ namespace Capstones.UnityEngineEx
                                         {
                                             obbpath = obbroot + obbpath;
                                         }
+
+                                        if (!PlatDependant.IsFileExist(obbpath))
+                                        { // use updatepath as obb path
+                                            obbpath = ThreadSafeValues.UpdatePath + "/obb/" + obbname + "." + obbver + ".obb";
+                                        }
+
                                         obbs.Add(new Pack<string, string>(obbname, obbpath));
                                         if (obbname == "main")
                                         {
@@ -121,6 +127,12 @@ namespace Capstones.UnityEngineEx
                             if (mainobbpath == null)
                             {
                                 mainobbpath = obbroot + "main." + AppVer + "." + appid + ".obb";
+
+                                if (!PlatDependant.IsFileExist(mainobbpath))
+                                { // use updatepath as obb path
+                                    mainobbpath = ThreadSafeValues.UpdatePath + "/obb/main." + AppVer + ".obb";
+                                }
+                                
                                 obbs.Insert(0, new Pack<string, string>("main", mainobbpath));
                             }
                         }
