@@ -325,8 +325,12 @@ namespace Capstones.UnityEngineEx
                             var allobbs = ResManager.AllObbZipArchives;
                             for (int z = allobbs.Length - 1; z >= 0; --z)
                             {
-                                var zip = allobbs[z];
+                                if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[z]))
+                                { // means the obb is to be downloaded.
+                                    continue;
+                                }
 
+                                var zip = allobbs[z];
                                 int retryTimes = 10;
                                 long offset = -1;
                                 for (int i = 0; i < retryTimes; ++i)
@@ -570,8 +574,12 @@ namespace Capstones.UnityEngineEx
 
                                 for (int z = allobbs.Length - 1; z >= 0; --z)
                                 {
+                                    if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[z]))
+                                    { // means the obb is to be downloaded.
+                                        continue;
+                                    }
+                                    
                                     var zip = allobbs[z];
-
                                     int retryTimes = 3;
                                     for (int i = 0; i < retryTimes; ++i)
                                     {
@@ -793,8 +801,12 @@ namespace Capstones.UnityEngineEx
 
                                 for (int z = allobbs.Length - 1; z >= 0; --z)
                                 {
+                                    if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[z]))
+                                    { // means the obb is to be downloaded.
+                                        continue;
+                                    }
+                                    
                                     var zip = allobbs[z];
-
                                     int retryTimes = 3;
                                     for (int i = 0; i < retryTimes; ++i)
                                     {
@@ -1010,8 +1022,12 @@ namespace Capstones.UnityEngineEx
                         {
                             for (int z = 0; z < allobbs.Length; ++z)
                             {
-                                var zip = allobbs[z];
+                                if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[z]))
+                                { // means the obb is to be downloaded.
+                                    continue;
+                                }
 
+                                var zip = allobbs[z];
                                 int retryTimes = 10;
                                 for (int i = 0; i < retryTimes; ++i)
                                 {
@@ -1202,8 +1218,12 @@ namespace Capstones.UnityEngineEx
                         {
                             for (int z = 0; z < allobbs.Length; ++z)
                             {
-                                var zip = allobbs[z];
+                                if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[z]))
+                                { // means the obb is to be downloaded.
+                                    continue;
+                                }
 
+                                var zip = allobbs[z];
                                 int retryTimes = 10;
                                 for (int i = 0; i < retryTimes; ++i)
                                 {
@@ -1817,6 +1837,11 @@ namespace Capstones.UnityEngineEx
             {
                 for (int n = allarchives.Length - 1; n >= 0; --n)
                 {
+                    if (!PlatDependant.IsFileExist(ResManager.AllObbPaths[n]))
+                    { // means the obb is to be downloaded.
+                        continue;
+                    }
+
                     var archive = allarchives[n];
                     int retryTimes = 10;
                     for (int i = 0; i < retryTimes; ++i)
