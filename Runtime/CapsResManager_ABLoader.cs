@@ -1805,7 +1805,10 @@ namespace Capstones.UnityEngineEx
                             if (disposed)
                             {
                                 _AllObbZipArchives[i] = null;
-                                _AllObbZipArchives[i] = new ZipArchive(filestreams[i]);
+                                if (filestreams[i] != null)
+                                {
+                                    _AllObbZipArchives[i] = new ZipArchive(filestreams[i]);
+                                }
                             }
                         }
                         catch (Exception e)
