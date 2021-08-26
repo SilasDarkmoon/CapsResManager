@@ -349,8 +349,6 @@ namespace Capstones.UnityEditorEx
                 }
 
                 var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, blacklist, true);
-                //System.IO.Directory.Delete("Assets/StreamingAssets/res", true);
-                //System.IO.Directory.Delete("Assets/StreamingAssets/spt", true);
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
                 {
                     foreach (var key in built)

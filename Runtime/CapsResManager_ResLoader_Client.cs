@@ -353,23 +353,18 @@ namespace Capstones.UnityEngineEx
                     }
 
                     var cabi = LoadAssetBundleEx(mod, bundle, true);
-                    Debug.LogFormat("ResLoader_Client.Preload step 1 mod = {0}, bundle = {1}", mod, bundle);
                     if (cabi != null)
                     {
                         AssetBundleManifest umani;
-                        Debug.LogFormat("ResLoader_Client.Preload step 1.1");
                         if (UnityManifests.TryGetValue(mod, out umani) && umani)
                         {
-                            Debug.LogFormat("ResLoader_Client.Preload step 1.2 umani = {0}", umani);
                             var deps = umani.GetAllDependencies(bundle);
                             if (deps != null)
                             {
-                                Debug.LogFormat("ResLoader_Client.Preload step 1.3 deps.Length = {0}", deps.Length);
                                 for (int i = 0; i < deps.Length; ++i)
                                 {
                                     var dep = deps[i];
                                     var bi = LoadAssetBundleEx(mod, dep, false);
-                                    Debug.LogFormat("ResLoader_Client.Preload step 2 mod = {0}, dep = {1}, bi = {2}", mod, dep, bi);
                                     if (bi != null)
                                     {
                                         bi.AddRef();
@@ -377,9 +372,8 @@ namespace Capstones.UnityEngineEx
                                     }
                                 }
                             }
-                            Debug.LogFormat("ResLoader_Client.Preload step 3");
                         }
-                        Debug.LogFormat("ResLoader_Client.Preload step 4");
+
                         cabi.AddRef();
                         DepBundles.Add(cabi);
                     }
