@@ -347,9 +347,12 @@ namespace Capstones.UnityEngineEx
                                         try
                                         {
                                             var entry = za.GetEntry(path);
-                                            using (var srcstream = entry.Open())
+                                            if (entry != null)
                                             {
-                                                offset = ResManager.AllObbFileStreams[z].Position;
+                                                using (var srcstream = entry.Open())
+                                                {
+                                                    offset = ResManager.AllObbFileStreams[z].Position;
+                                                }
                                             }
                                         }
                                         catch (Exception e)
