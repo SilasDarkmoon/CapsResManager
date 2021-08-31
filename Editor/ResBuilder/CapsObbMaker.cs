@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Capstones.UnityEngineEx;
+using System.Text;
 #if !NET_4_6 && !NET_STANDARD_2_0
 using Unity.IO.Compression;
 using CompressionLevel = Unity.IO.Compression.CompressionLevel;
@@ -154,6 +155,8 @@ namespace Capstones.UnityEditorEx
                 curfile = new System.IO.FileInfo(files[fileindex]);
             }
 
+            StringBuilder sb = new StringBuilder();
+
             HashSet<string> builtKeys = new HashSet<string>();
             List<string> builtKeysList = new List<string>();
             for (int obbindex = 0; ; ++obbindex)
@@ -210,6 +213,14 @@ namespace Capstones.UnityEditorEx
                 {
                     //obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
                     obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + ".obb";
+                    if ("main".Equals(curobb.Key))
+                    {
+                        sb.Append(obbpath);
+                    }
+                    else if ("patch".Equals(curobb.Key))
+                    {
+                        sb.Append('\n').Append(obbpath);
+                    }
                 }
                 if (!obbpath.EndsWith(".obb", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -322,6 +333,20 @@ namespace Capstones.UnityEditorEx
                     break;
                 }
             }
+
+            if (sb.Length > 0)
+            {
+                string obbRecordFilePath = dest + "obb.txt";
+                if (PlatDependant.IsFileExist(obbRecordFilePath))
+                {
+                    PlatDependant.DeleteFile(obbRecordFilePath);
+                }
+                using (var sw = PlatDependant.OpenWriteText(obbRecordFilePath))
+                {
+                    sw.WriteLine(sb.ToString());
+                }
+            }
+
             return builtKeysList;
         }
 
