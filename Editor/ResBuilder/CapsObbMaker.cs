@@ -155,8 +155,6 @@ namespace Capstones.UnityEditorEx
                 curfile = new System.IO.FileInfo(files[fileindex]);
             }
 
-            StringBuilder sb = new StringBuilder();
-
             HashSet<string> builtKeys = new HashSet<string>();
             List<string> builtKeysList = new List<string>();
             for (int obbindex = 0; ; ++obbindex)
@@ -213,14 +211,6 @@ namespace Capstones.UnityEditorEx
                 {
                     //obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
                     obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + ".obb";
-                    if ("main".Equals(curobb.Key))
-                    {
-                        sb.Append(obbpath);
-                    }
-                    else if ("patch".Equals(curobb.Key))
-                    {
-                        sb.Append('\n').Append(obbpath);
-                    }
                 }
                 if (!obbpath.EndsWith(".obb", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -334,19 +324,14 @@ namespace Capstones.UnityEditorEx
                 }
             }
 
-            if (sb.Length > 0)
+            string obbRecordFilePath = dest + "obb.txt";
+            using (var sw = PlatDependant.OpenWriteText(obbRecordFilePath))
             {
-                string obbRecordFilePath = dest + "obb.txt";
-                if (PlatDependant.IsFileExist(obbRecordFilePath))
+                foreach (var key in builtKeysList)
                 {
-                    PlatDependant.DeleteFile(obbRecordFilePath);
-                }
-                using (var sw = PlatDependant.OpenWriteText(obbRecordFilePath))
-                {
-                    sw.WriteLine(sb.ToString());
+                    sw.WriteLine(key + "." + PlayerSettings.Android.bundleVersionCode + ".obb");
                 }
             }
-
             return builtKeysList;
         }
 
@@ -373,7 +358,7 @@ namespace Capstones.UnityEditorEx
                     }
                 }
 
-                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/", null, blacklist, true);
+                var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/obb/", null, blacklist, true);
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
                 {
                     foreach (var key in built)
