@@ -2005,6 +2005,10 @@ namespace Capstones.UnityEngineEx
             typeof(IntPtr),
         };
 
+        public interface ITypedConverter<T>
+        {
+            T Convert(object obj);
+        }
         public class TypedConverter
         {
             protected Type _ToType;
@@ -2013,10 +2017,10 @@ namespace Capstones.UnityEngineEx
                 get { return _ToType; }
             }
 
-            public Func<object, object> ConvertFunc;
-            public object Convert(object obj)
+            public Func<object, object> ConvertRawFunc;
+            public virtual object ConvertRaw(object obj)
             {
-                var func = ConvertFunc;
+                var func = ConvertRawFunc;
                 if (func != null)
                 {
                     return func(obj);
@@ -2067,7 +2071,7 @@ namespace Capstones.UnityEngineEx
             }
             return true;
         }
-        public class TypedConverter<T> : TypedConverter
+        public class TypedConverter<T> : TypedConverter, ITypedConverter<T>
         { // TODO: unmanaged value type converter using ByRefUtils
             public TypedConverter()
             {
@@ -2079,20 +2083,59 @@ namespace Capstones.UnityEngineEx
                 ConvertFunc = convertFunc;
             }
 
-            public new Func<object, T> ConvertFunc;
-            public new T Convert(object obj)
+            public Func<object, T> ConvertFunc;
+            public T Convert(object obj)
             {
                 var func = ConvertFunc;
                 if (func != null)
                 {
                     return func(obj);
                 }
+                else
+                {
+                    var funcraw = ConvertRawFunc;
+                    if (funcraw != null)
+                    {
+                        return (T)funcraw(obj);
+                    }
+                }
                 return default(T);
+            }
+            public override object ConvertRaw(object obj)
+            {
+                var func = ConvertFunc;
+                if (func != null)
+                {
+                    return func(obj);
+                }
+                else
+                {
+                    var funcraw = ConvertRawFunc;
+                    if (funcraw != null)
+                    {
+                        return funcraw(obj);
+                    }
+                }
+                return default(T);
+            }
+        }
+        public class TypedValueTypeConverter<T> : TypedConverter<T>, ITypedConverter<T?> where T : struct
+        {
+            public TypedValueTypeConverter(Func<object, T> convertFunc) : base(convertFunc)
+            { }
+            public TypedValueTypeConverter() : base() { }
+            T? ITypedConverter<T?>.Convert(object obj)
+            {
+                if (obj == null)
+                {
+                    return null;
+                }
+                return Convert(obj);
             }
         }
         public static readonly Dictionary<Type, TypedConverter> _TypedConverters = new Dictionary<Type, TypedConverter>()
         {
-            { typeof(bool), new TypedConverter<bool>(ToBoolean) },
+            { typeof(bool), new TypedValueTypeConverter<bool>(ToBoolean) },
             { typeof(string), new TypedConverter<string>(
                 obj =>
                 {
@@ -2129,7 +2172,7 @@ namespace Capstones.UnityEngineEx
                     return null;
                 })
             },
-            { typeof(byte), new TypedConverter<byte>(
+            { typeof(byte), new TypedValueTypeConverter<byte>(
                 obj =>
                 {
                     if (obj == null)
@@ -2166,7 +2209,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(sbyte), new TypedConverter<sbyte>(
+            { typeof(sbyte), new TypedValueTypeConverter<sbyte>(
                 obj =>
                 {
                     if (obj == null)
@@ -2203,7 +2246,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(short), new TypedConverter<short>(
+            { typeof(short), new TypedValueTypeConverter<short>(
                 obj =>
                 {
                     if (obj == null)
@@ -2240,7 +2283,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(ushort), new TypedConverter<ushort>(
+            { typeof(ushort), new TypedValueTypeConverter<ushort>(
                 obj =>
                 {
                     if (obj == null)
@@ -2277,7 +2320,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(int), new TypedConverter<int>(
+            { typeof(int), new TypedValueTypeConverter<int>(
                 obj =>
                 {
                     if (obj == null)
@@ -2314,7 +2357,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(uint), new TypedConverter<uint>(
+            { typeof(uint), new TypedValueTypeConverter<uint>(
                 obj =>
                 {
                     if (obj == null)
@@ -2351,7 +2394,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(long), new TypedConverter<long>(
+            { typeof(long), new TypedValueTypeConverter<long>(
                 obj =>
                 {
                     if (obj == null)
@@ -2388,7 +2431,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(ulong), new TypedConverter<ulong>(
+            { typeof(ulong), new TypedValueTypeConverter<ulong>(
                 obj =>
                 {
                     if (obj == null)
@@ -2425,7 +2468,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(char), new TypedConverter<char>(
+            { typeof(char), new TypedValueTypeConverter<char>(
                 obj =>
                 {
                     if (obj == null)
@@ -2462,7 +2505,7 @@ namespace Capstones.UnityEngineEx
                     return default(char);
                 })
             },
-            { typeof(IntPtr), new TypedConverter<IntPtr>(
+            { typeof(IntPtr), new TypedValueTypeConverter<IntPtr>(
                 obj =>
                 {
                     if (obj == null)
@@ -2495,7 +2538,7 @@ namespace Capstones.UnityEngineEx
                     return default(IntPtr);
                 })
             },
-            { typeof(UIntPtr), new TypedConverter<UIntPtr>(
+            { typeof(UIntPtr), new TypedValueTypeConverter<UIntPtr>(
                 obj =>
                 {
                     if (obj == null)
@@ -2528,7 +2571,7 @@ namespace Capstones.UnityEngineEx
                     return default(UIntPtr);
                 })
             },
-            { typeof(float), new TypedConverter<float>(
+            { typeof(float), new TypedValueTypeConverter<float>(
                 obj =>
                 {
                     if (obj == null)
@@ -2565,7 +2608,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(double), new TypedConverter<double>(
+            { typeof(double), new TypedValueTypeConverter<double>(
                 obj =>
                 {
                     if (obj == null)
@@ -2602,7 +2645,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(decimal), new TypedConverter<decimal>(
+            { typeof(decimal), new TypedValueTypeConverter<decimal>(
                 obj =>
                 {
                     if (obj == null)
@@ -2639,7 +2682,7 @@ namespace Capstones.UnityEngineEx
                     return 0;
                 })
             },
-            { typeof(TimeSpan), new TypedConverter<TimeSpan>(
+            { typeof(TimeSpan), new TypedValueTypeConverter<TimeSpan>(
                 obj =>
                 {
                     if (obj == null)
@@ -2676,7 +2719,7 @@ namespace Capstones.UnityEngineEx
                     return default(TimeSpan);
                 })
             },
-            { typeof(DateTime), new TypedConverter<DateTime>(
+            { typeof(DateTime), new TypedValueTypeConverter<DateTime>(
                 obj =>
                 {
                     if (obj == null)
@@ -2716,10 +2759,12 @@ namespace Capstones.UnityEngineEx
         };
         public static T Convert<T>(this object obj)
         {
+            var type = typeof(T);
+            var uutype = Nullable.GetUnderlyingType(type);
             TypedConverter converter;
-            if (_TypedConverters.TryGetValue(typeof(T), out converter))
+            if (_TypedConverters.TryGetValue(uutype ?? type, out converter))
             {
-                TypedConverter<T> tconverter = converter as TypedConverter<T>;
+                ITypedConverter<T> tconverter = converter as ITypedConverter<T>;
                 if (tconverter != null)
                 {
                     return tconverter.Convert(obj);
@@ -2729,20 +2774,6 @@ namespace Capstones.UnityEngineEx
                 return default(T);
             if (obj is T)
                 return (T)obj;
-            var type = typeof(T);
-            //if (typeof(T) == typeof(bool))
-            //{
-            //    if (obj is string)
-            //    {
-            //        var str = (string)obj;
-            //        str = str.ToLower().Trim();
-            //        if (str == "" || str == "n" || str == "no" || str == "f" || str == "false")
-            //        {
-            //            return (T)(object)false;
-            //        }
-            //        return (T)(object)true;
-            //    }
-            //}
             if (type.IsEnum())
             {
                 if (obj is string)
@@ -2770,73 +2801,27 @@ namespace Capstones.UnityEngineEx
                     return default(T);
                 }
             }
-            //else if (obj is Enum)
-            //{
-            //    if (type == typeof(string))
-            //    {
-            //        return (T)(object)obj.ToString();
-            //    }
-            //    else if (NumericTypes.Contains(type))
-            //    {
-            //        return (T)System.Convert.ChangeType(System.Convert.ToUInt64(obj), type);
-            //    }
-            //    else
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else if (NumericTypes.Contains(type) && NumericTypes.Contains(obj.GetType()))
-            //{
-            //    try
-            //    {
-            //        return (T)System.Convert.ChangeType(obj, type);
-            //    }
-            //    catch
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else if (type == typeof(IntPtr) && NumericTypes.Contains(obj.GetType()))
-            //{
-            //    try
-            //    {
-            //        long l = System.Convert.ToInt64(obj);
-            //        IntPtr p = (IntPtr)l;
-            //        return (T)(object)p;
-            //    }
-            //    catch
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else if (obj is IntPtr && NumericTypes.Contains(type))
-            //{
-            //    IntPtr p = (IntPtr)obj;
-            //    long l = (long)p;
-            //    try
-            //    {
-            //        return (T)System.Convert.ChangeType(l, type);
-            //    }
-            //    catch
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else if (ConvertibleTypes.Contains(type) && ConvertibleTypes.Contains(obj.GetType()))
-            //{
-            //    try
-            //    {
-            //        return (T)System.Convert.ChangeType(obj, type);
-            //    }
-            //    catch
-            //    {
-            //        return default(T);
-            //    }
-            //}
-            //else if (typeof(T) == typeof(string))
-            //{
-            //    return (T)(object)obj.ToString();
-            //}
+            else if (uutype != null && uutype.IsEnum())
+            {
+                if (obj is string)
+                {
+                    return (T)Enum.Parse(uutype, obj as string);
+                }
+                else if (NumericTypes.Contains(obj.GetType()))
+                {
+                    var num = System.Convert.ToUInt64(obj);
+                    return (T)Enum.ToObject(uutype, num);
+                }
+                else if (obj is Enum)
+                {
+                    var num = System.Convert.ToUInt64(obj);
+                    return (T)Enum.ToObject(uutype, num);
+                }
+                else
+                {
+                    return default(T);
+                }
+            }
             return default(T);
         }
 
@@ -2854,6 +2839,237 @@ namespace Capstones.UnityEngineEx
                 ConvertFunc = convFunc;
             }
             public Func<F, T> ConvertFunc;
+        }
+        public class TypedNullableConverterWrapper<F, T> where F : struct where T : struct
+        {
+            public Func<F, T> ConvertFunc;
+            public Func<T, F> ConvertBackFunc;
+
+            public TypedNullableConverterWrapper()
+            {
+                TypedValueConverter rawconverter;
+                _TypedValueConverters.TryGetValue(new Pack<Type, Type>(typeof(F), typeof(T)), out rawconverter);
+                TypedValueConverter<F, T> converter = rawconverter as TypedValueConverter<F, T>;
+                if (converter != null)
+                {
+                    ConvertFunc = converter.ConvertFunc;
+                }
+
+                _TypedValueConverters.TryGetValue(new Pack<Type, Type>(typeof(T), typeof(F)), out rawconverter);
+                TypedValueConverter<T, F> converterback = rawconverter as TypedValueConverter<T, F>;
+                if (converterback != null)
+                {
+                    ConvertBackFunc = converterback.ConvertFunc;
+                }
+
+                _TypedValueConverters[new Pack<Type, Type>(typeof(F?), typeof(T))] = new TypedValueConverter<F?, T>(ConvertNF2T);
+                _TypedValueConverters[new Pack<Type, Type>(typeof(F), typeof(T?))] = new TypedValueConverter<F, T?>(ConvertF2NT);
+                _TypedValueConverters[new Pack<Type, Type>(typeof(F?), typeof(T?))] = new TypedValueConverter<F?, T?>(ConvertNF2NT);
+                _TypedValueConverters[new Pack<Type, Type>(typeof(T?), typeof(F))] = new TypedValueConverter<T?, F>(ConvertNT2F);
+                _TypedValueConverters[new Pack<Type, Type>(typeof(T), typeof(F?))] = new TypedValueConverter<T, F?>(ConvertT2NF);
+                _TypedValueConverters[new Pack<Type, Type>(typeof(T?), typeof(F?))] = new TypedValueConverter<T?, F?>(ConvertNT2NF);
+            }
+            public bool TryConvert(F val, out T converted)
+            {
+                if (ConvertFunc != null)
+                {
+                    converted = ConvertFunc(val);
+                    return true;
+                }
+                else
+                {
+                    return Convert<F, T>(val, out converted);
+                }
+            }
+            public bool TryConvertBack(T val, out F converted)
+            {
+                if (ConvertBackFunc != null)
+                {
+                    converted = ConvertBackFunc(val);
+                    return true;
+                }
+                else
+                {
+                    return Convert<T, F>(val, out converted);
+                }
+            }
+            public T Convert(F val)
+            {
+                T converted;
+                TryConvert(val, out converted);
+                return converted;
+            }
+            public F ConvertBack(T val)
+            {
+                F converted;
+                TryConvertBack(val, out converted);
+                return converted;
+            }
+
+            public T ConvertNF2T(F? val)
+            {
+                if (val == null)
+                {
+                    return default(T);
+                }
+                return Convert(val.Value);
+            }
+            public T? ConvertF2NT(F val)
+            {
+                T converted;
+                var success = TryConvert(val, out converted);
+                if (success)
+                {
+                    return converted;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            public T? ConvertNF2NT(F? val)
+            {
+                if (val == null)
+                {
+                    return null;
+                }
+                return ConvertF2NT(val.Value);
+            }
+            public F ConvertNT2F(T? val)
+            {
+                if (val == null)
+                {
+                    return default(F);
+                }
+                return ConvertBack(val.Value);
+            }
+            public F? ConvertT2NF(T val)
+            {
+                F converted;
+                var success = TryConvertBack(val, out converted);
+                if (success)
+                {
+                    return converted;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            public F? ConvertNT2NF(T? val)
+            {
+                if (val == null)
+                {
+                    return null;
+                }
+                return ConvertT2NF(val.Value);
+            }
+        }
+        static ConvertUtils()
+        {
+            new TypedNullableConverterWrapper<bool, bool>();
+            new TypedNullableConverterWrapper<bool, byte>();
+            new TypedNullableConverterWrapper<bool, sbyte>();
+            new TypedNullableConverterWrapper<bool, short>();
+            new TypedNullableConverterWrapper<bool, ushort>();
+            new TypedNullableConverterWrapper<bool, int>();
+            new TypedNullableConverterWrapper<bool, uint>();
+            new TypedNullableConverterWrapper<bool, long>();
+            new TypedNullableConverterWrapper<bool, ulong>();
+            new TypedNullableConverterWrapper<bool, IntPtr>();
+            new TypedNullableConverterWrapper<bool, UIntPtr>();
+            new TypedNullableConverterWrapper<bool, float>();
+            new TypedNullableConverterWrapper<bool, double>();
+
+            new TypedNullableConverterWrapper<byte, byte>();
+            new TypedNullableConverterWrapper<byte, sbyte>();
+            new TypedNullableConverterWrapper<byte, short>();
+            new TypedNullableConverterWrapper<byte, ushort>();
+            new TypedNullableConverterWrapper<byte, int>();
+            new TypedNullableConverterWrapper<byte, uint>();
+            new TypedNullableConverterWrapper<byte, long>();
+            new TypedNullableConverterWrapper<byte, ulong>();
+            new TypedNullableConverterWrapper<byte, IntPtr>();
+            new TypedNullableConverterWrapper<byte, UIntPtr>();
+            new TypedNullableConverterWrapper<byte, float>();
+            new TypedNullableConverterWrapper<byte, double>();
+
+            new TypedNullableConverterWrapper<sbyte, sbyte>();
+            new TypedNullableConverterWrapper<sbyte, short>();
+            new TypedNullableConverterWrapper<sbyte, ushort>();
+            new TypedNullableConverterWrapper<sbyte, int>();
+            new TypedNullableConverterWrapper<sbyte, uint>();
+            new TypedNullableConverterWrapper<sbyte, long>();
+            new TypedNullableConverterWrapper<sbyte, ulong>();
+            new TypedNullableConverterWrapper<sbyte, IntPtr>();
+            new TypedNullableConverterWrapper<sbyte, UIntPtr>();
+            new TypedNullableConverterWrapper<sbyte, float>();
+            new TypedNullableConverterWrapper<sbyte, double>();
+
+            new TypedNullableConverterWrapper<short, short>();
+            new TypedNullableConverterWrapper<short, ushort>();
+            new TypedNullableConverterWrapper<short, int>();
+            new TypedNullableConverterWrapper<short, uint>();
+            new TypedNullableConverterWrapper<short, long>();
+            new TypedNullableConverterWrapper<short, ulong>();
+            new TypedNullableConverterWrapper<short, IntPtr>();
+            new TypedNullableConverterWrapper<short, UIntPtr>();
+            new TypedNullableConverterWrapper<short, float>();
+            new TypedNullableConverterWrapper<short, double>();
+
+            new TypedNullableConverterWrapper<ushort, ushort>();
+            new TypedNullableConverterWrapper<ushort, int>();
+            new TypedNullableConverterWrapper<ushort, uint>();
+            new TypedNullableConverterWrapper<ushort, long>();
+            new TypedNullableConverterWrapper<ushort, ulong>();
+            new TypedNullableConverterWrapper<ushort, IntPtr>();
+            new TypedNullableConverterWrapper<ushort, UIntPtr>();
+            new TypedNullableConverterWrapper<ushort, float>();
+            new TypedNullableConverterWrapper<ushort, double>();
+
+            new TypedNullableConverterWrapper<int, int>();
+            new TypedNullableConverterWrapper<int, uint>();
+            new TypedNullableConverterWrapper<int, long>();
+            new TypedNullableConverterWrapper<int, ulong>();
+            new TypedNullableConverterWrapper<int, IntPtr>();
+            new TypedNullableConverterWrapper<int, UIntPtr>();
+            new TypedNullableConverterWrapper<int, float>();
+            new TypedNullableConverterWrapper<int, double>();
+
+            new TypedNullableConverterWrapper<uint, uint>();
+            new TypedNullableConverterWrapper<uint, long>();
+            new TypedNullableConverterWrapper<uint, ulong>();
+            new TypedNullableConverterWrapper<uint, IntPtr>();
+            new TypedNullableConverterWrapper<uint, UIntPtr>();
+            new TypedNullableConverterWrapper<uint, float>();
+            new TypedNullableConverterWrapper<uint, double>();
+
+            new TypedNullableConverterWrapper<long, long>();
+            new TypedNullableConverterWrapper<long, ulong>();
+            new TypedNullableConverterWrapper<long, IntPtr>();
+            new TypedNullableConverterWrapper<long, UIntPtr>();
+            new TypedNullableConverterWrapper<long, float>();
+            new TypedNullableConverterWrapper<long, double>();
+
+            new TypedNullableConverterWrapper<ulong, ulong>();
+            new TypedNullableConverterWrapper<ulong, IntPtr>();
+            new TypedNullableConverterWrapper<ulong, UIntPtr>();
+            new TypedNullableConverterWrapper<ulong, float>();
+            new TypedNullableConverterWrapper<ulong, double>();
+
+            new TypedNullableConverterWrapper<IntPtr, IntPtr>();
+            new TypedNullableConverterWrapper<IntPtr, UIntPtr>();
+            new TypedNullableConverterWrapper<IntPtr, float>();
+            new TypedNullableConverterWrapper<IntPtr, double>();
+
+            new TypedNullableConverterWrapper<UIntPtr, UIntPtr>();
+            new TypedNullableConverterWrapper<UIntPtr, float>();
+            new TypedNullableConverterWrapper<UIntPtr, double>();
+
+            new TypedNullableConverterWrapper<float, float>();
+            new TypedNullableConverterWrapper<float, double>();
+
+            new TypedNullableConverterWrapper<double, double>();
         }
         public static readonly Dictionary<Pack<Type, Type>, TypedValueConverter> _TypedValueConverters = new Dictionary<Pack<Type, Type>, TypedValueConverter>()
         {
@@ -3131,10 +3347,11 @@ namespace Capstones.UnityEngineEx
             }
             // the non-generic logic
             {
+                var uuttype = Nullable.GetUnderlyingType(ttype);
                 TypedConverter converter;
-                if (_TypedConverters.TryGetValue(typeof(T), out converter))
+                if (_TypedConverters.TryGetValue(uuttype ?? ttype, out converter))
                 {
-                    TypedConverter<T> tconverter = converter as TypedConverter<T>;
+                    ITypedConverter<T> tconverter = converter as ITypedConverter<T>;
                     if (tconverter != null)
                     {
                         to = tconverter.Convert(from);
@@ -3149,6 +3366,16 @@ namespace Capstones.UnityEngineEx
                 if (from is T)
                 {
                     to = (T)(object)from;
+                    return true;
+                }
+            }
+            // Nullable?
+            {
+                var uuftype = Nullable.GetUnderlyingType(ftype);
+                var uuttype = Nullable.GetUnderlyingType(ttype);
+                if (uuftype != null || uuttype != null)
+                {
+                    to = Convert<T>(from);
                     return true;
                 }
             }
