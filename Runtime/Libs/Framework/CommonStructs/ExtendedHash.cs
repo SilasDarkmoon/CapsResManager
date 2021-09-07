@@ -452,7 +452,7 @@ namespace Capstones.UnityEngineEx
         }
         public static long GetHashCodeEx(this string str)
         {
-            return GetHashCodeEx(str, 0, 0, 0, 0);
+            return GetHashCodeEx(str, 0, 0, -1, 0);
         }
         public static int GetHashCodeExShort(long hash)
         {
@@ -485,7 +485,7 @@ namespace Capstones.Test
                     if (parts.Length > 4)
                     {
                         var real = parts[3] + " " + parts[4];
-                        var hash = real.GetHashCodeEx(0, 1, -1, (byte)parts[4][0]);
+                        var hash = real.GetHashCodeEx(0, 1, parts[3].Length + 1, 0);
                         int hash_short = ExtendedStringHash.GetHashCodeExShort(hash);
                         if (map.ContainsKey(hash) && map[hash] != real)
                         {
