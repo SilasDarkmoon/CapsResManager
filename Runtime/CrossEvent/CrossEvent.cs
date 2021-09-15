@@ -858,6 +858,33 @@ namespace Capstones.UnityEngineEx
             return hindex;
         }
 
+        // TODO: IsHandlerReged(XXX)
+        public static int GetHandlerCount(string cate)
+        {
+            if (cate == null)
+            {
+                int count = 0;
+                foreach (var handlers in EventHandlers)
+                {
+                    count += handlers.Value.Count;
+                }
+                return count;
+            }
+            else
+            {
+                List<EventHandlerRegEntry> handlers;
+                var allhandles = EventHandlers;
+                if (!allhandles.TryGetValue(cate, out handlers))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return handlers.Count;
+                }
+            }
+        }
+
         [AOT.MonoPInvokeCallback(typeof(Del_RegHandler))]
         public static int RegHandler(string cate, CEventHandler handler)
         {
