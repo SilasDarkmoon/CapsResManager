@@ -162,6 +162,7 @@ namespace Capstones.UnityEngineEx
             public void Cleanup()
             {
                 UnloadAllBundle();
+                UnloadAllObbs();
                 ResManager.ReloadDistributeFlags();
             }
         }
@@ -1910,6 +1911,36 @@ namespace Capstones.UnityEngineEx
         public static bool IsFileInObb(string file)
         {
             return ObbEntryType(file) != ZipEntryType.NonExist;
+        }
+
+        public static void UnloadAllObbs()
+        {
+            if (_ObbZipArchive != null)
+            {
+                _ObbZipArchive.Dispose();
+                _ObbZipArchive = null;
+            }
+            if (_ObbFileStream != null)
+            {
+                _ObbFileStream.Dispose();
+                _ObbFileStream = null;
+            }
+            if (_AllObbZipArchives != null)
+            {
+                for (int i = 0; i < _AllObbZipArchives.Length; ++i)
+                {
+                    _AllObbZipArchives[i].Dispose();
+                }
+                _AllObbZipArchives = null;
+            }
+            if (_AllObbFileStreams != null)
+            {
+                for (int i = 0; i < _AllObbFileStreams.Length; ++i)
+                {
+                    _AllObbFileStreams[i].Dispose();
+                }
+                _AllObbFileStreams = null;
+            }
         }
 #endregion
     }
