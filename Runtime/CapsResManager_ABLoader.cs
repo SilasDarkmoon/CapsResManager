@@ -1917,19 +1917,43 @@ namespace Capstones.UnityEngineEx
         {
             if (_ObbZipArchive != null)
             {
-                _ObbZipArchive.Dispose();
+                try
+                {
+                    _ObbZipArchive.Dispose();
+                }
+                catch (Exception e)
+                {
+                    PlatDependant.LogError(e);
+                }
                 _ObbZipArchive = null;
             }
             if (_ObbFileStream != null)
             {
-                _ObbFileStream.Dispose();
+                try
+                {
+                    _ObbFileStream.Dispose();
+                }
+                catch (Exception e)
+                {
+                    PlatDependant.LogError(e);
+                }
                 _ObbFileStream = null;
             }
             if (_AllObbZipArchives != null)
             {
                 for (int i = 0; i < _AllObbZipArchives.Length; ++i)
                 {
-                    _AllObbZipArchives[i].Dispose();
+                    if (_AllObbZipArchives[i] != null)
+                    {
+                        try
+                        {
+                            _AllObbZipArchives[i].Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
                 }
                 _AllObbZipArchives = null;
             }
@@ -1937,7 +1961,17 @@ namespace Capstones.UnityEngineEx
             {
                 for (int i = 0; i < _AllObbFileStreams.Length; ++i)
                 {
-                    _AllObbFileStreams[i].Dispose();
+                    if (_AllObbFileStreams[i] != null)
+                    {
+                        try
+                        {
+                            _AllObbFileStreams[i].Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                    }
                 }
                 _AllObbFileStreams = null;
             }
