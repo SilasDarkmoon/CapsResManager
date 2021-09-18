@@ -209,11 +209,25 @@ namespace Capstones.UnityEngineEx
                 list.Sort((ia, ib) => ia.Order - ib.Order);
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    list[i].Prepare();
+                    try
+                    {
+                        list[i].Prepare();
+                    }
+                    catch (Exception e)
+                    {
+                        PlatDependant.LogError(e);
+                    }
                 }
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    list[i].Init();
+                    try
+                    {
+                        list[i].Init();
+                    }
+                    catch (Exception e)
+                    {
+                        PlatDependant.LogError(e);
+                    }
                 }
             }
         }
@@ -241,14 +255,29 @@ namespace Capstones.UnityEngineEx
                         if (pr != null && pr is IInitAsync)
                         {
                             pr.ReportProgress += reportProgress;
-                            var step = pr.CountWorkStep();
+                            int step = 0;
+                            try
+                            {
+                                step = pr.CountWorkStep();
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                            }
                             totalStep += step;
                             ++totalPhase;
                             workSteps[i] = step;
                         }
                         else
                         {
-                            list[i].Prepare();
+                            try
+                            {
+                                list[i].Prepare();
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                            }
                         }
                     }
                     if (totalStep > 0)
@@ -264,7 +293,14 @@ namespace Capstones.UnityEngineEx
                 {
                     for (int i = 0; i < list.Count; ++i)
                     {
-                        list[i].Prepare();
+                        try
+                        {
+                            list[i].Prepare();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
                     }
                 }
                 int workingPhase = 0;
@@ -285,11 +321,53 @@ namespace Capstones.UnityEngineEx
                             if (pr != null)
                             {
                                 reportProgress("WorkingPhase", null, ++workingPhase);
-                                reportProgress("Desc", pr.GetPhaseDesc(), 0);
+                                try
+                                {
+                                    var phaseDesc = pr.GetPhaseDesc();
+                                    reportProgress("Desc", phaseDesc, 0);
+                                }
+                                catch (Exception e)
+                                {
+                                    PlatDependant.LogError(e);
+                                }
                             }
                         }
-                        var work = inita.InitAsync();
-                        yield return work;
+                        IEnumerator work = null;
+                        try
+                        {
+                            work = inita.InitAsync();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
+                        if (work != null)
+                        {
+                            if (AsyncWorkTimer.Check())
+                            {
+                                yield return null;
+                            }
+                            while (true)
+                            {
+                                bool haveNext = false;
+                                try
+                                {
+                                    haveNext = work.MoveNext();
+                                }
+                                catch (Exception e)
+                                {
+                                    PlatDependant.LogError(e);
+                                }
+                                if (!haveNext)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    yield return work.Current;
+                                }
+                            }
+                        }
                         if (reportProgress != null)
                         {
                             if (workSteps[i] > 0)
@@ -301,7 +379,14 @@ namespace Capstones.UnityEngineEx
                     }
                     else
                     {
-                        list[i].Init();
+                        try
+                        {
+                            list[i].Init();
+                        }
+                        catch (Exception e)
+                        {
+                            PlatDependant.LogError(e);
+                        }
                     }
                 }
                 if (reportProgress != null)
@@ -326,7 +411,14 @@ namespace Capstones.UnityEngineEx
                 list.Sort((ia, ib) => ib.Order - ia.Order);
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    list[i].Cleanup();
+                    try
+                    {
+                        list[i].Cleanup();
+                    }
+                    catch (Exception e)
+                    {
+                        PlatDependant.LogError(e);
+                    }
                 }
             }
         }
