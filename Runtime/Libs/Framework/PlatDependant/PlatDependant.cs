@@ -1247,6 +1247,31 @@ namespace Capstones.UnityEngineEx
             return null;
         }
 
+        public static System.IO.Stream OpenReadWrite(this string path)
+        {
+            CreateFolder(System.IO.Path.GetDirectoryName(path));
+            for (int i = 0; i <= 3; ++i)
+            { // retry 3 times
+                try
+                {
+                    var stream = System.IO.File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                    if (stream != null)
+                    {
+                        return stream;
+                    }
+                }
+                catch (ArgumentException) { break; }
+                catch (NotSupportedException) { break; }
+                catch (DirectoryNotFoundException) { break; }
+                catch (Exception e)
+                {
+                    LogInfo(e);
+                }
+                Sleep(1);
+            }
+            return null;
+        }
+
         public static bool IsFileExist(this string path)
         {
             try
