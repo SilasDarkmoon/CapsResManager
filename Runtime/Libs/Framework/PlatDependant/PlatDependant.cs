@@ -522,6 +522,9 @@ namespace Capstones.UnityEngineEx
 
         static PlatDependant()
         {
+#if UNITY_EDITOR
+            if (SafeInitializerUtils.CheckShouldDelay()) return;
+#endif
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
             UnityEngine.Application.logMessageReceivedThreaded += (condition, stackTrace, type) =>
             {

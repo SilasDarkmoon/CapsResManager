@@ -13,6 +13,9 @@ namespace Capstones.UnityEngineEx
     {
         static ThreadSafeValues()
         {
+#if UNITY_EDITOR
+            if (SafeInitializerUtils.CheckShouldDelay()) return;
+#endif
             Init();
         }
 
