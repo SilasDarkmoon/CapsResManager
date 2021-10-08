@@ -12,7 +12,7 @@ namespace Capstones.UnityEngineEx
             {
                 try
                 {
-                    var _ = UnityEngine.Application.temporaryCachePath;
+                    var _ = UnityEngine.Application.GetStackTraceLogType(UnityEngine.LogType.Log);
                     return false;
                 }
                 catch (UnityEngine.UnityException e)
