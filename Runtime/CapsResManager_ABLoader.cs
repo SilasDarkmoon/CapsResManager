@@ -479,6 +479,22 @@ namespace Capstones.UnityEngineEx
                 return FindLoadedAssetBundle("mod/" + mod + "/" + name, norm, out abi);
             }
         }
+        public static void ForgetMissingAssetBundles()
+        {
+            List<string> missingNames = new List<string>();
+            foreach (var kvp in LoadedAssetBundles)
+            {
+                if (kvp.Value == null)
+                {
+                    missingNames.Add(kvp.Key);
+                }
+            }
+            for (int i = 0; i < missingNames.Count; ++i)
+            {
+                var name = missingNames[i];
+                LoadedAssetBundles.Remove(name);
+            }
+        }
 
         // TODO: in server?
         public static System.IO.Stream LoadFileInStreaming(string file)
