@@ -335,28 +335,238 @@ namespace Capstones.UnityEditorEx
             return builtKeysList;
         }
 
+        public static List<string> MakeObbDelayedInFolder(string folder, string dest, IList<ObbInfo> obbs, IList<string> blackList, IList<string> filterList, bool deleteSrc)
+        {
+            if (string.IsNullOrEmpty(dest))
+            {
+                dest = "EditorOutput/Build/Latest/";
+            }
+            if (!folder.EndsWith("/") && !folder.EndsWith("\\"))
+            {
+                folder = folder + "/";
+            }
+            var files = PlatDependant.GetAllFiles(folder);
+            int fileindex = 0;
+            System.IO.FileInfo curfile = null;
+            if (files.Length > 0)
+            {
+                curfile = new System.IO.FileInfo(files[fileindex]);
+            }
+
+            bool isMainObb = false;
+            HashSet<string> builtKeys = new HashSet<string>();
+            List<string> builtKeysList = new List<string>();
+            for (int obbindex = 0; ; ++obbindex)
+            {
+                ObbInfo curobb;
+                if (obbs != null && obbs.Count > 0)
+                {
+                    if (obbindex < obbs.Count)
+                    {
+                        curobb = obbs[obbindex];
+                    }
+                    else
+                    {
+                        curobb = obbs[obbs.Count - 1];
+                    }
+                }
+                else
+                {
+                    curobb = new ObbInfo();
+                }
+                if (string.IsNullOrEmpty(curobb.Key))
+                {
+                    curobb.Key = "main";
+                    isMainObb = true;
+                }
+                else
+                {
+                    curobb.Key = curobb.Key.ToLower();
+                }
+                if (builtKeys.Contains(curobb.Key) && curobb.Key == "main")
+                {
+                    curobb.Key = "delayed";
+                    isMainObb = false;
+                }
+                if (builtKeys.Contains(curobb.Key))
+                {
+                    string ukey = curobb.Key + "-" + obbindex;
+                    if (builtKeys.Contains(ukey))
+                    {
+                        for (int i = 1; ; ++i)
+                        {
+                            ukey = curobb.Key + "-" + (obbindex + i);
+                            if (!builtKeys.Contains(ukey))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    curobb.Key = ukey;
+                }
+                builtKeys.Add(curobb.Key);
+                builtKeysList.Add(curobb.Key);
+
+                var obbpath = curobb.ObbFileName;
+                if (string.IsNullOrEmpty(obbpath))
+                {
+                    //obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + "." + PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) + ".obb";
+                    obbpath = curobb.Key + "." + PlayerSettings.Android.bundleVersionCode + ".obb";
+                }
+                if (!obbpath.EndsWith(".obb", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    obbpath += ".obb";
+                }
+                if (!System.IO.Path.IsPathRooted(obbpath))
+                {
+                    obbpath = System.IO.Path.Combine(dest, obbpath);
+                }
+
+                if (curobb.MaxSize <= 0)
+                {
+                    curobb.MaxSize = 1024L * 1024L * (1024L * 2L - 10L);
+                }
+
+                var tmpdir = obbpath + ".tmp/";
+                if (System.IO.Directory.Exists(tmpdir))
+                {
+                    System.IO.Directory.Delete(tmpdir, true);
+                }
+                PlatDependant.CreateFolder(tmpdir);
+                PlatDependant.CreateFolder(System.IO.Path.GetDirectoryName(obbpath));
+                if (PlatDependant.IsFileExist(obbpath))
+                {
+                    PlatDependant.DeleteFile(obbpath);
+                }
+
+                long curobbsize = 0;
+                System.IO.FileInfo fileinfo = null;
+
+                for (; fileindex < files.Length; ++fileindex)
+                {
+
+                    var file = files[fileindex];
+                    if (file.EndsWith(".meta", StringComparison.InvariantCultureIgnoreCase)
+                        || file.EndsWith(".manifest", StringComparison.InvariantCultureIgnoreCase)
+                        || file.EndsWith(".srcinfo", StringComparison.InvariantCultureIgnoreCase)
+                        )
+                    {
+                        continue;
+                    }
+
+                    var part = file.Substring(folder.Length);
+                    if (part.StartsWith("res/") || part.StartsWith("spt/"))
+                    {
+                        bool isValid = true;
+                        if (isMainObb)
+                        {
+                            if (filterList.Contains(part))
+                            {
+                                isValid = true;
+                            }
+                            else
+                            {
+                                isValid = false;
+                            }
+                        }
+                        else
+                        {
+                            if (filterList.Contains(part))
+                            {
+                                isValid = false;
+                            }
+                            else
+                            {
+                                if (blackList != null)
+                                {
+                                    if (blackList.Contains(part))
+                                    {
+                                        isValid = false;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!isValid)
+                        {
+                            continue;
+                        }
+
+                        fileinfo = new System.IO.FileInfo(file);
+                        if (!isMainObb)
+                        {
+                            if (curobb.MaxSize - fileinfo.Length < curobbsize)
+                            {
+                                if (curobbsize == 0)
+                                { // big file - this single file is larger than obb's limit.
+                                    continue;
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                        curobbsize += fileinfo.Length;
+
+                        try
+                        {
+                            var dst = tmpdir + part;
+                            if (deleteSrc)
+                            {
+                                PlatDependant.MoveFile(file, dst);
+                            }
+                            else
+                            {
+                                PlatDependant.CopyFile(file, dst);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                }
+
+                try
+                {
+                    if (curobbsize <= 0 || CapsEditorUtils.ZipFolderNoCompress(tmpdir, obbpath))
+                    {
+                        System.IO.Directory.Delete(tmpdir, true);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+
+                if (isMainObb)
+                {
+                    fileindex = 0;
+                }
+                else if(fileindex >= files.Length)
+                {
+                    break;
+                }
+            }
+
+            string obbRecordFilePath = dest + "obb.txt";
+            using (var sw = PlatDependant.OpenWriteText(obbRecordFilePath))
+            {
+                foreach (var key in builtKeysList)
+                {
+                    sw.WriteLine(key + "." + PlayerSettings.Android.bundleVersionCode + ".obb");
+                }
+            }
+            return builtKeysList;
+        }
+
         [MenuItem("Res/Build Obb (Default)", priority = 202020)]
         public static void MakeDefaultObb()
         {
             if (System.IO.Directory.Exists("Assets/StreamingAssets"))
             {
-                List<string> blacklist = null;
-                var blacklistfile = ResManager.EditorResLoader.CheckDistributePathSafe("~Config~/", "obb-except.txt");
-                if (blacklistfile != null)
-                {
-                    blacklist = new List<string>();
-                    using (var sr = PlatDependant.OpenReadText(blacklistfile))
-                    {
-                        string line;
-                        while ((line = sr.ReadLine()) != null)
-                        {
-                            if (line.Length > 0)
-                            {
-                                blacklist.Add(line);
-                            }
-                        }
-                    }
-                }
+                List<string> blacklist = GetDistributeAssetsList("obb-except.txt");
 
                 var built = MakeObbInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/obb/", null, blacklist, true);
                 using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
@@ -367,6 +577,28 @@ namespace Capstones.UnityEditorEx
                     }
                 }
             }
+        }
+
+        public static List<string> GetDistributeAssetsList(string path)
+        {
+            List<string> blacklist = null;
+            var blacklistfile = ResManager.EditorResLoader.CheckDistributePathSafe("~Config~/", path);
+            if (blacklistfile != null)
+            {
+                blacklist = new List<string>();
+                using (var sr = PlatDependant.OpenReadText(blacklistfile))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        if (line.Length > 0)
+                        {
+                            blacklist.Add(line);
+                        }
+                    }
+                }
+            }
+            return blacklist;
         }
     }
 }
