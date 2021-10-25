@@ -479,9 +479,15 @@ namespace Capstones.UnityEditorEx
                             {
                                 if (blackList != null)
                                 {
-                                    if (blackList.Contains(part))
+                                    // judge folder
+                                    for (int i = 0; i < blackList.Count; ++i)
                                     {
-                                        isValid = false;
+                                        var blackItem = blackList[i];
+                                        if (part.StartsWith(blackItem, StringComparison.InvariantCultureIgnoreCase))
+                                        {
+                                            isValid = false;
+                                            break;
+                                        }
                                     }
                                 }
                             }
