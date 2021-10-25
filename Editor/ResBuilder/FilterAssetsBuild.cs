@@ -307,10 +307,25 @@ namespace Capstones.UnityEditorEx
             return false;
         }
 
+        public static bool IsValidAssets(string path, List<string> blackList)
+        {
+            var isValid = true;
+            for (int i = 0; i < blackList.Count; ++i)
+            {
+                var blackItem = blackList[i];
+                if (path.StartsWith(blackItem, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+            return isValid;
+        }
+
         [MenuItem("Res/Filter Split Apk", priority = 205050)]
         public static void FindFilterAssets()
         {
-            List<string> blacklist = CapsObbMaker.GetDistributeAssetsList("obb-except.txt");
+            List<string> blackList = CapsObbMaker.GetDistributeAssetsList("obb-except.txt");
             var filterfile = ResManager.EditorResLoader.CheckDistributePathSafe("~Config~/", "filter-asset.txt");
             if (PlatDependant.IsFileExist(filterfile))
             {
@@ -352,7 +367,9 @@ namespace Capstones.UnityEditorEx
                 strTempPath = "res/" + strTempPath.Substring(strTempPath.IndexOf("res/") + 4);
                 string splitTempPath = strTempPath + "\r\n";
 
-                if (!blacklist.Contains(strTempPath))
+                var isValid = IsValidAssets(strTempPath, blackList);
+
+                if (isValid)
                 {
                     var isContain = IsContainsAsset(strTempPath);
                     if (isContain)
@@ -369,7 +386,9 @@ namespace Capstones.UnityEditorEx
                 strTempPath = "spt/" + strTempPath.Substring(strTempPath.IndexOf("spt/") + 4);
                 string splitTempPath = strTempPath + "\r\n";
 
-                if (!blacklist.Contains(strTempPath))
+                var isValid = IsValidAssets(strTempPath, blackList); ;
+            
+                if (isValid)
                 {
                     byte[] data = Encoding.UTF8.GetBytes(splitTempPath);
                     stream.Write(data, 0, data.Length);
@@ -380,7 +399,7 @@ namespace Capstones.UnityEditorEx
             stream.Close();
             Debug.Log("RemainAssets Done!");
             List<string> filterList = CapsObbMaker.GetDistributeAssetsList("filter-asset.txt");
-            var built = CapsObbMaker.MakeObbDelayedInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/obb/", null, blacklist, filterList, true);
+            var built = CapsObbMaker.MakeObbDelayedInFolder("Assets/StreamingAssets", "EditorOutput/Build/Latest/obb/", null, blackList, filterList, true);
             using (var sw = PlatDependant.OpenWriteText("Assets/StreamingAssets/hasobb.flag.txt"))
             {
                 foreach (var key in built)
