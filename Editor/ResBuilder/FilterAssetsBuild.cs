@@ -179,6 +179,9 @@ namespace Capstones.UnityEditorEx
             list.Add("m--d--game-models-player3dshow");
             _filterAssets.Add("m--d--game-models-player3dshow", list);
             list = new ArrayList();
+            list.Add("m--d--game-models-headrender");
+            _filterAssets.Add("m--d--game-models-headrender", list);
+            list = new ArrayList();
             list.Add("m--d--game-models-players");
             _filterAssets.Add("m--d--game-models-players", list);
             list = new ArrayList();
