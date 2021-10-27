@@ -246,10 +246,10 @@ namespace Capstones.UnityEditorEx
             //list.Add("m--d--game-models-scenes-story-plotscene-beach");
             list.Add("m--d--game-models-scenes-story-plotscene-cafe");
             //list.Add("m--d--game-models-scenes-story-plotscene-hall");
-            list.Add("m--d--game-models-scenes-story-plotscene-home");
+            //list.Add("m--d--game-models-scenes-story-plotscene-home");
             list.Add("m--d--game-models-scenes-story-plotscene-locker_room");
             list.Add("m--d--game-models-scenes-story-plotscene-park");
-            list.Add("m--d--game-models-scenes-story-plotscene-training");
+            //list.Add("m--d--game-models-scenes-story-plotscene-training");
             list.Add("m--d--game-models-scenes-story-sceneprops");
             list.Add("m--d--game-models-scenes-story-themescene-animator");
             list.Add("m--d--game-models-scenes-story-themescene-beach");
