@@ -414,7 +414,7 @@ namespace Capstones.UnityEditorEx
         }
 
         [MenuItem("Res/Build Obb (Delayed)", priority = 202021)]
-        public static void MakeDefaultObb()
+        public static void MakeDelayedObb()
         {
             if (System.IO.Directory.Exists("Assets/StreamingAssets"))
             {
