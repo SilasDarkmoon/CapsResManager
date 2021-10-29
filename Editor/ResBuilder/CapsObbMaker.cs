@@ -149,11 +149,6 @@ namespace Capstones.UnityEditorEx
             }
             var files = PlatDependant.GetAllFiles(folder);
             int fileindex = 0;
-            System.IO.FileInfo curfile = null;
-            if (files.Length > 0)
-            {
-                curfile = new System.IO.FileInfo(files[fileindex]);
-            }
 
             HashSet<string> builtKeys = new HashSet<string>();
             List<string> builtKeysList = new List<string>();
