@@ -558,6 +558,13 @@ namespace Capstones.UnityEditorEx
                     {
                         continue;
                     }
+                    if (!isMainObb)
+                    {
+                        if (!System.IO.File.Exists(file))
+                        {
+                            continue;
+                        }
+                    }
 
                     var part = file.Substring(folder.Length);
                     if (part.StartsWith("res/") || part.StartsWith("spt/"))
@@ -711,11 +718,6 @@ namespace Capstones.UnityEditorEx
         }
         public static bool MatchTemplate(string checkingstr, string templatestr, bool ignorecase)
         {
-            if (ignorecase)
-            {
-                checkingstr = checkingstr.ToLower();
-                templatestr = templatestr.ToLower();
-            }
             var flags = ResManager.GetValidDistributeFlags();
             int tokenindex = -1;
             int tokenendindex = -1;
@@ -725,12 +727,13 @@ namespace Capstones.UnityEditorEx
             while ((tokenindex = templatestr.IndexOf("{", tsindex)) >= 0 && (tokenendindex = templatestr.IndexOf("}", tokenindex)) > tokenindex)
             {
                 var cntnotoken = tokenindex - tsindex;
-                for (int i = 0; i < cntnotoken; ++i)
+                if (csindex + cntnotoken > checkingstr.Length)
                 {
-                    if (csindex + i >= checkingstr.Length || checkingstr[csindex + i] != templatestr[tsindex + i])
-                    {
-                        return false;
-                    }
+                    return false;
+                }
+                if (string.Compare(checkingstr, csindex, templatestr, tsindex, cntnotoken, ignorecase) != 0)
+                {
+                    return false;
                 }
                 csindex += cntnotoken;
                 tsindex += cntnotoken;
@@ -742,7 +745,7 @@ namespace Capstones.UnityEditorEx
                     for (int f = 0; f < flags.Length; ++f)
                     {
                         var flag = flags[f];
-                        if (checkingstr.IndexOf(flag, csindex) == csindex)
+                        if (checkingstr.IndexOf(flag, csindex, ignorecase ? StringComparison.InvariantCultureIgnoreCase : 0) == csindex)
                         {
                             fit = true;
                             csindex += flag.Length;
@@ -758,12 +761,13 @@ namespace Capstones.UnityEditorEx
                 else
                 {
                     var tokenlen = token.Length + 2;
-                    for (int i = 0; i < tokenlen; ++i)
+                    if (csindex + tokenlen > checkingstr.Length)
                     {
-                        if (csindex + i >= checkingstr.Length || checkingstr[csindex + i] != templatestr[tsindex + i])
-                        {
-                            return false;
-                        }
+                        return false;
+                    }
+                    if (string.Compare(checkingstr, csindex, templatestr, tsindex, tokenlen, ignorecase) != 0)
+                    {
+                        return false;
                     }
                     csindex += tokenlen;
                     tsindex += tokenlen;
@@ -771,12 +775,13 @@ namespace Capstones.UnityEditorEx
             }
 
             var cntrest = templatestr.Length - tsindex;
-            for (int i = 0; i < cntrest; ++i)
+            if (csindex + cntrest > checkingstr.Length)
             {
-                if (csindex + i >= checkingstr.Length || checkingstr[csindex + i] != templatestr[tsindex + i])
-                {
-                    return false;
-                }
+                return false;
+            }
+            if (string.Compare(checkingstr, csindex, templatestr, tsindex, cntrest, ignorecase) != 0)
+            {
+                return false;
             }
 
             return true;

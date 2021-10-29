@@ -580,7 +580,15 @@ namespace Capstones.UnityEngineEx
                             return dfound;
                         }
                     }
+                    {
+                        var dfound = CheckModPathSafe(distFolderName + normal);
+                        if (dfound != null)
+                        {
+                            return dfound;
+                        }
+                    }
                 }
+                else
                 {
                     var dfound = CheckModPathSafe(normal);
                     if (dfound != null)
