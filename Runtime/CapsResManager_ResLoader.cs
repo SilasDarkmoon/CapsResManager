@@ -21,7 +21,7 @@ namespace Capstones.UnityEngineEx
             void LoadScene(string name, bool additive);
 
             CoroutineWork LoadResAsync(string asset, Type type);
-            IEnumerator LoadSceneAsync(string name, bool additive);
+            CoroutineWork LoadSceneAsync(string name, bool additive);
 
             void UnloadUnusedRes();
             void UnloadAllRes(bool unloadPermanentBundle);
@@ -138,6 +138,8 @@ namespace Capstones.UnityEngineEx
 
         private static List<Pack<string, bool, bool>> LoadingScenes = new List<Pack<string, bool, bool>>();
         private static int LoadingSceneQueueIndex = -1;
+        private static CoroutineWorkQueue LoadingSceneWorkFull;
+        private static CoroutineWorkQueue LoadingSceneWork;
         public static void LoadScene(string name, bool additive)
         {
             //if (!additive)
@@ -184,7 +186,12 @@ namespace Capstones.UnityEngineEx
                 var info = LoadingScenes[LoadingSceneQueueIndex];
                 if (info.t2)
                 {
-                    ResLoader.LoadSceneAsync(info.t1, info.t3);
+                    var work = ResLoader.LoadSceneAsync(info.t1, info.t3);
+                    if (LoadingSceneWork == null)
+                    {
+                        CreateLoadingSceneWork();
+                    }
+                    LoadingSceneWork.AddWork(work);
                 }
                 else
                 {
@@ -195,6 +202,8 @@ namespace Capstones.UnityEngineEx
             {
                 LoadingScenes.Clear();
                 LoadingSceneQueueIndex = -1;
+                LoadingSceneWork = null;
+                LoadingSceneWorkFull = null;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedClearLoadingQueue;
             }
         }
@@ -371,7 +380,7 @@ namespace Capstones.UnityEngineEx
         {
             return LoadResDeepAsync(name, null);
         }
-        public static IEnumerator LoadSceneAsync(string name, bool additive)
+        public static CoroutineWork LoadSceneAsync(string name, bool additive)
         {
             //if (!additive)
             //{
@@ -405,15 +414,18 @@ namespace Capstones.UnityEngineEx
             if (LoadingScenes.Count == 1)
             {
                 LoadingSceneQueueIndex = 0;
+                CreateLoadingSceneWork();
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
-                return ResLoader.LoadSceneAsync(name, additive);
+                var work = ResLoader.LoadSceneAsync(name, additive);
+                LoadingSceneWork.AddWork(work);
+                return LoadingSceneWorkFull;
             }
             else
             {
-                return new LoadSceneAsyncYieldable();
+                return LoadingSceneWorkFull;
             }
         }
-        public static IEnumerator LoadSceneAsync(string name)
+        public static CoroutineWork LoadSceneAsync(string name)
         {
             return LoadSceneAsync(name, false);
         }
@@ -426,6 +438,13 @@ namespace Capstones.UnityEngineEx
                     return LoadingScenes.Count > 0;
                 }
             }
+        }
+        private static void CreateLoadingSceneWork()
+        {
+            LoadingSceneWork = new CoroutineWorkQueue();
+            LoadingSceneWorkFull = new CoroutineWorkQueue();
+            LoadingSceneWorkFull.AddWork(LoadingSceneWork);
+            LoadingSceneWorkFull.AddWork(new CoroutineWorkSingle(new LoadSceneAsyncYieldable()));
         }
 
         public static void UnloadUnusedRes()

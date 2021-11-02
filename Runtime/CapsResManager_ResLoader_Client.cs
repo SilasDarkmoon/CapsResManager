@@ -583,10 +583,14 @@ namespace Capstones.UnityEngineEx
                 }
             }
 
-            private static IEnumerator LoadAssetAsyncWork(CoroutineTasks.CoroutineWork req, string asset, Type type)
+            private static IEnumerator LoadAssetAsyncWork(CoroutineTasks.CoroutineWorkSingle req, string asset, Type type)
             {
+                req.Total = 10000;
                 while (AsyncWorkTimer.Check()) yield return null;
+                req.Progress = 50;
                 while (ResManager.IsCollectingGarbage) yield return null;
+                req.Progress = 100;
+
                 ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
 
 #if COMPATIBLE_RESMANAGER_V1
@@ -604,14 +608,22 @@ namespace Capstones.UnityEngineEx
                     int sceneindex;
                     if (IsBuiltinScene(scenepath, out sceneindex))
                     {
+                        AsyncOperation op;
                         if (sceneindex >= 0)
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                            op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
                         else
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(node.PPath), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                            op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(node.PPath), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
+
+                        while (!op.isDone)
+                        {
+                            req.Progress = 100 + (long)((10000 - 100) * op.progress);
+                            yield return null;
+                        }
+
                         ResManager.DelayGarbageCollectTo(int.MinValue);
                         //req.Result = ???
                         yield break;
@@ -620,9 +632,15 @@ namespace Capstones.UnityEngineEx
                     var ai = CreateAssetInfo(item);
                     ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                     yield return ai.PreloadAsync();
+                    req.Progress = 150;
                     ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                     var work = new CoroutineTasks.CoroutineWorkSingle();
                     work.SetWork(ai.LoadAsync(work, type));
+                    while (work.MoveNext())
+                    {
+                        req.Progress = 150 + (long)((10000 - 150) * ((double)work.Progress / (double)work.Total));
+                        yield return null;
+                    }
                     yield return work;
                     req.Result = work.Result;
                 }
@@ -631,14 +649,22 @@ namespace Capstones.UnityEngineEx
                     int sceneindex;
                     if (IsBuiltinScene(asset, out sceneindex))
                     {
+                        AsyncOperation op;
                         if (sceneindex >= 0)
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                            op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneindex, type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
                         else
                         {
-                            yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(asset), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
+                            op = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(System.IO.Path.GetFileNameWithoutExtension(asset), type == null ? UnityEngine.SceneManagement.LoadSceneMode.Single : UnityEngine.SceneManagement.LoadSceneMode.Additive);
                         }
+
+                        while (!op.isDone)
+                        {
+                            req.Progress = 100 + (long)((10000 - 100) * op.progress);
+                            yield return null;
+                        }
+
                         ResManager.DelayGarbageCollectTo(int.MinValue);
                         //req.Result = ???
                         yield break;
@@ -653,7 +679,7 @@ namespace Capstones.UnityEngineEx
                 work.SetWork(LoadAssetAsyncWork(work, asset, type));
                 return work;
             }
-            public static IEnumerator LoadLevelAsync(string name, bool additive)
+            public static CoroutineTasks.CoroutineWork LoadLevelAsync(string name, bool additive)
             {
                 ResManager.StartGarbageCollectLite();
                 var work = LoadAssetAsync(name, additive ? typeof(object) : null);
@@ -673,7 +699,7 @@ namespace Capstones.UnityEngineEx
             {
                 return LoadAssetAsync(asset, type);
             }
-            public IEnumerator LoadSceneAsync(string name, bool additive)
+            public CoroutineTasks.CoroutineWork LoadSceneAsync(string name, bool additive)
             {
                 return LoadLevelAsync(name, additive);
             }

@@ -701,10 +701,10 @@ namespace Capstones.UnityEngineEx
                 work.Result = LoadRes(asset, type);
                 return work;
             }
-            public IEnumerator LoadSceneAsync(string name, bool additive)
+            public CoroutineTasks.CoroutineWork LoadSceneAsync(string name, bool additive)
             {
                 AsyncOperation op = LoadSceneAsyncInPlayMode(name, additive);
-                yield return op;
+                return new CoroutineTasks.CoroutineWorkAsyncOp(op);
             }
 
             public int Order { get { return LifetimeOrders.ResLoader; } }

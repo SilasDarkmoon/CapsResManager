@@ -201,6 +201,12 @@ namespace Capstones.UnityEngineEx
             protected object _Result = null;
             protected bool _Suspended = false;
 
+            protected long _Total = 1;
+            protected long _Progress = 0;
+            public virtual long Total { get { return _Total; } set { _Total = value; } }
+            public virtual long Progress { get { return _Progress; } set { _Progress = value; } }
+            public float NormalizedProgress { get { return (float)Progress / (float)Total; } }
+
             public abstract object Current { get; }
             public abstract bool MoveNext();
             public virtual void Reset() { }
@@ -239,6 +245,11 @@ namespace Capstones.UnityEngineEx
         }
         public class CoroutineWorkSingle : CoroutineWork
         {
+            public CoroutineWorkSingle() { }
+            public CoroutineWorkSingle(IEnumerator work)
+            {
+                _Inner = work;
+            }
             protected IEnumerator _Inner;
 
             public override object Current
@@ -419,6 +430,25 @@ namespace Capstones.UnityEngineEx
                     return null;
                 }
             }
+
+            public override long Total { get { return 10000; } set { } }
+            public override long Progress
+            {
+                get
+                {
+                    var myprog = Math.Pow(0.1, _CurWorkIndex);
+                    var baseprog = 1.0 - myprog;
+
+                    double curprog = 0;
+                    var work = Work;
+                    if (work != null)
+                    {
+                        curprog = ((double)work.Progress) / ((double)work.Total);
+                    }
+                    return (long)((baseprog + (curprog * myprog)) * 10000);
+                }
+                set { }
+            }
         }
         public class CoroutineAwait : CoroutineWork
         {
@@ -464,6 +494,46 @@ namespace Capstones.UnityEngineEx
             public void SetWork(CoroutineWork work)
             {
                 _Inner = work;
+            }
+        }
+        public class CoroutineWorkAsyncOp : CoroutineWork
+        {
+            protected AsyncOperation _Inner;
+
+            public CoroutineWorkAsyncOp() { }
+            public CoroutineWorkAsyncOp(AsyncOperation op)
+            {
+                _Inner = op;
+            }
+            public void SetWork(AsyncOperation work)
+            {
+                _Inner = work;
+            }
+
+            public override object Current { get { return null; } }
+            public override bool MoveNext()
+            {
+                var done = Done = _Inner == null || _Inner.isDone;
+                return !done;
+            }
+            public override void Dispose()
+            {
+            }
+            public override long Total { get { return 10000; } set { } }
+            public override long Progress
+            {
+                get
+                {
+                    if (_Inner == null)
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return (long)(_Inner.progress * 10000);
+                    }
+                }
+                set { }
             }
         }
 
