@@ -201,7 +201,7 @@ namespace Capstones.UnityEngineEx
             protected object _Result = null;
             protected bool _Suspended = false;
 
-            protected long _Total = 1;
+            protected long _Total = 10000;
             protected long _Progress = 0;
             public virtual long Total { get { return _Total; } set { _Total = value; } }
             public virtual long Progress { get { return _Progress; } set { _Progress = value; } }
@@ -214,7 +214,7 @@ namespace Capstones.UnityEngineEx
 
             public event Action OnDone = () => { };
 
-            protected bool TryStart()
+            public bool TryStart()
             {
                 if (!_Started)
                 {
@@ -225,7 +225,7 @@ namespace Capstones.UnityEngineEx
                 return false;
             }
             protected virtual void Start() { }
-            public bool Done {
+            public virtual bool Done {
                 get { return _Done; }
                 protected set
                 {
@@ -268,7 +268,7 @@ namespace Capstones.UnityEngineEx
             }
             public override bool MoveNext()
             {
-                if (Done)
+                if (_Done)
                 {
                     return false;
                 }
@@ -431,7 +431,6 @@ namespace Capstones.UnityEngineEx
                 }
             }
 
-            public override long Total { get { return 10000; } set { } }
             public override long Progress
             {
                 get
@@ -445,7 +444,7 @@ namespace Capstones.UnityEngineEx
                     {
                         curprog = ((double)work.Progress) / ((double)work.Total);
                     }
-                    return (long)((baseprog + (curprog * myprog)) * 10000);
+                    return _Progress = (long)((baseprog + (curprog * myprog)) * Total);
                 }
                 set { }
             }
@@ -496,7 +495,19 @@ namespace Capstones.UnityEngineEx
                 _Inner = work;
             }
         }
-        public class CoroutineWorkAsyncOp : CoroutineWork
+
+        public abstract class CoroutineMonitor : CoroutineWork
+        {
+            public override object Current
+            {
+                get
+                {
+                    return null;
+                }
+            }
+
+        }
+        public class CoroutineWorkAsyncOp : CoroutineMonitor
         {
             protected AsyncOperation _Inner;
 
@@ -510,16 +521,40 @@ namespace Capstones.UnityEngineEx
                 _Inner = work;
             }
 
-            public override object Current { get { return null; } }
             public override bool MoveNext()
             {
-                var done = Done = _Inner == null || _Inner.isDone;
-                return !done;
+                if (_Done)
+                {
+                    return false;
+                }
+                if (_Inner == null)
+                {
+                    Done = true;
+                    return false;
+                }
+                _Progress = (long)(_Inner.progress * _Total);
+                if (_Suspended)
+                {
+                    return true;
+                }
+                if (_Inner.isDone)
+                {
+                    Done = true;
+                    if (_Inner is AssetBundleRequest)
+                    {
+                        _Result = ((AssetBundleRequest)_Inner).asset;
+                    }
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
             }
             public override void Dispose()
             {
             }
-            public override long Total { get { return 10000; } set { } }
+
             public override long Progress
             {
                 get
@@ -530,32 +565,120 @@ namespace Capstones.UnityEngineEx
                     }
                     else
                     {
-                        return (long)(_Inner.progress * 10000);
+                        return _Progress = (long)(_Inner.progress * _Total);
                     }
                 }
                 set { }
             }
-        }
-
-        public abstract class CoroutineMonitor : CoroutineWork
-        {
-            public override object Current
+            public override long Total
             {
                 get
                 {
-                    return null;
+                    MoveNext();
+                    return _Total;
                 }
+                set { }
+            }
+            public override object Result
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Result == null && _Inner is AssetBundleRequest)
+                    {
+                        _Result = ((AssetBundleRequest)_Inner).asset;
+                    }
+                    return _Result;
+                }
+                set { }
+            }
+            public override bool Done
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Inner != null)
+                    {
+                        base.Done = _Inner.isDone;
+                    }
+                    return base.Done;
+                }
+                protected set { base.Done = value; }
+            }
+        }
+        public class CoroutineMonitorRaw : CoroutineWorkSingle
+        {
+            public CoroutineMonitorRaw() : base() { }
+            public CoroutineMonitorRaw(IEnumerator work) : base(work)
+            {
+                TryStart();
             }
 
+            protected override void Start()
+            {
+                if (_Inner != null)
+                {
+                    _Inner.StartCoroutine();
+                }
+            }
+            public override bool MoveNext()
+            {
+                TryStart();
+                return base.MoveNext();
+            }
+
+            public override long Progress
+            {
+                get
+                {
+                    MoveNext();
+                    return _Progress;
+                }
+                set { }
+            }
+            public override long Total
+            {
+                get
+                {
+                    MoveNext();
+                    return _Total;
+                }
+                set { }
+            }
+            public override object Result
+            {
+                get
+                {
+                    MoveNext();
+                    return _Result;
+                }
+                set { }
+            }
+            public override bool Done
+            {
+                get
+                {
+                    MoveNext();
+                    return base.Done;
+                }
+                protected set { base.Done = value; }
+            }
         }
         public class CoroutineMonitorSingle : CoroutineMonitor
         {
+            public CoroutineMonitorSingle() { }
+            public CoroutineMonitorSingle(CoroutineWork work)
+            {
+                _Inner = work;
+                TryStart();
+            }
+
             protected CoroutineWork _Inner;
 
             public override bool MoveNext()
             {
                 TryStart();
-                if (Done)
+                if (_Done)
                 {
                     return false;
                 }
@@ -564,11 +687,12 @@ namespace Capstones.UnityEngineEx
                     Done = true;
                     return false;
                 }
+                _Progress = _Inner.Progress;
                 if (_Suspended)
                 {
                     return true;
                 }
-                if (_Inner.Done)
+                if (!_Inner.MoveNext())
                 {
                     Done = true;
                     _Result = _Inner.Result;
@@ -590,12 +714,66 @@ namespace Capstones.UnityEngineEx
             {
                 if (_Inner != null)
                 {
+                    _Total = _Inner.Total;
                     if (_Result != null)
                     {
                         _Inner.Result = _Result;
                     }
                     _Inner.StartCoroutine();
                 }
+            }
+
+            public override long Progress
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Inner != null)
+                    {
+                        _Progress = _Inner.Progress;
+                    }
+                    return _Progress;
+                }
+                set { }
+            }
+            public override long Total
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Inner != null)
+                    {
+                        _Total = _Inner.Total;
+                    }
+                    return _Total;
+                }
+                set { }
+            }
+            public override object Result
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Result == null && _Inner != null)
+                    {
+                        _Result = _Inner.Result;
+                    }
+                    return _Result;
+                }
+                set { }
+            }
+            public override bool Done
+            {
+                get
+                {
+                    MoveNext();
+                    if (_Inner != null)
+                    {
+                        base.Done = _Inner.Done;
+                    }
+                    return base.Done;
+                }
+                protected set { base.Done = value; }
             }
 
             public void SetWork(CoroutineWork work)
@@ -613,7 +791,7 @@ namespace Capstones.UnityEngineEx
             public override bool MoveNext()
             {
                 TryStart();
-                if (Done)
+                if (_Done)
                 {
                     return false;
                 }
@@ -622,18 +800,25 @@ namespace Capstones.UnityEngineEx
                     Done = true;
                     return false;
                 }
+                _Progress = CheckProgress();
                 if (_Suspended)
                 {
                     return true;
                 }
+                bool done = true;
                 for (int i = 0; i < _Works.Count; ++i)
                 {
-                    if (!_Works[i].Done)
+                    if (_Works[i].MoveNext())
                     {
-                        return true;
+                        done = false;
                     }
                 }
+                if (!done)
+                {
+                    return true;
+                }
                 Done = true;
+                CheckResult();
                 return false;
             }
             public override void Dispose()
@@ -650,35 +835,95 @@ namespace Capstones.UnityEngineEx
                     _Works[i].StartCoroutine();
                 }
             }
+
+            protected long CheckProgress()
+            {
+                var total = base.Total;
+                double nprog = 0.0;
+                for (int i = 0; i < _Works.Count; ++i)
+                {
+                    var myfull = Math.Pow(0.1, i);
+                    if (i < _Works.Count - 1)
+                    {
+                        myfull *= 0.9;
+                    }
+                    nprog += myfull * _Works[i].NormalizedProgress;
+                }
+                return (long)(nprog * (double)total);
+            }
+            protected void CheckResult()
+            {
+                var result = _Result as object[];
+                if (result == null || result.Length < _Works.Count)
+                {
+                    result = new object[_Works.Count];
+                    _Result = result;
+                }
+                for (int i = 0; i < _Works.Count; ++i)
+                {
+                    result[i] = _Works[i].Result;
+                }
+            }
+            public override long Progress
+            {
+                get
+                {
+                    MoveNext();
+                    _Progress = CheckProgress();
+                    return _Progress;
+                }
+                set { }
+            }
+            public override long Total
+            {
+                get
+                {
+                    MoveNext();
+                    return base.Total;
+                }
+                set { }
+            }
             public override object Result
             {
                 get
                 {
-                    if (_Result == null)
-                    {
-                        var result = new object[_Works.Count];
-                        _Result = result;
-                        for (int i = 0; i < _Works.Count; ++i)
-                        {
-                            result[i] = _Works[i].Result;
-                        }
-                    }
+                    MoveNext();
+                    CheckResult();
                     return _Result;
                 }
-                set
+                set { }
+            }
+            public override bool Done
+            {
+                get
                 {
+                    MoveNext();
+                    bool done = true;
                     for (int i = 0; i < _Works.Count; ++i)
                     {
-                        _Works[i].Result = value;
+                        if (!_Works[i].Done)
+                        {
+                            done = false;
+                        }
                     }
+                    return base.Done = done;
                 }
+                protected set { base.Done = value; }
             }
 
             public void AddWork(CoroutineWork work)
             {
-                if (!_Started && work != null)
+                if (work != null)
                 {
                     _Works.Add(work);
+                }
+            }
+            public int WorkCount { get { return _Works.Count; } }
+            public void InsertWork(CoroutineWork work, int index)
+            {
+                if (work != null)
+                {
+                    _Works.Insert(index, work);
                 }
             }
         }

@@ -697,8 +697,9 @@ namespace Capstones.UnityEngineEx
 
             public CoroutineTasks.CoroutineWork LoadResAsync(string asset, Type type)
             {
-                var work = new CoroutineTasks.CoroutineWorkSingle();
+                var work = new CoroutineTasks.CoroutineMonitorRaw();
                 work.Result = LoadRes(asset, type);
+                work.TryStart();
                 return work;
             }
             public CoroutineTasks.CoroutineWork LoadSceneAsync(string name, bool additive)

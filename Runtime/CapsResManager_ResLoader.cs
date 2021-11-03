@@ -138,8 +138,7 @@ namespace Capstones.UnityEngineEx
 
         private static List<Pack<string, bool, bool>> LoadingScenes = new List<Pack<string, bool, bool>>();
         private static int LoadingSceneQueueIndex = -1;
-        private static CoroutineWorkQueue LoadingSceneWorkFull;
-        private static CoroutineWorkQueue LoadingSceneWork;
+        private static CoroutineMonitorConcurrent LoadingSceneWork;
         public static void LoadScene(string name, bool additive)
         {
             //if (!additive)
@@ -191,7 +190,7 @@ namespace Capstones.UnityEngineEx
                     {
                         CreateLoadingSceneWork();
                     }
-                    LoadingSceneWork.AddWork(work);
+                    LoadingSceneWork.InsertWork(work, LoadingSceneWork.WorkCount - 1);
                 }
                 else
                 {
@@ -203,7 +202,6 @@ namespace Capstones.UnityEngineEx
                 LoadingScenes.Clear();
                 LoadingSceneQueueIndex = -1;
                 LoadingSceneWork = null;
-                LoadingSceneWorkFull = null;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoadedClearLoadingQueue;
             }
         }
@@ -417,12 +415,12 @@ namespace Capstones.UnityEngineEx
                 CreateLoadingSceneWork();
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
                 var work = ResLoader.LoadSceneAsync(name, additive);
-                LoadingSceneWork.AddWork(work);
-                return LoadingSceneWorkFull;
+                LoadingSceneWork.InsertWork(work, LoadingSceneWork.WorkCount - 1);
+                return LoadingSceneWork;
             }
             else
             {
-                return LoadingSceneWorkFull;
+                return LoadingSceneWork;
             }
         }
         public static CoroutineWork LoadSceneAsync(string name)
@@ -441,10 +439,8 @@ namespace Capstones.UnityEngineEx
         }
         private static void CreateLoadingSceneWork()
         {
-            LoadingSceneWork = new CoroutineWorkQueue();
-            LoadingSceneWorkFull = new CoroutineWorkQueue();
-            LoadingSceneWorkFull.AddWork(LoadingSceneWork);
-            LoadingSceneWorkFull.AddWork(new CoroutineWorkSingle(new LoadSceneAsyncYieldable()));
+            LoadingSceneWork = new CoroutineMonitorConcurrent();
+            LoadingSceneWork.AddWork(new CoroutineWorkSingle(new LoadSceneAsyncYieldable()));
         }
 
         public static void UnloadUnusedRes()
