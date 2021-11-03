@@ -258,7 +258,11 @@ namespace Capstones.UnityEngineEx
                                 }
                                 if (reqraw != null)
                                 {
-                                    yield return reqraw;
+                                    while (!reqraw.isDone)
+                                    {
+                                        yield return null;
+                                        req.Progress = (long)(req.Total * reqraw.progress);
+                                    }
                                     var asset = reqraw.asset;
 
                                     if (!asset)

@@ -74,7 +74,11 @@ namespace Capstones.UnityEngineEx
                             }
                             if (raw != null)
                             {
-                                yield return raw;
+                                while (!raw.isDone)
+                                {
+                                    yield return null;
+                                    req.Progress = (long)(req.Total * raw.progress * 1.11f);
+                                }
                             }
                         }
                     }

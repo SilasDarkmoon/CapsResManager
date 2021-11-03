@@ -637,7 +637,10 @@ namespace Capstones.UnityEngineEx
                     MoveNext();
                     return _Progress;
                 }
-                set { }
+                set
+                {
+                    _Progress = value;
+                }
             }
             public override long Total
             {
@@ -646,7 +649,10 @@ namespace Capstones.UnityEngineEx
                     MoveNext();
                     return _Total;
                 }
-                set { }
+                set
+                {
+                    _Total = value;
+                }
             }
             public override object Result
             {

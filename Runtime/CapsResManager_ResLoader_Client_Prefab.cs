@@ -72,7 +72,11 @@ namespace Capstones.UnityEngineEx
                                     }
                                     if (raw != null)
                                     {
-                                        yield return raw;
+                                        while (!raw.isDone)
+                                        {
+                                            yield return null;
+                                            req.Progress = (long)(req.Total * raw.progress);
+                                        }
                                         var asset = raw.asset as GameObject;
 
                                         if (!Prefab)
