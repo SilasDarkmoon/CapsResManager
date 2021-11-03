@@ -590,7 +590,10 @@ namespace Capstones.UnityEngineEx
                     }
                     return _Result;
                 }
-                set { }
+                set
+                {
+                    _Result = value;
+                }
             }
             public override bool Done
             {
@@ -652,7 +655,10 @@ namespace Capstones.UnityEngineEx
                     MoveNext();
                     return _Result;
                 }
-                set { }
+                set
+                {
+                    _Result = value;
+                }
             }
             public override bool Done
             {
@@ -760,7 +766,10 @@ namespace Capstones.UnityEngineEx
                     }
                     return _Result;
                 }
-                set { }
+                set
+                {
+                    _Result = value;
+                }
             }
             public override bool Done
             {
@@ -891,7 +900,62 @@ namespace Capstones.UnityEngineEx
                     CheckResult();
                     return _Result;
                 }
-                set { }
+                set
+                {
+                    if (value is IList<object>)
+                    {
+                        var list = (IList<object>)value;
+
+                        var result = _Result as object[];
+                        if (result == null || result.Length < _Works.Count)
+                        {
+                            result = new object[_Works.Count];
+                            _Result = result;
+                        }
+                        for (int i = 0; i < _Works.Count; ++i)
+                        {
+                            object r = null;
+                            if (list.Count > i)
+                            {
+                                r = list[i];
+                            }
+                            result[i] = r;
+                        }
+                    }
+                    else if (value is IList)
+                    {
+                        var list = (IList)value;
+
+                        var result = _Result as object[];
+                        if (result == null || result.Length < _Works.Count)
+                        {
+                            result = new object[_Works.Count];
+                            _Result = result;
+                        }
+                        for (int i = 0; i < _Works.Count; ++i)
+                        {
+                            object r = null;
+                            if (list.Count > i)
+                            {
+                                r = list[i];
+                            }
+                            result[i] = r;
+                        }
+                    }
+                    else
+                    {
+                        var result = _Result as object[];
+                        if (result == null || result.Length < _Works.Count)
+                        {
+                            result = new object[_Works.Count];
+                            _Result = result;
+                        }
+                        for (int i = 0; i < _Works.Count; ++i)
+                        {
+                            result[i] = value;
+                        }
+                    }
+                }
             }
             public override bool Done
             {
