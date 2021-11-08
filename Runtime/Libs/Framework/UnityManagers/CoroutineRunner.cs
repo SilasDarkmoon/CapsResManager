@@ -449,52 +449,6 @@ namespace Capstones.UnityEngineEx
                 set { }
             }
         }
-        public class CoroutineAwait : CoroutineWork
-        {
-            protected CoroutineWork _Inner;
-
-            public override object Current
-            {
-                get
-                {
-                    return null;
-                }
-            }
-            public override bool MoveNext()
-            {
-                if (Done)
-                {
-                    return false;
-                }
-                if (_Inner == null)
-                {
-                    Done = true;
-                    return false;
-                }
-                if (_Suspended)
-                {
-                    return true;
-                }
-                if (_Inner.Done)
-                {
-                    Done = true;
-                    _Result = _Inner.Result;
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-            public override void Dispose()
-            {
-            }
-
-            public void SetWork(CoroutineWork work)
-            {
-                _Inner = work;
-            }
-        }
 
         public abstract class CoroutineMonitor : CoroutineWork
         {
@@ -621,20 +575,48 @@ namespace Capstones.UnityEngineEx
             {
                 if (_Inner != null)
                 {
-                    _Inner.StartCoroutine();
+                    CoroutineRunner.StartCoroutine(RealWork());
                 }
+                else
+                {
+                    Done = true;
+                }
+            }
+            protected IEnumerator RealWork()
+            {
+                while (_Inner.MoveNext())
+                {
+                    yield return _Inner.Current;
+                }
+                Done = true;
             }
             public override bool MoveNext()
             {
                 TryStart();
-                return base.MoveNext();
+                if (_Done)
+                {
+                    return false;
+                }
+                if (_Inner == null)
+                {
+                    Done = true;
+                    return false;
+                }
+                if (_Suspended)
+                {
+                    return true;
+                }
+                return true;
             }
 
             public override long Progress
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     return _Progress;
                 }
                 set
@@ -646,7 +628,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     return _Total;
                 }
                 set
@@ -658,7 +643,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     return _Result;
                 }
                 set
@@ -670,7 +658,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     return base.Done;
                 }
                 protected set { base.Done = value; }
@@ -704,7 +695,7 @@ namespace Capstones.UnityEngineEx
                 {
                     return true;
                 }
-                if (!_Inner.MoveNext())
+                if (_Inner.Done)
                 {
                     Done = true;
                     _Result = _Inner.Result;
@@ -739,7 +730,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     if (_Inner != null)
                     {
                         _Progress = _Inner.Progress;
@@ -752,7 +746,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     if (_Inner != null)
                     {
                         _Total = _Inner.Total;
@@ -765,7 +762,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     if (_Result == null && _Inner != null)
                     {
                         _Result = _Inner.Result;
@@ -781,7 +781,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     if (_Inner != null)
                     {
                         base.Done = _Inner.Done;
@@ -823,7 +826,7 @@ namespace Capstones.UnityEngineEx
                 bool done = true;
                 for (int i = 0; i < _Works.Count; ++i)
                 {
-                    if (_Works[i].MoveNext())
+                    if (!_Works[i].Done)
                     {
                         done = false;
                     }
@@ -883,7 +886,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     _Progress = CheckProgress();
                     return _Progress;
                 }
@@ -893,7 +899,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     return base.Total;
                 }
                 set { }
@@ -902,7 +911,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     CheckResult();
                     return _Result;
                 }
@@ -967,7 +979,10 @@ namespace Capstones.UnityEngineEx
             {
                 get
                 {
-                    MoveNext();
+                    if (_Started && !_Done)
+                    {
+                        MoveNext();
+                    }
                     bool done = true;
                     for (int i = 0; i < _Works.Count; ++i)
                     {
@@ -981,151 +996,206 @@ namespace Capstones.UnityEngineEx
                 protected set { base.Done = value; }
             }
 
+            public int WorkCount { get { return _Works.Count; } }
             public void AddWork(CoroutineWork work)
             {
                 if (work != null)
                 {
                     _Works.Add(work);
+                    if (_Started)
+                    {
+                        work.StartCoroutine();
+                    }
                 }
             }
-            public int WorkCount { get { return _Works.Count; } }
             public void InsertWork(CoroutineWork work, int index)
             {
                 if (work != null)
                 {
                     _Works.Insert(index, work);
-                }
-            }
-        }
-
-        public class CoroutineTask : CoroutineMonitorSingle
-        {
-            protected CoroutineWork GetRealWorkFromSubWork(IEnumerator work)
-            {
-                var realwork = work as CoroutineWork;
-                if (realwork == null)
-                {
-                    var worksingle = new CoroutineWorkSingle();
-                    worksingle.SetWork(work);
-                    realwork = worksingle;
-                }
-                else
-                {
-                    var rtask = work as CoroutineTask;
-                    if (rtask != null)
+                    if (_Started)
                     {
-                        realwork = rtask._Inner;
-                        var rawait = new CoroutineAwait();
-                        rawait.SetWork(realwork);
-                        rtask.SetWork(rawait);
-                    }
-                }
-                return realwork;
-            }
-            protected CoroutineWorkQueue MakeInnerQueue()
-            {
-                var queue = _Inner as CoroutineWorkQueue;
-                if (queue == null)
-                {
-                    queue = new CoroutineWorkQueue();
-                    queue.AddWork(_Inner);
-                    _Inner = queue;
-                }
-                return queue;
-            }
-            protected CoroutineMonitorConcurrent MakeInnerConcurrent()
-            {
-                var con = _Inner as CoroutineMonitorConcurrent;
-                if (con == null)
-                {
-                    con = new CoroutineMonitorConcurrent();
-                    con.AddWork(_Inner);
-                    _Inner = con;
-                }
-                return con;
-            }
-
-            public void Concat(IEnumerator work)
-            {
-                if (work == null)
-                {
-                    return;
-                }
-                var realwork = GetRealWorkFromSubWork(work);
-
-                if (_Inner == null)
-                {
-                    _Inner = realwork;
-                }
-                else
-                {
-                    var queue = MakeInnerQueue();
-                    queue.AddWork(realwork);
-                }
-            }
-            public void Concurrent(IEnumerator work)
-            {
-                if (work == null)
-                {
-                    return;
-                }
-                var realwork = GetRealWorkFromSubWork(work);
-
-                if (_Inner == null)
-                {
-                    _Inner = realwork;
-                }
-                else
-                {
-                    var queue = MakeInnerConcurrent();
-                    queue.AddWork(realwork);
-                }
-            }
-            public void ConcurrentLast(IEnumerator work)
-            {
-                if (work == null)
-                {
-                    return;
-                }
-                var realwork = GetRealWorkFromSubWork(work);
-
-                if (_Inner == null)
-                {
-                    _Inner = realwork;
-                }
-                else
-                {
-                    var queue = _Inner as CoroutineWorkQueue;
-                    if (queue == null)
-                    {
-                        var queuec = MakeInnerConcurrent();
-                        queuec.AddWork(realwork);
-                    }
-                    else
-                    {
-                        var last = queue.LastWork;
-                        if (last == null)
-                        {
-                            queue.AddWork(realwork);
-                        }
-                        else
-                        {
-                            var queuec = last as CoroutineMonitorConcurrent;
-                            if (queuec != null)
-                            {
-                                queuec.AddWork(realwork);
-                            }
-                            else
-                            {
-                                queuec = new CoroutineMonitorConcurrent();
-                                queuec.AddWork(last);
-                                queuec.AddWork(realwork);
-                            }
-                        }
+                        work.StartCoroutine();
                     }
                 }
             }
         }
+
+        //public class CoroutineAwait : CoroutineWork
+        //{
+        //    protected CoroutineWork _Inner;
+
+        //    public override object Current
+        //    {
+        //        get
+        //        {
+        //            return null;
+        //        }
+        //    }
+        //    public override bool MoveNext()
+        //    {
+        //        if (Done)
+        //        {
+        //            return false;
+        //        }
+        //        if (_Inner == null)
+        //        {
+        //            Done = true;
+        //            return false;
+        //        }
+        //        if (_Suspended)
+        //        {
+        //            return true;
+        //        }
+        //        if (_Inner.Done)
+        //        {
+        //            Done = true;
+        //            _Result = _Inner.Result;
+        //            return false;
+        //        }
+        //        else
+        //        {
+        //            return true;
+        //        }
+        //    }
+        //    public override void Dispose()
+        //    {
+        //    }
+
+        //    public void SetWork(CoroutineWork work)
+        //    {
+        //        _Inner = work;
+        //    }
+        //}
+
+        //public class CoroutineTask : CoroutineMonitorSingle
+        //{
+        //    protected CoroutineWork GetRealWorkFromSubWork(IEnumerator work)
+        //    {
+        //        var realwork = work as CoroutineWork;
+        //        if (realwork == null)
+        //        {
+        //            var worksingle = new CoroutineWorkSingle();
+        //            worksingle.SetWork(work);
+        //            realwork = worksingle;
+        //        }
+        //        else
+        //        {
+        //            var rtask = work as CoroutineTask;
+        //            if (rtask != null)
+        //            {
+        //                realwork = rtask._Inner;
+        //                var rawait = new CoroutineAwait();
+        //                rawait.SetWork(realwork);
+        //                rtask.SetWork(rawait);
+        //            }
+        //        }
+        //        return realwork;
+        //    }
+        //    protected CoroutineWorkQueue MakeInnerQueue()
+        //    {
+        //        var queue = _Inner as CoroutineWorkQueue;
+        //        if (queue == null)
+        //        {
+        //            queue = new CoroutineWorkQueue();
+        //            queue.AddWork(_Inner);
+        //            _Inner = queue;
+        //        }
+        //        return queue;
+        //    }
+        //    protected CoroutineMonitorConcurrent MakeInnerConcurrent()
+        //    {
+        //        var con = _Inner as CoroutineMonitorConcurrent;
+        //        if (con == null)
+        //        {
+        //            con = new CoroutineMonitorConcurrent();
+        //            con.AddWork(_Inner);
+        //            _Inner = con;
+        //        }
+        //        return con;
+        //    }
+
+        //    public void Concat(IEnumerator work)
+        //    {
+        //        if (work == null)
+        //        {
+        //            return;
+        //        }
+        //        var realwork = GetRealWorkFromSubWork(work);
+
+        //        if (_Inner == null)
+        //        {
+        //            _Inner = realwork;
+        //        }
+        //        else
+        //        {
+        //            var queue = MakeInnerQueue();
+        //            queue.AddWork(realwork);
+        //        }
+        //    }
+        //    public void Concurrent(IEnumerator work)
+        //    {
+        //        if (work == null)
+        //        {
+        //            return;
+        //        }
+        //        var realwork = GetRealWorkFromSubWork(work);
+
+        //        if (_Inner == null)
+        //        {
+        //            _Inner = realwork;
+        //        }
+        //        else
+        //        {
+        //            var queue = MakeInnerConcurrent();
+        //            queue.AddWork(realwork);
+        //        }
+        //    }
+        //    public void ConcurrentLast(IEnumerator work)
+        //    {
+        //        if (work == null)
+        //        {
+        //            return;
+        //        }
+        //        var realwork = GetRealWorkFromSubWork(work);
+
+        //        if (_Inner == null)
+        //        {
+        //            _Inner = realwork;
+        //        }
+        //        else
+        //        {
+        //            var queue = _Inner as CoroutineWorkQueue;
+        //            if (queue == null)
+        //            {
+        //                var queuec = MakeInnerConcurrent();
+        //                queuec.AddWork(realwork);
+        //            }
+        //            else
+        //            {
+        //                var last = queue.LastWork;
+        //                if (last == null)
+        //                {
+        //                    queue.AddWork(realwork);
+        //                }
+        //                else
+        //                {
+        //                    var queuec = last as CoroutineMonitorConcurrent;
+        //                    if (queuec != null)
+        //                    {
+        //                        queuec.AddWork(realwork);
+        //                    }
+        //                    else
+        //                    {
+        //                        queuec = new CoroutineMonitorConcurrent();
+        //                        queuec.AddWork(last);
+        //                        queuec.AddWork(realwork);
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
     }
 
     public class WaitForTickCount : CustomYieldInstruction

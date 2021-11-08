@@ -631,7 +631,14 @@ namespace Capstones.UnityEngineEx
                     var item = node.Item;
                     var ai = CreateAssetInfo(item);
                     ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
-                    yield return ai.PreloadAsync();
+                    var prework = ai.PreloadAsync();
+                    if (prework != null)
+                    {
+                        while (prework.MoveNext())
+                        {
+                            yield return prework.Current;
+                        }
+                    }
                     req.Progress = 150;
                     ResManager.DelayGarbageCollectTo(System.Environment.TickCount + 10000);
                     var work = new CoroutineTasks.CoroutineWorkSingle();
@@ -641,7 +648,6 @@ namespace Capstones.UnityEngineEx
                         req.Progress = 150 + (long)((10000 - 150) * ((double)work.Progress / (double)work.Total));
                         yield return null;
                     }
-                    yield return work;
                     req.Result = work.Result;
                 }
                 else

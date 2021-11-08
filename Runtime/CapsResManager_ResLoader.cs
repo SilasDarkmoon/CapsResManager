@@ -441,6 +441,7 @@ namespace Capstones.UnityEngineEx
         {
             LoadingSceneWork = new CoroutineMonitorConcurrent();
             LoadingSceneWork.AddWork(new CoroutineWorkSingle(new LoadSceneAsyncYieldable()));
+            LoadingSceneWork.TryStart();
         }
 
         public static void UnloadUnusedRes()
