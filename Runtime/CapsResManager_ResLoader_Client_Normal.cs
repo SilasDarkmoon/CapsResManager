@@ -142,7 +142,11 @@ namespace Capstones.UnityEngineEx
                             }
                             if (rawreq != null)
                             {
-                                yield return rawreq;
+                                while (!rawreq.isDone)
+                                {
+                                    yield return null;
+                                    req.Progress = (long)(req.Total * rawreq.progress);
+                                }
                                 var asset = rawreq.asset;
                                 if (asset is Texture2D)
                                 {
@@ -157,7 +161,11 @@ namespace Capstones.UnityEngineEx
                                     }
                                     if (rawreq != null)
                                     {
-                                        yield return rawreq;
+                                        while (!rawreq.isDone)
+                                        {
+                                            yield return null;
+                                            req.Progress = (long)(req.Total * rawreq.progress);
+                                        }
                                         if (rawreq.asset)
                                         {
                                             asset = rawreq.asset;
