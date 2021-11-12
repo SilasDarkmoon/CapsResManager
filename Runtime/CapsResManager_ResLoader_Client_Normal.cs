@@ -223,6 +223,7 @@ namespace Capstones.UnityEngineEx
                                         yield break;
                                     }
                                 }
+                                yield return null;
                             }
                         }
                         if (MainType == typeof(object))
