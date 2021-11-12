@@ -172,6 +172,14 @@ namespace Capstones.UnityEngineEx
                                         }
                                     }
                                 }
+                                if (asset != null)
+                                {
+                                    if (MainType != null)
+                                    {
+                                        MainType = asset.GetType();
+                                    }
+                                    TypedAssets[asset.GetType()] = new AssetRef() { Asset = new WeakReference(asset) };
+                                }
                                 req.Result = asset;
                             }
                         }
