@@ -225,7 +225,6 @@ namespace Capstones.UnityEditorEx
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
 
-            GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             if (GUILayout.Button("Apply"))
             {
@@ -235,14 +234,13 @@ namespace Capstones.UnityEditorEx
 
             //abcd配置
             GUILayout.BeginHorizontal();
-            var _index = GUILayout.SelectionGrid(OptionConfigIndex, OptionConfigs, 10);
+            var _index = GUILayout.SelectionGrid(OptionConfigIndex, OptionConfigs, Math.Min(10, OptionConfigs.Length), GUILayout.MinWidth(GUI.skin.button.CalcSize(new GUIContent("3")).x * Math.Min(10, OptionConfigs.Length)));
             if (_index != OptionConfigIndex)
             {
                 OptionConfigIndex = _index;
                 if (PlayerPrefs.HasKey("DistributeFlags_" + OptionConfigIndex))
                 {
                     RefreshConfig(PlayerPrefs.GetString("DistributeFlags_" + OptionConfigIndex), OptionConfigIndex);
-                    return;
                 }
             }
             GUILayout.EndHorizontal();
