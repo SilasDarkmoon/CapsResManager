@@ -14,6 +14,20 @@ namespace Capstones.UnityEngineEx
 {
     public static partial class ResManager
     {
+        public interface IObbEx
+        {
+            public string HostedObbName { get; }
+            public bool IsRaw { get; } // raw: this is an obb zip file. not-raw: this is contained in some other file.
+            public bool IsReady { get; }
+            public string Error { get; }
+            public void GetProgress(out long progress, out long total);
+            public string GetContainingFile(); // raw: get the obb zip file. not-raw: get the containing file. check this file exists to determine whether we can load assets from the obb.
+            public System.IO.Stream OpenWholeObb(System.IO.Stream containingStream); // open the obb zip stream for both raw or not-raw. for raw, return null, means we should open file at GetContainingFile(). for not-raw, the stream is a span of GetContainingFile()。
+            public string GetEntryPrefix(); // get the entry prefix, null for no prefix
+            public string FindEntryUrl(string entryname); // for not-raw obb, maybe an asset can be loaded but can not find url of it.
+            public void Reset();
+        }
+
         private class ResManager_ABLoader : ILifetime
         {
             public ResManager_ABLoader()
@@ -46,12 +60,15 @@ namespace Capstones.UnityEngineEx
                     }
 #endif
                     _ObbPath = "/storage/emulated/0/Download/default.obb";
+                    _MainObbEx = null;
                     var obb2path = "/storage/emulated/0/Download/obb2.obb";
                     _AllObbPaths = new[] { _ObbPath, obb2path };
                     _AllObbNames = new[] { "testobb", "testobb2" };
+                    _AllNonRawExObbs = new IObbEx[_AllObbNames.Length];
 #else
                     bool hasobb = false;
                     string mainobbpath = null;
+                    IObbEx mainobbex = null;
                     List<Pack<string, string>> obbs = new List<Pack<string, string>>();
 
                     using (var stream = LoadFileInStreaming("hasobb.flag.txt"))
@@ -88,37 +105,53 @@ namespace Capstones.UnityEngineEx
                                     {
                                         var obbname = parts[0];
                                         string obbpath = null;
-                                        int obbver = 0;
-                                        if (parts.Length > 1)
+                                        if (AllExObbs.ContainsKey(obbname))
                                         {
-                                            var val = parts[1];
-                                            if (!int.TryParse(val, out obbver))
+                                            var oex = AllExObbs[obbname];
+                                            obbpath = oex.GetContainingFile();
+                                        }
+                                        else
+                                        {
+                                            int obbver = 0;
+                                            if (parts.Length > 1)
                                             {
-                                                obbpath = val;
+                                                var val = parts[1];
+                                                if (!int.TryParse(val, out obbver))
+                                                {
+                                                    obbpath = val;
+                                                }
                                             }
-                                        }
-                                        if (obbpath == null)
-                                        {
-                                            if (obbver <= 0)
+                                            if (obbpath == null)
                                             {
-                                                obbver = AppVer;
+                                                if (obbver <= 0)
+                                                {
+                                                    obbver = AppVer;
+                                                }
+                                                obbpath = obbname + "." + obbver + "." + appid + ".obb";
                                             }
-                                            obbpath = obbname + "." + obbver + "." + appid + ".obb";
-                                        }
-                                        if (!obbpath.Contains("/") && !obbpath.Contains("\\"))
-                                        {
-                                            obbpath = obbroot + obbpath;
-                                        }
+                                            if (!obbpath.Contains("/") && !obbpath.Contains("\\"))
+                                            {
+                                                obbpath = obbroot + obbpath;
+                                            }
 
-                                        if (!PlatDependant.IsFileExist(obbpath))
-                                        { // use updatepath as obb path
-                                            obbpath = ThreadSafeValues.UpdatePath + "/obb/" + obbname + "." + obbver + ".obb";
+                                            if (!PlatDependant.IsFileExist(obbpath))
+                                            { // use updatepath as obb path
+                                                obbpath = ThreadSafeValues.UpdatePath + "/obb/" + obbname + "." + obbver + ".obb";
+                                            }
                                         }
 
                                         obbs.Add(new Pack<string, string>(obbname, obbpath));
                                         if (obbname == "main")
                                         {
                                             mainobbpath = obbpath;
+                                            if (AllExObbs.ContainsKey(obbname))
+                                            {
+                                                var oex = AllExObbs[obbname];
+                                                if (!oex.IsRaw)
+                                                {
+                                                    mainobbex = oex;
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -141,19 +174,31 @@ namespace Capstones.UnityEngineEx
                     if (hasobb)
                     {
                         _ObbPath = mainobbpath;
+                        _MainObbEx = mainobbex;
                         _AllObbPaths = new string[obbs.Count];
                         _AllObbNames = new string[obbs.Count];
+                        _AllNonRawExObbs = new IObbEx[obbs.Count];
                         for (int i = 0; i < obbs.Count; ++i)
                         {
                             _AllObbPaths[i] = obbs[i].t2;
-                            _AllObbNames[i] = obbs[i].t1;
+                            string obbname = _AllObbNames[i] = obbs[i].t1;
+                            if (AllExObbs.ContainsKey(obbname))
+                            {
+                                var oex = AllExObbs[obbname];
+                                if (!oex.IsRaw)
+                                {
+                                    _AllNonRawExObbs[i] = oex;
+                                }
+                            }
                         }
                     }
                     else
                     {
                         _ObbPath = null;
+                        _MainObbEx = null;
                         _AllObbPaths = null;
                         _AllObbNames = null;
+                        _AllNonRawExObbs = null;
                     }
 #endif
                 }
@@ -332,6 +377,15 @@ namespace Capstones.UnityEngineEx
                                 }
 
                                 var zip = allobbs[z];
+                                string entryname = path;
+                                if (ResManager.AllNonRawExObbs[z] != null)
+                                {
+                                    var obbpre = ResManager.AllNonRawExObbs[z].GetEntryPrefix();
+                                    if (obbpre != null)
+                                    {
+                                        entryname = obbpre + entryname;
+                                    }
+                                }
                                 int retryTimes = 10;
                                 long offset = -1;
                                 for (int i = 0; i < retryTimes; ++i)
@@ -347,7 +401,7 @@ namespace Capstones.UnityEngineEx
                                         }
                                         try
                                         {
-                                            var entry = za.GetEntry(path);
+                                            var entry = za.GetEntry(entryname);
                                             if (entry != null)
                                             {
                                                 using (var srcstream = entry.Open())
@@ -600,6 +654,15 @@ namespace Capstones.UnityEngineEx
                                     }
                                     
                                     var zip = allobbs[z];
+                                    string fullentryname = entryname;
+                                    if (ResManager.AllNonRawExObbs[z] != null)
+                                    {
+                                        var obbpre = ResManager.AllNonRawExObbs[z].GetEntryPrefix();
+                                        if (obbpre != null)
+                                        {
+                                            fullentryname = obbpre + fullentryname;
+                                        }
+                                    }
                                     int retryTimes = 3;
                                     for (int i = 0; i < retryTimes; ++i)
                                     {
@@ -616,7 +679,7 @@ namespace Capstones.UnityEngineEx
 
                                         try
                                         {
-                                            var entry = za.GetEntry(entryname);
+                                            var entry = za.GetEntry(fullentryname);
                                             if (entry != null)
                                             {
                                                 return entry.Open();
@@ -825,37 +888,53 @@ namespace Capstones.UnityEngineEx
                                     { // means the obb is to be downloaded.
                                         continue;
                                     }
-                                    
-                                    var zip = allobbs[z];
-                                    int retryTimes = 3;
-                                    for (int i = 0; i < retryTimes; ++i)
-                                    {
-                                        ZipArchive za = zip;
-                                        if (za == null)
-                                        {
-                                            PlatDependant.LogError("Obb Archive Cannot be read.");
-                                            if (i != retryTimes - 1)
-                                            {
-                                                PlatDependant.LogInfo("Need Retry " + i);
-                                            }
-                                            continue;
-                                        }
 
-                                        try
+                                    if (ResManager.AllNonRawExObbs[z] != null)
+                                    {
+                                        var result = ResManager.AllNonRawExObbs[z].FindEntryUrl(entryname);
+                                        if (result != null)
                                         {
-                                            var entry = za.GetEntry(entryname);
-                                            if (entry != null)
-                                            {
-                                                return "jar:file://" + AllObbPaths[z] + "!/" + entryname;
-                                            }
-                                            break;
+                                            return result;
                                         }
-                                        catch (Exception e)
+                                    }
+                                    if (ResManager.AllNonRawExObbs[z] == null || ResManager.AllNonRawExObbs[z].GetEntryPrefix() != null)
+                                    {
+                                        var zip = allobbs[z];
+                                        var fullentryname = entryname;
+                                        if (ResManager.AllNonRawExObbs[z] != null)
                                         {
-                                            PlatDependant.LogError(e);
-                                            if (i != retryTimes - 1)
+                                            fullentryname = ResManager.AllNonRawExObbs[z].GetEntryPrefix() + fullentryname;
+                                        }
+                                        int retryTimes = 3;
+                                        for (int i = 0; i < retryTimes; ++i)
+                                        {
+                                            ZipArchive za = zip;
+                                            if (za == null)
                                             {
-                                                PlatDependant.LogInfo("Need Retry " + i);
+                                                PlatDependant.LogError("Obb Archive Cannot be read.");
+                                                if (i != retryTimes - 1)
+                                                {
+                                                    PlatDependant.LogInfo("Need Retry " + i);
+                                                }
+                                                continue;
+                                            }
+
+                                            try
+                                            {
+                                                var entry = za.GetEntry(fullentryname);
+                                                if (entry != null)
+                                                {
+                                                    return "jar:file://" + AllObbPaths[z] + "!/" + fullentryname;
+                                                }
+                                                break;
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                PlatDependant.LogError(e);
+                                                if (i != retryTimes - 1)
+                                                {
+                                                    PlatDependant.LogInfo("Need Retry " + i);
+                                                }
                                             }
                                         }
                                     }
@@ -1048,6 +1127,11 @@ namespace Capstones.UnityEngineEx
                                 }
 
                                 var zip = allobbs[z];
+                                string obbpre = null;
+                                if (ResManager.AllNonRawExObbs[z] != null)
+                                {
+                                    obbpre = ResManager.AllNonRawExObbs[z].GetEntryPrefix();
+                                }
                                 int retryTimes = 10;
                                 for (int i = 0; i < retryTimes; ++i)
                                 {
@@ -1067,12 +1151,20 @@ namespace Capstones.UnityEngineEx
                                             {
                                                 if (entry.CompressedLength == entry.Length)
                                                 {
-                                                    var name = entry.FullName.Substring("res/".Length);
-                                                    if (name.StartsWith(pre))
+                                                    var name = entry.FullName;
+                                                    if (obbpre == null || name.StartsWith(obbpre))
                                                     {
-                                                        if (foundSet.Add(name))
+                                                        if (obbpre != null)
                                                         {
-                                                            found.Add(name);
+                                                            name = name.Substring(obbpre.Length);
+                                                        }
+                                                        name = name.Substring("res/".Length);
+                                                        if (name.StartsWith(pre))
+                                                        {
+                                                            if (foundSet.Add(name))
+                                                            {
+                                                                found.Add(name);
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -1244,6 +1336,11 @@ namespace Capstones.UnityEngineEx
                                 }
 
                                 var zip = allobbs[z];
+                                string obbpre = null;
+                                if (ResManager.AllNonRawExObbs[z] != null)
+                                {
+                                    obbpre = ResManager.AllNonRawExObbs[z].GetEntryPrefix();
+                                }
                                 int retryTimes = 10;
                                 for (int i = 0; i < retryTimes; ++i)
                                 {
@@ -1258,7 +1355,12 @@ namespace Capstones.UnityEngineEx
                                         }
                                         try
                                         {
-                                            var indexentry = za.GetEntry("res/index.txt");
+                                            var indexentryname = "res/index.txt";
+                                            if (obbpre != null)
+                                            {
+                                                indexentryname = obbpre + indexentryname;
+                                            }
+                                            var indexentry = za.GetEntry(indexentryname);
                                             if (indexentry == null)
                                             {
                                                 var entries = za.Entries;
@@ -1266,12 +1368,20 @@ namespace Capstones.UnityEngineEx
                                                 {
                                                     if (entry.CompressedLength == entry.Length)
                                                     {
-                                                        var name = entry.FullName.Substring("res/".Length);
-                                                        if (name.StartsWith(dir) && name.EndsWith(".m.ab"))
+                                                        var name = entry.FullName;
+                                                        if (obbpre == null || name.StartsWith(obbpre))
                                                         {
-                                                            if (foundSet.Add(name))
+                                                            if (obbpre != null)
                                                             {
-                                                                found.Add(name);
+                                                                name = name.Substring(obbpre.Length);
+                                                            }
+                                                            name = name.Substring("res/".Length);
+                                                            if (name.StartsWith(dir) && name.EndsWith(".m.ab"))
+                                                            {
+                                                                if (foundSet.Add(name))
+                                                                {
+                                                                    found.Add(name);
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -1620,6 +1730,11 @@ namespace Capstones.UnityEngineEx
         {
             get { return _ObbPath; }
         }
+        private static IObbEx _MainObbEx;
+        public static IObbEx MainObbEx
+        {
+            get { return _MainObbEx; }
+        }
         private static string[] _AllObbPaths;
         public static string[] AllObbPaths
         {
@@ -1629,6 +1744,12 @@ namespace Capstones.UnityEngineEx
         public static string[] AllObbNames
         {
             get { return _AllObbNames; }
+        }
+        public static readonly Dictionary<string, IObbEx> AllExObbs = new Dictionary<string, IObbEx>();
+        private static IObbEx[] _AllNonRawExObbs;
+        public static IObbEx[] AllNonRawExObbs
+        {
+            get { return _AllNonRawExObbs; }
         }
 
         [ThreadStatic] private static System.IO.Stream _ObbFileStream;
@@ -1713,7 +1834,14 @@ namespace Capstones.UnityEngineEx
                         if (disposed)
                         {
                             _ObbZipArchive = null;
-                            _ObbZipArchive = new ZipArchive(ObbFileStream);
+                            if (_MainObbEx != null)
+                            {
+                                _ObbZipArchive = new ZipArchive(_MainObbEx.OpenWholeObb(ObbFileStream) ?? ObbFileStream);
+                            }
+                            else
+                            {
+                                _ObbZipArchive = new ZipArchive(ObbFileStream);
+                            }
                         }
                     }
                     catch (Exception e)
@@ -1827,7 +1955,14 @@ namespace Capstones.UnityEngineEx
                                 _AllObbZipArchives[i] = null;
                                 if (filestreams[i] != null)
                                 {
-                                    _AllObbZipArchives[i] = new ZipArchive(filestreams[i]);
+                                    if (_AllNonRawExObbs[i] != null)
+                                    {
+                                        _AllObbZipArchives[i] = new ZipArchive(_AllNonRawExObbs[i].OpenWholeObb(filestreams[i]) ?? filestreams[i]);
+                                    }
+                                    else
+                                    {
+                                        _AllObbZipArchives[i] = new ZipArchive(filestreams[i]);
+                                    }
                                 }
                             }
                         }

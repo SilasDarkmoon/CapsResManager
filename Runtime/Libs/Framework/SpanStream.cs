@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Capstones.UnityEngineEx
 {
@@ -117,6 +118,39 @@ namespace Capstones.UnityEngineEx
         public override void Write(byte[] buffer, int offset, int count)
         {
             // TODO: Enable write?
+        }
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+            if (LeaveOpen)
+            {
+                Underlay = null;
+            }
+            else
+            {
+                if (Underlay != null)
+                {
+                    Underlay.Dispose();
+                    Underlay = null;
+                }
+            }
+        }
+        public override async ValueTask DisposeAsync()
+        {
+            if (LeaveOpen)
+            {
+                Underlay = null;
+            }
+            await base.DisposeAsync();
+            if (!LeaveOpen)
+            {
+                if (Underlay != null)
+                {
+                    var underlay = Underlay;
+                    Underlay = null;
+                    await underlay.DisposeAsync();
+                }
+            }
         }
     }
 }

@@ -29,6 +29,10 @@ namespace Capstones.UnityEngineEx
             void Init();
             void Cleanup();
         }
+        public interface IInitPrepareAsync
+        {
+            IEnumerator PrepareAsync();
+        }
         public interface IInitAsync
         {
             IEnumerator InitAsync();
@@ -252,6 +256,46 @@ namespace Capstones.UnityEngineEx
                     for (int i = 0; i < list.Count; ++i)
                     {
                         var pr = list[i] as IInitProgressReporter;
+                        var pasync = list[i] as IInitPrepareAsync;
+                        if (pasync != null)
+                        {
+                            IEnumerator work = null;
+                            try
+                            {
+                                work = pasync.PrepareAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                PlatDependant.LogError(e);
+                            }
+                            if (work != null)
+                            {
+                                if (AsyncWorkTimer.Check())
+                                {
+                                    yield return null;
+                                }
+                                while (true)
+                                {
+                                    bool haveNext = false;
+                                    try
+                                    {
+                                        haveNext = work.MoveNext();
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        PlatDependant.LogError(e);
+                                    }
+                                    if (!haveNext)
+                                    {
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        yield return work.Current;
+                                    }
+                                }
+                            }
+                        }
                         if (pr != null && pr is IInitAsync)
                         {
                             pr.ReportProgress += reportProgress;
@@ -268,7 +312,7 @@ namespace Capstones.UnityEngineEx
                             ++totalPhase;
                             workSteps[i] = step;
                         }
-                        else
+                        else if (pasync == null)
                         {
                             try
                             {
