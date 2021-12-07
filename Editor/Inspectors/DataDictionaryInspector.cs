@@ -13,6 +13,8 @@ namespace Capstones.UnityEditorEx
     [CustomPropertyDrawer(typeof(DataDictionary))]
     public class DataDictionaryInspector : PropertyDrawer
     {
+        public static IDictionary ClipBoard;
+
         protected bool _GUI_Collapsed = false;
         protected bool _GUI_Dirty = false;
         protected GUIStyle _GUI_BoldFoldout;
@@ -114,12 +116,50 @@ namespace Capstones.UnityEditorEx
             }
             else
             {
-                
+
                 originDict = new Dictionary<string, object>(Target);
                 _GUI_Dirty = false;
                 dirtyKeys.Clear();
             }
         }
+
+        public void PasteData(IDictionary source)
+        {
+            if (source != null)
+            {
+                var gsrc = source as IDictionary<string, object>;
+                if (gsrc != null)
+                {
+                    foreach (var kvp in gsrc)
+                    {
+                        Target[kvp.Key] = kvp.Value;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        foreach (var entry in source)
+                        {
+                            if (entry is DictionaryEntry)
+                            {
+                                var dentry = (DictionaryEntry)entry;
+                                var key = dentry.Key as string;
+                                if (key != null)
+                                {
+                                    Target[key] = dentry.Value;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
+        }
+
         private bool IsEditorOld(SerializedProperty property)
         {
             if (oldDict == null)
@@ -221,7 +261,7 @@ namespace Capstones.UnityEditorEx
             //}
 
             // the set-to-null btn
-            GUIContent nullbtntxt = new GUIContent("X");
+            GUIContent nullbtntxt = new GUIContent("X", "Clear");
             var nullbtnsize = GUI.skin.button.CalcSize(nullbtntxt);
             Rect nullbtnrect = new Rect();
             nullbtnrect.xMin = position.xMax - nullbtnsize.x;
@@ -249,7 +289,7 @@ namespace Capstones.UnityEditorEx
             }
 
             // the reload btn
-            GUIContent reloadbtntxt = new GUIContent("↕");
+            GUIContent reloadbtntxt = new GUIContent("↕", "Sort");
             var reloadbtnsize = GUI.skin.button.CalcSize(reloadbtntxt);
             Rect reloadbtnrect = new Rect();
             reloadbtnrect.xMin = position.xMax - reloadbtnsize.x - nullbtnsize.x - EditorGUIUtility.standardVerticalSpacing;
@@ -263,18 +303,57 @@ namespace Capstones.UnityEditorEx
             }
 
             // save btn
-            GUIContent savebtntxt = new GUIContent("save");
-            var savebtnsize = GUI.skin.button.CalcSize(savebtntxt);
+            var textureSave = EditorGUIUtility.Load("Save@2x") as Texture2D;
+            GUIContent savebtntxt = new GUIContent("save", "Save");
+            var savebtnsize = nullbtnsize;
+            GUIStyle styleSave = new GUIStyle(GUI.skin.button);
+            if (textureSave)
+            {
+                savebtntxt = new GUIContent(textureSave, "Save");
+                styleSave.padding = new RectOffset(1, 1, 1, 1);
+            }
+            else
+            {
+                savebtnsize = GUI.skin.button.CalcSize(savebtntxt);
+            }
             Rect savebtnrect = new Rect();
             savebtnrect.xMin = position.xMax - savebtnsize.x - reloadbtnsize.x - nullbtnsize.x - EditorGUIUtility.standardVerticalSpacing;
             savebtnrect.width = savebtnsize.x;
             savebtnrect.yMin = position.yMin;
             savebtnrect.height = EditorGUIUtility.singleLineHeight;
-            if (GUI.Button(savebtnrect, savebtntxt))
+            if (GUI.Button(savebtnrect, savebtntxt, styleSave))
             {
                 property.serializedObject.Update();
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
                 property.serializedObject.ApplyModifiedProperties();
+                return;
+            }
+
+            // the copy btn
+            GUIContent copybtntxt = new GUIContent("^C", "Copy");
+            var copybtnsize = GUI.skin.button.CalcSize(copybtntxt);
+            Rect copybtnrect = new Rect();
+            copybtnrect.xMin = position.xMax - copybtnsize.x - savebtnsize.x - reloadbtnsize.x - nullbtnsize.x - EditorGUIUtility.standardVerticalSpacing;
+            copybtnrect.width = copybtnsize.x;
+            copybtnrect.yMin = position.yMin;
+            copybtnrect.height = EditorGUIUtility.singleLineHeight;
+            if (GUI.Button(copybtnrect, copybtntxt))
+            {
+                ClipBoard = Target;
+                return;
+            }
+
+            // the paste btn
+            GUIContent pastebtntxt = new GUIContent("^V", "Paste");
+            var pastebtnsize = GUI.skin.button.CalcSize(pastebtntxt);
+            Rect pastebtnrect = new Rect();
+            pastebtnrect.xMin = position.xMax - pastebtnsize.x - copybtnsize.x - savebtnsize.x - reloadbtnsize.x - nullbtnsize.x - EditorGUIUtility.standardVerticalSpacing;
+            pastebtnrect.width = pastebtnsize.x;
+            pastebtnrect.yMin = position.yMin;
+            pastebtnrect.height = EditorGUIUtility.singleLineHeight;
+            if (GUI.Button(pastebtnrect, pastebtntxt))
+            {
+                PasteData(ClipBoard);
                 return;
             }
 
