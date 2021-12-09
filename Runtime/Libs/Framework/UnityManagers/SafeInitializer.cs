@@ -53,6 +53,21 @@ namespace Capstones.UnityEngineEx
                 DoDelayedInitialize();
             }
         }
+
+        public static bool IsInitializingInInitializeOnLoadAttribute
+        {
+            get
+            {
+                System.IO.Directory.CreateDirectory("EditorOutput/Temp");
+                using (var sw = new System.IO.StreamWriter("EditorOutput/Temp/temp.txt", true))
+                {
+                    sw.WriteLine(UnityEditor.AssetDatabase.IsAssetImportWorkerProcess());
+                    sw.WriteLine(Environment.StackTrace);
+                }
+                var stacktrace = Environment.StackTrace;
+                return stacktrace.Contains("UnityEditor.EditorAssemblies.ProcessInitializeOnLoadAttributes");
+            }
+        }
 #endif
         internal static bool CheckShouldDelay(int depth)
         {
