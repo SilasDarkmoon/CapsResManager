@@ -95,6 +95,12 @@ namespace Capstones.UnityEngineEx
 #if UNITY_EDITOR
         public class EditorResLoader : IResLoader
         {
+            public interface IEditorResLoaderEx
+            {
+                string FindFile(string path);
+            }
+            public static List<IEditorResLoaderEx> ExLoaders = new List<IEditorResLoaderEx>();
+
             public EditorResLoader()
             {
                 bool useclientloader = false;
@@ -182,6 +188,28 @@ namespace Capstones.UnityEngineEx
                             Debug.LogWarning("Duplicated item: " + found + "\nReplaces: " + file);
                         }
                         return true;
+                    }
+
+                    string exfound = null;
+                    for (int i = 0; i < ExLoaders.Count; ++i)
+                    {
+                        var exloader = ExLoaders[i];
+                        exfound = exloader.FindFile(file);
+                        if (exfound != null && PlatDependant.IsFileExist(exfound))
+                        {
+#if EDITOR_LOADER_NO_CHECK
+                            found = exfound;
+#endif
+                            if (found == null)
+                            {
+                                found = exfound;
+                            }
+                            else
+                            {
+                                Debug.LogWarning("Duplicated item: " + found + "\nReplaces: " + exfound);
+                            }
+                            return true;
+                        }
                     }
                     return false;
                 };

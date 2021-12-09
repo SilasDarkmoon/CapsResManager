@@ -6,8 +6,8 @@ using Object = UnityEngine.Object;
 namespace Capstones.UnityEngineEx
 {
     [CreateAssetMenu]
-    public sealed class CapsResRef : ScriptableObject
+    public sealed class CapsResAlias : ScriptableObject
     {
-        public Object[] Refs;
+        public string Target;
     }
 }
