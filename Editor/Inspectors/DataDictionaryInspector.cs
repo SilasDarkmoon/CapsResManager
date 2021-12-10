@@ -304,7 +304,7 @@ namespace Capstones.UnityEditorEx
 
             // save btn
             var textureSave = EditorGUIUtility.Load("Save@2x") as Texture2D;
-            GUIContent savebtntxt = new GUIContent("save", "Save");
+            GUIContent savebtntxt = new GUIContent("^S", "Save");
             var savebtnsize = nullbtnsize;
             GUIStyle styleSave = new GUIStyle(GUI.skin.button);
             if (textureSave)
