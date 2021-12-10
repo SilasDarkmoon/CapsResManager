@@ -96,7 +96,44 @@ namespace Capstones.UnityEditorEx
                 }
             }
 
+            EditorGUILayout.BeginHorizontal();
             GUILayout.Box(new GUIContent(_Preview), GUILayout.Height(100));
+            EditorGUILayout.BeginVertical();
+            if (_ShowingAssets != null && _ShowingAssets.Length > _SelectedItem && _SelectedItem >= 0)
+            {
+                var asset = _ShowingAssets[_SelectedItem];
+                GUI.enabled = false;
+                if (GUILayout.Button(new GUIContent("Open")))
+                {
+                    EditorGUIUtility.ShowObjectPicker<Object>(asset, false, asset.name, 0);
+                }
+                if (_SelectedGroup == 2)
+                {
+                    GUI.enabled = true;
+                }
+                if (GUILayout.Button(new GUIContent("Path")))
+                {
+                    if (_SelectedGroup == 2)
+                    {
+                        Debug.Log("UnityEditor.EditorGUIUtility.Load(\"" + asset.name + "\")"); // TODO: for shaders, there is '/' in the name, we should get the last part as the asset name.
+                    }
+                    // TODO: for runtime builtin assets, there is no clean way to load from a path. we'd better apply it to an object's serializable property and be staticlly loaded together with the container object.
+                }
+                GUI.enabled = true;
+
+                Event evt = Event.current;
+                if (evt != null)
+                {
+                    if (evt.type == EventType.MouseDrag)
+                    {
+                        DragAndDrop.PrepareStartDrag();
+                        DragAndDrop.StartDrag("Drag from BuiltinAssetsViewer");
+                        DragAndDrop.objectReferences = new[] { asset };
+                    }
+                }
+            }
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
         }
     }
 }
