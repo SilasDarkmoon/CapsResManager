@@ -250,6 +250,174 @@ namespace Capstones.UnityEditorEx
             }
         }
 
+        public static System.Diagnostics.Process StartProcess(System.Diagnostics.ProcessStartInfo si)
+        {
+            si.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            si.UseShellExecute = false;
+            si.RedirectStandardInput = true;
+            si.RedirectStandardOutput = true;
+            si.RedirectStandardError = true;
+            si.CreateNoWindow = true;
+
+            var process = new System.Diagnostics.Process();
+            process.StartInfo = si;
+            process.Start();
+            return process;
+        }
+        public static bool ParseCommand(string command, out string exe, out string arg)
+        {
+            exe = null;
+            arg = null;
+            if (string.IsNullOrEmpty(command))
+            {
+                return false;
+            }
+            command = command.TrimStart(' ', '\t');
+            System.Text.StringBuilder sbexe = new System.Text.StringBuilder();
+
+            int index = 0;
+            char starttoken = '\0';
+            for (; index < command.Length; ++index)
+            {
+                var ch = command[index];
+                if (starttoken == '\0')
+                {
+                    if (ch == '\'' || ch == '\"')
+                    {
+                        starttoken = ch;
+                    }
+                    else if (ch == ' ' || ch == '\t')
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        sbexe.Append(ch);
+                    }
+                }
+                else
+                {
+                    if (ch == starttoken)
+                    {
+                        starttoken = '\0';
+                    }
+                    else
+                    {
+                        sbexe.Append(ch);
+                    }
+                }
+            }
+
+            if (sbexe.Length == 0)
+            {
+                return false;
+            }
+            exe = sbexe.ToString();
+
+            if (index < command.Length)
+            {
+                arg = command.Substring(index).TrimStart(' ', '\t');
+            }
+            return true;
+        }
+        public static System.Diagnostics.Process StartProcess(string command)
+        {
+            string exe, arg;
+            if (ParseCommand(command, out exe, out arg))
+            {
+                System.Diagnostics.ProcessStartInfo si;
+                if (string.IsNullOrEmpty(arg))
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe);
+                }
+                else
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe, arg);
+                }
+                return StartProcess(si);
+            }
+            return null;
+        }
+        public static System.Diagnostics.Process StartShell()
+        {
+#if UNITY_EDITOR_WIN
+            return StartProcess("cmd");
+#else
+            return StartProcess("bash");
+#endif
+        }
+        private static int _ShellProcessOutputFileID = 0;
+        public static int ExecuteProcessInShell(System.Diagnostics.Process shellproc, System.Diagnostics.ProcessStartInfo si)
+        {
+            var oid = System.Threading.Interlocked.Increment(ref _ShellProcessOutputFileID);
+            System.IO.Directory.CreateDirectory("EditorOutput/ShellOutput");
+            var stdoutfile = System.IO.Path.GetFullPath("EditorOutput/ShellOutput/StdOut" + oid + ".txt");
+            var stderrfile = System.IO.Path.GetFullPath("EditorOutput/ShellOutput/StdErr" + oid + ".txt");
+
+            var input = shellproc.StandardInput;
+            if (!string.IsNullOrEmpty(si.WorkingDirectory))
+            {
+                input.Write("cd \"");
+                input.Write(si.WorkingDirectory);
+                input.Write("\"\n");
+            }
+            input.Write("\"");
+            input.Write(si.FileName);
+            input.Write("\" ");
+            input.Write(si.Arguments);
+            input.Write(" 1> \"");
+            input.Write(stdoutfile);
+            input.Write("\" 2> \"");
+            input.Write(stderrfile);
+            input.Write("\"\n");
+            input.Write("echo $?\n");
+
+            var result = shellproc.StandardOutput.ReadLine();
+            int exitcode;
+            int.TryParse(result, out exitcode);
+
+            string commandecho = si.FileName;
+            if (si.Arguments != null)
+            {
+                commandecho = commandecho + " " + si.Arguments;
+            }
+
+            bool hasOutput = false;
+            if (System.IO.File.Exists(stderrfile))
+            {
+                var content = System.IO.File.ReadAllText(stderrfile);
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    Debug.LogErrorFormat("[Error {0}] {1}\n{2}", exitcode, commandecho, content);
+                    hasOutput = true;
+                }
+                System.IO.File.Delete(stderrfile);
+            }
+            if (System.IO.File.Exists(stdoutfile))
+            {
+                var content = System.IO.File.ReadAllText(stdoutfile);
+                if (!string.IsNullOrWhiteSpace(content))
+                {
+                    Debug.LogFormat("[Output {0}] {1}\n{2}", exitcode, commandecho, content);
+                    hasOutput = true;
+                }
+                System.IO.File.Delete(stdoutfile);
+            }
+            if (!hasOutput)
+            {
+                if (exitcode == 0)
+                {
+                    Debug.LogFormat("[Done {0}] {1}", exitcode, commandecho);
+                }
+                else
+                {
+                    Debug.LogErrorFormat("[Error {0}] {1}", exitcode, commandecho);
+                }
+            }
+
+            return exitcode;
+        }
+
         public static bool ExecuteProcess(System.Diagnostics.ProcessStartInfo si)
         {
             bool safeWaitMode = true;
@@ -267,9 +435,7 @@ namespace Capstones.UnityEditorEx
             using (var process = new System.Diagnostics.Process())
             {
                 process.StartInfo = si;
-
                 process.OutputDataReceived += (s, e) => WriteProcessOutput(s as System.Diagnostics.Process, e.Data, false);
-
                 process.ErrorDataReceived += (s, e) => WriteProcessOutput(s as System.Diagnostics.Process, e.Data, true);
 
                 System.Threading.ManualResetEventSlim waitHandleForProcess = null;
@@ -279,7 +445,9 @@ namespace Capstones.UnityEditorEx
                     process.Exited += (s, e) => waitHandleForProcess.Set();
                 }
 
+                Debug.LogFormat("Starting process {0} {1}", si.FileName, si.Arguments);
                 process.Start();
+                Debug.LogFormat("Started process {0} {1}", si.FileName, si.Arguments);
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
@@ -300,11 +468,12 @@ namespace Capstones.UnityEditorEx
 
                 if (process.ExitCode != 0)
                 {
-                    Debug.LogErrorFormat("Error when execute process {0} {1}", si.FileName, si.Arguments);
+                    Debug.LogErrorFormat("Error executing process {0} {1}", si.FileName, si.Arguments);
                     return false;
                 }
                 else
                 {
+                    Debug.LogFormat("Successfully executed process {0} {1}", si.FileName, si.Arguments);
                     return true;
                 }
             }
