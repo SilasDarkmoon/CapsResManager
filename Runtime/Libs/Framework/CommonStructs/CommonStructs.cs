@@ -1807,7 +1807,7 @@ namespace Capstones.UnityEngineEx
     { // TODO: use ByRefUtils.dll to do the convert quickly
         public static T ConvertToEnum<T>(ulong val) where T : struct
         {
-#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) && (!UNITY_2021_1_OR_NEWER && !NET_UNITY_4_8) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
             return (T)Enum.ToObject(typeof(T), val);
 #else
             Span<ulong> span = stackalloc[] { val };
@@ -1825,7 +1825,7 @@ namespace Capstones.UnityEngineEx
         }
         public static ulong ConvertFromEnum<T>(T val) where T : struct
         {
-#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) && (!UNITY_2021_1_OR_NEWER && !NET_UNITY_4_8) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
             return Convert.ToUInt64(val);
 #else
             Span<ulong> span = stackalloc ulong[1];

@@ -629,7 +629,7 @@ namespace Capstones.UnityEngineEx
         {
             return FormatDataString<byte[]>(buffer);
         }
-#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
+#if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && (!NET_4_6 && !NET_STANDARD_2_0 || !NET_EX_LIB_UNSAFE) && (!UNITY_2021_1_OR_NEWER && !NET_UNITY_4_8) || !UNITY_ENGINE && !UNITY_5_3_OR_NEWER && !NET && !NETCOREAPP
 #else
         public static string FormatDataString(Span<byte> buffer)
         {
