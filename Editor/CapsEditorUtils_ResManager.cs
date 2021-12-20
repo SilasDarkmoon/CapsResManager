@@ -421,6 +421,57 @@ namespace Capstones.UnityEditorEx
 
             return exitcode;
         }
+        public static int ExecuteProcessInShell(System.Diagnostics.Process shellproc, string command, bool cdToExeFolder)
+        {
+            string exe, arg;
+            if (ParseCommand(command, out exe, out arg))
+            {
+                System.Diagnostics.ProcessStartInfo si;
+                if (string.IsNullOrEmpty(arg))
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe);
+                }
+                else
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe, arg);
+                }
+                if (cdToExeFolder)
+                {
+                    var dir = System.IO.Path.GetDirectoryName(exe);
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        si.WorkingDirectory = dir;
+                    }
+                }
+                return ExecuteProcessInShell(shellproc, si);
+            }
+            Debug.LogErrorFormat("Cannot parse command: " + command);
+            return -1;
+        }
+        public static int ExecuteProcessInShell(System.Diagnostics.Process shellproc, string command)
+        {
+            return ExecuteProcessInShell(shellproc, command, false);
+        }
+        public static int ExecuteProcessInShell(System.Diagnostics.Process shellproc, string command, string workingDir)
+        {
+            string exe, arg;
+            if (ParseCommand(command, out exe, out arg))
+            {
+                System.Diagnostics.ProcessStartInfo si;
+                if (string.IsNullOrEmpty(arg))
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe);
+                }
+                else
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe, arg);
+                }
+                si.WorkingDirectory = workingDir;
+                return ExecuteProcessInShell(shellproc, si);
+            }
+            Debug.LogErrorFormat("Cannot parse command: " + command);
+            return -1;
+        }
 
         public static bool ExecuteProcess(System.Diagnostics.ProcessStartInfo si)
         {
