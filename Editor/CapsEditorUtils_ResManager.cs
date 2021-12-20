@@ -370,7 +370,11 @@ namespace Capstones.UnityEditorEx
             input.Write("\" 2> \"");
             input.Write(stderrfile);
             input.Write("\"\n");
+#if UNITY_EDITOR_WIN
+            input.Write("echo %errorlevel%\n");
+#else
             input.Write("echo $?\n");
+#endif
 
             var result = shellproc.StandardOutput.ReadLine();
             int exitcode;
