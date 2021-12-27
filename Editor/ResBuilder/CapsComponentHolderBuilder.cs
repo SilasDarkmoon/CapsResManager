@@ -79,6 +79,19 @@ namespace Capstones.UnityEditorEx
             for (int i = 0; i < allassets.Length; ++i)
             {
                 var asset = allassets[i];
+                var pinfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(asset);
+                if (pinfo != null)
+                {
+                    if (pinfo.source != UnityEditor.PackageManager.PackageSource.Local
+                        && pinfo.source != UnityEditor.PackageManager.PackageSource.Embedded
+                        )
+                    {
+                        continue;
+                    }
+                }
+
+
+
                 if (asset.EndsWith(".prefab", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var prefab = AssetDatabase.LoadMainAssetAtPath(asset) as GameObject;
