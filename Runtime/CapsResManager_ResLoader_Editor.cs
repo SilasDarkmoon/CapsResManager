@@ -451,6 +451,7 @@ namespace Capstones.UnityEngineEx
                     catch { } // If it is called inside ctor of MonoBehaviour, AssetPathToGUID will fail.
                 }
                 _RuntimeCache.Mapping[path] = found;
+                OnResFound(path, found);
                 return found;
             }
             public static string CheckModPathSafe(string path)
@@ -626,6 +627,8 @@ namespace Capstones.UnityEngineEx
                 }
                 return null;
             }
+
+            public static event Action<string, string> OnResFound = (norm, real) => { };
 
             public static Object LoadMainAsset(string name)
             {
