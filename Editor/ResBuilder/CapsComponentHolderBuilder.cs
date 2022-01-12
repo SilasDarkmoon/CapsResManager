@@ -8,30 +8,12 @@ using Capstones.UnityEngineEx;
 
 namespace Capstones.UnityEditorEx
 {
-    public class CapsComponentHolderBuilder : CapsResBuilder.IResBuilderEx
+    [InitializeOnLoad]
+    public class CapsComponentHolderBuilder : CapsResBuilder.BaseResBuilderEx<CapsComponentHolderBuilder>
     {
-        public void Cleanup()
-        {
-        }
-        public bool CreateItem(CapsResManifestNode node)
-        {
-            return false;
-        }
-        public string FormatBundleName(string asset, string mod, string dist, string norm)
-        {
-            return null;
-        }
-        public void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
-        {
-        }
-        public void ModifyItem(CapsResManifestItem item)
-        {
-        }
-        public void OnSuccess()
-        {
-        }
-
-        public void Prepare(string output)
+        private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
+        
+        public override void Prepare(string output)
         { // TODO: if we do BuildComponentHolder() here, it will cost a lot of time, mostly useless.
         }
 
@@ -250,16 +232,6 @@ namespace Capstones.UnityEditorEx
             }
 
             return changed;
-        }
-    }
-
-    [InitializeOnLoad]
-    public static class CapsComponentHolderBuilderEntry
-    {
-        private static CapsComponentHolderBuilder _Builder = new CapsComponentHolderBuilder();
-        static CapsComponentHolderBuilderEntry()
-        {
-            CapsResBuilder.ResBuilderEx.Add(_Builder);
         }
     }
 }

@@ -35,6 +35,7 @@ namespace Capstones.UnityEditorEx
         {
             //IEnumerator CustomBuild();
             void Prepare(string output);
+            bool IgnoreAsset(string asset, string mod, string dist, string norm);
             string FormatBundleName(string asset, string mod, string dist, string norm);
             bool CreateItem(CapsResManifestNode node);
             void ModifyItem(CapsResManifestItem item);
@@ -67,6 +68,10 @@ namespace Capstones.UnityEditorEx
             }
             public virtual void Prepare(string output)
             {
+            }
+            public virtual bool IgnoreAsset(string asset, string mod, string dist, string norm)
+            {
+                return false;
             }
 
             protected static T _BuilderEx = new T();
@@ -308,6 +313,22 @@ namespace Capstones.UnityEditorEx
                         logger.Log("Normallized Path Empty.");
                         continue;
                     }
+
+                    bool ignored = false;
+                    for (int j = 0; j < allExBuilders.Count; ++j)
+                    {
+                        if (allExBuilders[j].IgnoreAsset(asset, mod, dist, norm))
+                        {
+                            ignored = true;
+                            break;
+                        }
+                    }
+                    if (ignored)
+                    {
+                        logger.Log("Ignored by BuilderEx.");
+                        continue;
+                    }
+
                     mod = mod ?? "";
                     dist = dist ?? "";
                     logger.Log("Mod " + mod + "; Dist " + dist + "; Norm " + norm);
@@ -716,6 +737,7 @@ namespace Capstones.UnityEditorEx
             {
                 Application.logMessageReceivedThreaded += LogToFile;
             }
+            var progDeleteOldAbWithNonExistingAssets = DeleteBuiltResWithNonExistingAssets(outputDir);
             for (int i = 0; i < allExBuilders.Count; ++i)
             {
                 allExBuilders[i].Prepare(outputDir);
@@ -811,6 +833,23 @@ namespace Capstones.UnityEditorEx
                         listManiBuilds.Add(new AssetBundleBuild() { assetBundleName = filename + ".m.ab", assetNames = new[] { manipath } });
                     }
                 }
+
+                logger.Log("(Phase) Wait For DeleteBuiltResWithNonExistingAssets.");
+                if (winprog != null)
+                {
+                    while (!progDeleteOldAbWithNonExistingAssets.Done)
+                    {
+                        yield return null;
+                    }
+                }
+                else
+                {
+                    while (!progDeleteOldAbWithNonExistingAssets.Done)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+
 
                 logger.Log("(Phase) Build Manifest.");
                 if (winprog != null && AsyncWorkTimer.Check()) yield return null;
@@ -1132,6 +1171,91 @@ namespace Capstones.UnityEditorEx
                 BuilderCleanup();
                 logger.Log("(Done) Build Res.");
             }
+        }
+
+        public static TaskProgress DeleteBuiltResWithNonExistingAssets(string dir)
+        {
+            List<string> manifestFiles = new List<string>();
+            if (System.IO.Directory.Exists(dir))
+            {
+                var allfiles = PlatDependant.GetAllFiles(dir);
+                for (int i = 0; i < allfiles.Length; ++i)
+                {
+                    var file = allfiles[i];
+                    if (file.EndsWith(".manifest", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        manifestFiles.Add(file);
+                    }
+                }
+            }
+            TaskProgress fullprog = new TaskProgress();
+            fullprog.Total = manifestFiles.Count;
+            Action<TaskProgress> work = prog =>
+            {
+                long index = 0;
+                while ((index = System.Threading.Interlocked.Increment(ref fullprog.Length) - 1) < manifestFiles.Count)
+                {
+                    var item = manifestFiles[(int)index];
+                    var assets = GetAssetPathsInAssetBundleManifest(item);
+                    bool hasNonExisting = false;
+                    for (int i = 0; i < assets.Length; ++i)
+                    {
+                        if (!PlatDependant.IsFileExist(assets[i]))
+                        {
+                            hasNonExisting = true;
+                            break;
+                        }
+                    }
+                    if (hasNonExisting)
+                    {
+                        var abfile = item.Substring(0, item.Length - ".manifest".Length);
+                        PlatDependant.DeleteFile(abfile);
+                        PlatDependant.DeleteFile(item);
+                    }
+                }
+                fullprog.Done = true;
+            };
+            for (int i = 0; i < System.Environment.ProcessorCount; ++i)
+            {
+                PlatDependant.RunBackgroundLongTime(work);
+            }
+            return fullprog;
+        }
+
+        public static string[] GetAssetPathsInAssetBundleManifest(string manifestFile)
+        {
+            List<string> assets = new List<string>();
+            if (PlatDependant.IsFileExist(manifestFile))
+            {
+                bool started = false;
+                foreach (var line in System.IO.File.ReadLines(manifestFile))
+                {
+                    if (started)
+                    {
+                        if (string.IsNullOrWhiteSpace(line))
+                        {
+                            continue;
+                        }
+                        else if (line.StartsWith("- "))
+                        {
+                            var asset = line.Substring("- ".Length);
+                            assets.Add(asset);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (line == "Assets:")
+                        {
+                            started = true;
+                        }
+                    }
+                }
+            }
+            return assets.ToArray();
         }
 
         public static int GetResVersion()

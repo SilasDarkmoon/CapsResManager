@@ -5,30 +5,28 @@ using UnityEditor;
 namespace Capstones.UnityEditorEx
 {
     [InitializeOnLoad]
-    public class CapsResAliasBuilder : CapsResBuilder.IResBuilderEx, ResManager.EditorResLoader.IEditorResLoaderEx
+    public class CapsResAliasBuilder : CapsResBuilder.BaseResBuilderEx<CapsResAliasBuilder>, ResManager.EditorResLoader.IEditorResLoaderEx
     {
-        private static CapsResAliasBuilder _Instance = new CapsResAliasBuilder();
+        private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
+
         static CapsResAliasBuilder()
         {
-            CapsResBuilder.ResBuilderEx.Add(_Instance);
-            ResManager.EditorResLoader.ExLoaders.Add(_Instance);
+            ResManager.EditorResLoader.ExLoaders.Add(_BuilderEx);
         }
 
-        public void Prepare(string output)
+        public override void Prepare(string output)
         {
             _DelayedRevAliasMap = new Dictionary<string, List<CapsResManifestItem>>();
         }
-        public void Cleanup()
+        public override void Cleanup()
         {
             _DelayedRevAliasMap = null;
         }
-        public void OnSuccess()
-        {
-        }
+
         private Dictionary<string, string> _AliasMap;
         private Dictionary<string, List<CapsResManifestItem>> _DelayedRevAliasMap;
         private List<CapsResManifestItem> _CurrentDelayedLink;
-        public string FormatBundleName(string asset, string mod, string dist, string norm)
+        public override string FormatBundleName(string asset, string mod, string dist, string norm)
         {
             _AliasMap = null;
             if (AssetDatabase.GetMainAssetTypeAtPath(asset) == typeof(CapsResAlias))
@@ -58,11 +56,7 @@ namespace Capstones.UnityEditorEx
             _DelayedRevAliasMap.TryGetValue(asset, out _CurrentDelayedLink);
             return null;
         }
-        public bool CreateItem(CapsResManifestNode node)
-        {
-            return false;
-        }
-        public void ModifyItem(CapsResManifestItem item)
+        public override void ModifyItem(CapsResManifestItem item)
         {
             if (_AliasMap != null)
             {
@@ -104,9 +98,6 @@ namespace Capstones.UnityEditorEx
                     linkitem.Ref = item;
                 }
             }
-        }
-        public void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
-        {
         }
 
         public string FindFile(string path)
