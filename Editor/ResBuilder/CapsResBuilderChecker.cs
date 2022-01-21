@@ -242,5 +242,63 @@ namespace Capstones.UnityEditorEx
             }
             return deps.ToArray();
         }
+
+        public static void GetAssetBundleModAndDist(string abname, out string mod, out string dist)
+        {
+            mod = null;
+            dist = null;
+            if (abname == null)
+            {
+                return;
+            }
+            abname = abname.ToLower();
+            if (abname.EndsWith(".ab"))
+            {
+                var extindex = abname.IndexOf('.');
+                abname = abname.Substring(0, extindex);
+            }
+            if (!abname.StartsWith("m-") && !abname.StartsWith("d-"))
+            {
+                return;
+            }
+            string dpart = null;
+            if (abname.StartsWith("m-"))
+            {
+                var mendIndex = abname.IndexOf("-d-");
+                if (mendIndex > 0)
+                {
+                    mod = abname.Substring("m-".Length, mendIndex - "m-".Length);
+                    dpart = abname.Substring(mendIndex + "-d-".Length);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+                dpart = abname.Substring("d-".Length);
+            }
+
+            if (dpart != null)
+            {
+                var dflags = CapsDistributeEditor.GetAllDistributesCached();
+                for (int i = 0; i < dflags.Length; ++i)
+                {
+                    var dflag = dflags[i].ToLower();
+                    if (dpart.StartsWith(dflag))
+                    {
+                        dist = dflag;
+                        return;
+                    }
+                }
+
+                var dendindex = dpart.IndexOf("-");
+                if (dendindex >= 0)
+                {
+                    dist = dpart.Substring(0, dendindex);
+                }
+            }
+        }
     }
 }

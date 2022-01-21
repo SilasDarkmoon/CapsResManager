@@ -154,6 +154,25 @@ namespace Capstones.UnityEditorEx
             results.AddRange(CapsModEditor.FindAssetsInMods(prefix + file));
             return results.ToArray();
         }
+
+        private static string[] _CachedAllDFlags = null;
+        public static string[] GetAllDistributesCached()
+        {
+            if (_CachedAllDFlags == null)
+            {
+                _CachedAllDFlags = GetAllDistributes();
+            }
+            return _CachedAllDFlags;
+        }
+
+        private class RefreshCachePostProcessor : AssetPostprocessor
+        {
+            private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+            {
+                _CachedAllDFlags = null;
+            }
+        }
+
     }
 
     public class DistributeSelectWindow : EditorWindow, ISerializationCallbackReceiver
