@@ -877,7 +877,7 @@ namespace Capstones.UnityEditorEx
                     {
                         bool inMain;
                         string[] deps;
-                        if (TryParseModDesc(descpath, out inMain, out deps))
+                        if (TryParseModDescFile(descpath, out inMain, out deps))
                         {
                             return !inMain || (deps != null && deps.Length > 0);
                         }
@@ -901,7 +901,7 @@ namespace Capstones.UnityEditorEx
                 {
                     bool inMain;
                     string[] deps;
-                    if (TryParseModDesc(descpath, out inMain, out deps))
+                    if (TryParseModDescFile(descpath, out inMain, out deps))
                     {
                         return !inMain || (deps != null && deps.Length > 0);
                     }
@@ -912,7 +912,7 @@ namespace Capstones.UnityEditorEx
                 return rv;
             }
         }
-        public static bool TryParseModDesc(string file, out bool InMain, out string[] deps)
+        public static bool TryParseModDescFile(string file, out bool InMain, out string[] deps)
         {
             Debug.LogWarning("Can not load mod desc: " + file + ", try parse it as text.");
             bool success = false;
@@ -1009,6 +1009,62 @@ namespace Capstones.UnityEditorEx
                 {
                     Debug.LogError("Can not load mod desc: " + file + " as text.");
                 }
+            }
+        }
+        public static bool TryParseModDesc(string mod, out bool InMain, out string[] deps)
+        {
+            if (string.IsNullOrEmpty(mod))
+            {
+                InMain = true;
+                deps = null;
+                return false;
+            }
+            var package = GetPackageName(mod);
+            if (!string.IsNullOrEmpty(package))
+            {
+                var path = "Packages/" + package;
+                var descpath = path + "/Runtime/Resources/resdesc.asset";
+                bool descPathExists = false;
+                if (!(descPathExists = System.IO.File.Exists(descpath)))
+                {
+                    descpath = path + "/Resources/resdesc.asset";
+                }
+                if (descPathExists || System.IO.File.Exists(descpath))
+                {
+                    var desc = AssetDatabase.LoadAssetAtPath<CapsModDesc>(descpath);
+                    if (desc != null)
+                    {
+                        InMain = desc.InMain;
+                        deps = desc.Deps;
+                        return true;
+                    }
+                    else
+                    {
+                        return TryParseModDescFile(descpath, out InMain, out deps);
+                    }
+                }
+                InMain = false;
+                deps = null;
+                return false;
+            }
+            else
+            {
+                var descpath = "Assets/Mods/" + mod + "/Resources/resdesc.asset";
+                if (!System.IO.File.Exists(descpath))
+                {
+                    InMain = false;
+                    deps = null;
+                    return false;
+                }
+                var desc = AssetDatabase.LoadAssetAtPath<CapsModDesc>(descpath);
+                if (desc == null)
+                {
+                    return TryParseModDescFile(descpath, out InMain, out deps);
+                }
+                Resources.UnloadAsset(desc);
+                InMain = desc.InMain;
+                deps = desc.Deps;
+                return true;
             }
         }
     }

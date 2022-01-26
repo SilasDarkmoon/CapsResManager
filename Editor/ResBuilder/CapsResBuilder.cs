@@ -672,10 +672,23 @@ namespace Capstones.UnityEditorEx
             BuildingParams = BuildingParams ?? ResBuilderParams.Create();
             var timetoken = BuildingParams.timetoken;
             var makezip = BuildingParams.makezip;
+            int version = 0;
+            if (isDefaultBuild)
+            {
+                if (BuildingParams != null && BuildingParams.version > 0)
+                {
+                    version = BuildingParams.version;
+                }
+                else
+                {
+                    version = GetResVersion();
+                    BuildingParams.version = version;
+                }
+            }
             string outputDir = "Latest";
             if (!isDefaultBuild)
             {
-                outputDir = timetoken + "/build";
+                outputDir = timetoken + (version > 0 ? ("_" + version) : "") + "/build";
             }
             outputDir = "EditorOutput/Build/" + outputDir;
 
@@ -762,7 +775,7 @@ namespace Capstones.UnityEditorEx
 
                         if (isDefaultBuild)
                         {
-                            var logdir = "EditorOutput/Build/" + timetoken + "/log/";
+                            var logdir = "EditorOutput/Build/" + timetoken + (version > 0 ? ("_" + version) : "") + "/log/";
                             System.IO.Directory.CreateDirectory(logdir);
                             System.IO.File.Copy(outputDir + "/log/ResBuildLog.txt", logdir + "ResBuildLog.txt", true);
                         }
@@ -971,7 +984,6 @@ namespace Capstones.UnityEditorEx
                 {
                     logger.Log("(Phase) Write Version.");
                     var outverdir = outputDir + "/res/version.txt";
-                    int version = GetResVersion();
                     System.IO.File.WriteAllText(outverdir, version.ToString());
                     // Make icon
                     IconMaker.SetFolderIconToText(outputDir, version.ToString());
@@ -1044,121 +1056,14 @@ namespace Capstones.UnityEditorEx
 
                 if (isDefaultBuild && makezip)
                 {
-                    logger.Log("(Phase) Zip.");
-                    List<Pack<string, string, IList<string>>> zips = new List<Pack<string, string, IList<string>>>();
-                    var outzipdir = "EditorOutput/Build/" + timetoken + "/whole/res/";
-                    System.IO.Directory.CreateDirectory(outzipdir);
-                    foreach (var kvp in works)
+                    work = ZipBuiltResAsync(winprog, timetoken);
+                    while (work.MoveNext())
                     {
-                        var mod = kvp.Key;
-                        var manis = kvp.Value.Manifests;
-                        for (int i = 0; i < manis.Length; ++i)
+                        if (winprog != null)
                         {
-                            var opmod = manis[i].MFlag;
-                            var dist = manis[i].DFlag;
-                            if (winprog != null && AsyncWorkTimer.Check()) yield return null;
-                            logger.Log("Mod " + opmod + "; Dist " + dist);
-
-                            List<string> entries = new List<string>();
-                            // abs
-                            var abdir = outputDir + "/res";
-                            if (!string.IsNullOrEmpty(mod))
-                            {
-                                abdir += "/mod/" + mod;
-                            }
-
-                            if (System.IO.Directory.Exists(abdir))
-                            {
-                                try
-                                {
-                                    var files = System.IO.Directory.GetFiles(abdir);
-                                    for (int j = 0; j < files.Length; ++j)
-                                    {
-                                        var file = files[j];
-                                        if (!file.EndsWith(".ab"))
-                                        {
-                                            var sub = System.IO.Path.GetFileName(file);
-                                            var split = sub.LastIndexOf(".ab.");
-                                            if (split < 0)
-                                            {
-                                                continue;
-                                            }
-                                            var ext = sub.Substring(split + ".ab.".Length);
-                                            if (ext.Contains("."))
-                                            {
-                                                continue;
-                                            }
-                                            if (ext == "manifest")
-                                            {
-                                                continue;
-                                            }
-                                        }
-                                        {
-                                            var bundle = file.Substring(abdir.Length + 1);
-                                            if (IsBundleInModAndDist(bundle, opmod, dist))
-                                            {
-                                                var entry = file.Substring(outputDir.Length + 1);
-                                                entries.Add(entry);
-                                                entries.Add(entry + ".manifest");
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    logger.Log("(Error)(Not Critical)");
-                                    logger.Log(e.ToString());
-                                }
-                            }
-                            if (entries.Count > 0)
-                            {
-                                var reskey = "m-" + opmod.ToLower() + "-d-" + dist.ToLower();
-                                // unity build mani
-                                var umani = abdir + "/" + (string.IsNullOrEmpty(mod) ? "res" : mod);
-                                umani = umani.Substring(outputDir.Length + 1);
-                                entries.Add(umani);
-                                entries.Add(umani + ".manifest");
-                                // mani
-                                var mani = "m-" + opmod.ToLower() + "-d-" + dist.ToLower() + ".m.ab";
-                                mani = "res/mani/" + mani;
-                                entries.Add(mani);
-                                entries.Add(mani + ".manifest");
-                                entries.Add("res/mani/mani");
-                                entries.Add("res/mani/mani.manifest");
-                                // version
-                                entries.Add("res/version.txt");
-                                // dversion
-                                var dversion = "res/version/" + reskey + ".txt";
-                                PlatDependant.CopyFile(outputDir + "/res/version.txt", outputDir + "/" + dversion);
-                                entries.Add(dversion);
-
-                                var zipfile = outzipdir + reskey + ".zip";
-                                zips.Add(new Pack<string, string, IList<string>>(zipfile, outputDir, entries));
-                                //var workz = MakeZipAsync(zipfile, outputDir, entries, winprog);
-                                //while (workz.MoveNext())
-                                //{
-                                //    if (winprog != null)
-                                //    {
-                                //        yield return workz.Current;
-                                //    }
-                                //}
-                            }
+                            yield return work.Current;
                         }
                     }
-                    if (zips.Count > 0)
-                    {
-                        var workz = CapsResBuilder.MakeZipsBackground(zips, winprog);
-                        while (workz.MoveNext())
-                        {
-                            if (winprog != null)
-                            {
-                                yield return workz.Current;
-                            }
-                        }
-                    }
-
-                    // Make icon
-                    IconMaker.SetFolderIconToFileContent("EditorOutput/Build/" + timetoken, outputDir + "/res/version.txt");
                 }
 
                 for (int i = 0; i < allExBuilders.Count; ++i)
@@ -1220,6 +1125,458 @@ namespace Capstones.UnityEditorEx
                 PlatDependant.RunBackgroundLongTime(work);
             }
             return fullprog;
+        }
+
+        public static IEnumerator ZipBuiltResAsync(IEditorWorkProgressShower winprog, string timetoken)
+        {
+            if (string.IsNullOrEmpty(timetoken))
+            {
+                timetoken = ResBuilderParams.Create().timetoken;
+            }
+            var outputDir = "EditorOutput/Build/Latest";
+            List<string> mdtokens = new List<string>();
+            var manifiles = PlatDependant.GetAllFiles(outputDir + "/res/mani/");
+            for (int i = 0; i < manifiles.Length; ++i)
+            {
+                var manifile = manifiles[i];
+                if (manifile.EndsWith(".m.ab"))
+                {
+                    var mdtoken = System.IO.Path.GetFileName(manifile);
+                    mdtoken = mdtoken.Substring(0, mdtoken.Length - ".m.ab".Length);
+                    mdtokens.Add(mdtoken);
+                }
+            }
+            var logger = new EditorWorkProgressLogger() { Shower = winprog };
+            logger.Log("(Phase) Zip.");
+            List<Pack<string, string, IList<string>>> zips = new List<Pack<string, string, IList<string>>>();
+            int version = 0;
+            if (System.IO.File.Exists(outputDir + "/res/version.txt"))
+            {
+                foreach (var line in System.IO.File.ReadLines(outputDir + "/res/version.txt"))
+                {
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        if (int.TryParse(line, out version))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (version > 0)
+            {
+                timetoken = timetoken + "_" + version;
+            }
+            var outzipdir = "EditorOutput/Build/" + timetoken + "/whole/res/";
+            System.IO.Directory.CreateDirectory(outzipdir);
+            var allmods = CapsModEditor.GetAllModsOrPackages();
+            for (int i = 0; i < mdtokens.Count; ++i)
+            {
+                var mdtoken = mdtokens[i];
+                string mod = "";
+                string dist = "";
+                if (mdtoken.StartsWith("m-"))
+                {
+                    var mendi = mdtoken.IndexOf("-d-");
+                    if (mendi >= 0)
+                    {
+                        mod = mdtoken.Substring("m-".Length, mendi - "m-".Length);
+
+                        dist = mdtoken.Substring(mendi + "-d-".Length);
+                    }
+                }
+                else if (mdtoken.StartsWith("d-"))
+                {
+                    dist = mdtoken.Substring("d-".Length);
+                }
+                if (!string.IsNullOrEmpty(mod))
+                {
+                    foreach (var realmod in allmods)
+                    {
+                        if (realmod.Equals(mod, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            mod = realmod;
+                            break;
+                        }
+                    }
+                }
+                bool inPackage = !string.IsNullOrEmpty(mod) && !string.IsNullOrEmpty(CapsModEditor.GetPackageName(mod));
+                string opmod = mod;
+                var moddesc = ResManager.GetDistributeDesc(mod);
+                bool isMainPackage = inPackage && !CapsModEditor.ShouldTreatPackageAsMod(CapsModEditor.GetPackageName(mod));
+                if (moddesc == null || moddesc.InMain || isMainPackage)
+                {
+                    mod = "";
+                    if (moddesc != null && moddesc.IsOptional && !isMainPackage)
+                    {
+                        opmod = moddesc.Mod;
+                    }
+                }
+
+                if (winprog != null && AsyncWorkTimer.Check()) yield return null;
+                logger.Log("Mod " + opmod + "; Dist " + dist);
+
+                List<string> entries = new List<string>();
+                // abs
+                var abdir = outputDir + "/res";
+                if (!string.IsNullOrEmpty(mod))
+                {
+                    abdir += "/mod/" + mod;
+                }
+
+                if (System.IO.Directory.Exists(abdir))
+                {
+                    try
+                    {
+                        var files = System.IO.Directory.GetFiles(abdir);
+                        for (int j = 0; j < files.Length; ++j)
+                        {
+                            var file = files[j];
+                            if (!file.EndsWith(".ab"))
+                            {
+                                var sub = System.IO.Path.GetFileName(file);
+                                var split = sub.LastIndexOf(".ab.");
+                                if (split < 0)
+                                {
+                                    continue;
+                                }
+                                var ext = sub.Substring(split + ".ab.".Length);
+                                if (ext.Contains("."))
+                                {
+                                    continue;
+                                }
+                                if (ext == "manifest")
+                                {
+                                    continue;
+                                }
+                            }
+                            {
+                                var bundle = file.Substring(abdir.Length + 1);
+                                if (IsBundleInModAndDist(bundle, opmod, dist))
+                                {
+                                    var entry = file.Substring(outputDir.Length + 1);
+                                    entries.Add(entry);
+                                    entries.Add(entry + ".manifest");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Log("(Error)(Not Critical)");
+                        logger.Log(e.ToString());
+                    }
+                }
+                if (entries.Count > 0)
+                {
+                    var reskey = "m-" + opmod.ToLower() + "-d-" + dist.ToLower();
+                    // unity build mani
+                    var umani = abdir + "/" + (string.IsNullOrEmpty(mod) ? "res" : mod);
+                    umani = umani.Substring(outputDir.Length + 1);
+                    entries.Add(umani);
+                    entries.Add(umani + ".manifest");
+                    // mani
+                    var mani = "m-" + opmod.ToLower() + "-d-" + dist.ToLower() + ".m.ab";
+                    mani = "res/mani/" + mani;
+                    entries.Add(mani);
+                    entries.Add(mani + ".manifest");
+                    entries.Add("res/mani/mani");
+                    entries.Add("res/mani/mani.manifest");
+                    // version
+                    entries.Add("res/version.txt");
+                    // dversion
+                    var dversion = "res/version/" + reskey + ".txt";
+                    PlatDependant.CopyFile(outputDir + "/res/version.txt", outputDir + "/" + dversion);
+                    entries.Add(dversion);
+
+                    var zipfile = outzipdir + reskey + ".zip";
+                    zips.Add(new Pack<string, string, IList<string>>(zipfile, outputDir, entries));
+                    //var workz = MakeZipAsync(zipfile, outputDir, entries, winprog);
+                    //while (workz.MoveNext())
+                    //{
+                    //    if (winprog != null)
+                    //    {
+                    //        yield return workz.Current;
+                    //    }
+                    //}
+                }
+            }
+            if (zips.Count > 0)
+            {
+                var workz = CapsResBuilder.MakeZipsBackground(zips, winprog);
+                while (workz.MoveNext())
+                {
+                    if (winprog != null)
+                    {
+                        yield return workz.Current;
+                    }
+                }
+            }
+
+            CopyMissingBuiltFilesToArchiveFolder("EditorOutput/Build/" + timetoken + "/whole/", null);
+
+            // Make icon
+            IconMaker.SetFolderIconToFileContent("EditorOutput/Build/" + timetoken, outputDir + "/res/version.txt");
+        }
+
+        public static string[] GetFilesRelative(string root)
+        {
+            if (!System.IO.Directory.Exists(root))
+            {
+                return null;
+            }
+            if (!root.EndsWith("/") && !root.EndsWith("\\"))
+            {
+                root += "/";
+            }
+            List<string> results = new List<string>();
+            var files = PlatDependant.GetAllFiles(root);
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    var item = file.Substring(root.Length);
+                    results.Add(item);
+                }
+            }
+            return results.ToArray();
+        }
+        private static char[] DirSplitChars = new[] { '\\', '/' };
+        public static string[] GetFilesIncludingZipEntries(string root, int ignoreZipEntryDirLevel)
+        {
+            if (!System.IO.Directory.Exists(root))
+            {
+                return null;
+            }
+            if (!root.EndsWith("/") && !root.EndsWith("\\"))
+            {
+                root += "/";
+            }
+            List<string> results = new List<string>();
+            var files = PlatDependant.GetAllFiles(root);
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        var dir = System.IO.Path.GetDirectoryName(file);
+                        dir = dir.Substring(root.Length);
+                        dir = dir.Replace("\\", "/");
+                        if (!dir.EndsWith("/"))
+                        {
+                            dir += "/";
+                        }
+                        try
+                        {
+                            using (var stream = PlatDependant.OpenRead(file))
+                            {
+                                using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
+                                {
+                                    var entries = zip.Entries;
+                                    foreach (var entry in entries)
+                                    {
+                                        var ename = entry.FullName;
+                                        var rname = ename;
+                                        for (int i = 0; i < ignoreZipEntryDirLevel; ++i)
+                                        {
+                                            var index = rname.IndexOfAny(DirSplitChars);
+                                            if (index >= 0)
+                                            {
+                                                rname = rname.Substring(index + 1);
+                                            }
+                                            else
+                                            {
+                                                rname = null;
+                                                break;
+                                            }
+                                        }
+                                        if (!string.IsNullOrEmpty(rname))
+                                        {
+                                            var item = dir + rname;
+                                            results.Add(item);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                    else
+                    {
+                        var item = file.Substring(root.Length);
+                        results.Add(item);
+                    }
+                }
+            }
+            return results.ToArray();
+        }
+
+        public static void CopyMissing(string src, string dest, int ignoreZipEntryDirLevel, string[] ignoredItems)
+        {
+            if (!System.IO.Directory.Exists(src))
+            {
+                return;
+            }
+            if (!src.EndsWith("/") && !src.EndsWith("\\"))
+            {
+                src += "/";
+            }
+            System.IO.Directory.CreateDirectory(dest);
+            if (!System.IO.Directory.Exists(dest))
+            {
+                return;
+            }
+            if (!dest.EndsWith("/") && !dest.EndsWith("\\"))
+            {
+                dest += "/";
+            }
+            var existing = GetFilesIncludingZipEntries(dest, ignoreZipEntryDirLevel);
+            HashSet<string> existingset = new HashSet<string>();
+            if (existing != null)
+            {
+                foreach (var item in existing)
+                {
+                    existingset.Add(item.ToLower());
+                }
+            }
+            HashSet<string> blackset = new HashSet<string>();
+            if (ignoredItems != null)
+            {
+                foreach (var item in ignoredItems)
+                {
+                    blackset.Add(item.ToLower());
+                }
+            }
+            var srcitems = GetFilesRelative(src);
+            if (srcitems != null)
+            {
+                foreach (var item in srcitems)
+                {
+                    var litem = item.ToLower();
+                    if (!existingset.Contains(litem))
+                    {
+                        PlatDependant.CopyFile(src + item, dest + item);
+                    }
+                }
+            }
+        }
+
+        public static void CopyOrUnzip(string src, string dest, int ignoreZipEntryDirLevel, string[] ignoredItems)
+        {
+            if (!System.IO.Directory.Exists(src))
+            {
+                return;
+            }
+            if (!src.EndsWith("/") && !src.EndsWith("\\"))
+            {
+                src += "/";
+            }
+            System.IO.Directory.CreateDirectory(dest);
+            if (!System.IO.Directory.Exists(dest))
+            {
+                return;
+            }
+            if (!dest.EndsWith("/") && !dest.EndsWith("\\"))
+            {
+                dest += "/";
+            }
+            var files = PlatDependant.GetAllFiles(src);
+            if (files != null)
+            {
+                foreach (var file in files)
+                {
+                    if (file.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        var dir = System.IO.Path.GetDirectoryName(file);
+                        dir = dir.Substring(src.Length);
+                        dir = dir.Replace("\\", "/");
+                        if (!dir.EndsWith("/"))
+                        {
+                            dir += "/";
+                        }
+                        try
+                        {
+                            using (var stream = PlatDependant.OpenRead(file))
+                            {
+                                using (var zip = new ZipArchive(stream, ZipArchiveMode.Read))
+                                {
+                                    var entries = zip.Entries;
+                                    foreach (var entry in entries)
+                                    {
+                                        var ename = entry.FullName;
+                                        var rname = ename;
+                                        for (int i = 0; i < ignoreZipEntryDirLevel; ++i)
+                                        {
+                                            var index = rname.IndexOfAny(DirSplitChars);
+                                            if (index >= 0)
+                                            {
+                                                rname = rname.Substring(index + 1);
+                                            }
+                                            else
+                                            {
+                                                rname = null;
+                                                break;
+                                            }
+                                        }
+                                        if (!string.IsNullOrEmpty(rname))
+                                        {
+                                            try
+                                            {
+                                                var item = dir + rname;
+                                                var destfile = dest + item;
+                                                using (var estream = entry.Open())
+                                                {
+                                                    using (var dstream = PlatDependant.OpenWrite(destfile))
+                                                    {
+                                                        estream.CopyTo(dstream);
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                Debug.LogException(e);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                    else
+                    {
+                        var item = file.Substring(src.Length);
+                        var destfile = dest + item;
+                        PlatDependant.CopyFile(file, destfile);
+                    }
+                }
+            }
+        }
+
+        public static void CopyMissingBuiltFilesToArchiveFolder(string dest, string[] ignoredItems)
+        {
+            if (!System.IO.Directory.Exists(dest))
+            {
+                return;
+            }
+            CopyMissing("EditorOutput/Build/Latest/", dest, 1, ignoredItems);
+        }
+        public static void RestoreFromArchiveFolder(string src, string[] ignoredItems)
+        {
+            CopyOrUnzip(src, "EditorOutput/Build/Latest/", 1, ignoredItems);
+            var dirs = PlatDependant.GetAllFolders("EditorOutput/Build/Latest/");
+            foreach (var dir in dirs)
+            {
+                IconMaker.FixIcon(dir);
+            }
+            IconMaker.FixIcon("EditorOutput/Build/Latest/");
         }
 
         public static string[] GetAssetPathsInAssetBundleManifest(string manifestFile)

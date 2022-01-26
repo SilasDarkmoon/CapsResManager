@@ -196,6 +196,19 @@ namespace Capstones.UnityEditorEx
             }
             return false;
         }
+        public static void FixIcon(string folder)
+        {
+            string iconfile = null;
+#if UNITY_EDITOR_WIN
+            iconfile = System.IO.Path.Combine(folder, "icon.ico");
+#elif UNITY_EDITOR_OSX
+            iconfile = System.IO.Path.Combine(folder, "icon.png");
+#endif
+            if (!string.IsNullOrEmpty(iconfile) && System.IO.File.Exists(iconfile))
+            {
+                IconMaker.SetFolderIcon(folder, iconfile);
+            }
+        }
         public static bool SetFolderIconToFileContent(string folder, string file)
         {
             if (!System.IO.File.Exists(file))
