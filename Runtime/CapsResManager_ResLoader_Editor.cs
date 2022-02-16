@@ -170,6 +170,10 @@ namespace Capstones.UnityEngineEx
             }
             public static string CheckModPath(string path)
             {
+                return CheckModPath(path, false);
+            }
+            public static string CheckModPath(string path, bool ignoreExFinder)
+            {
                 string found = null;
                 Func<string, bool> checkFile = file =>
                 {
@@ -363,6 +367,10 @@ namespace Capstones.UnityEngineEx
             }
             public static string CheckDistributePath(string path, bool noWarningWhenNotFound)
             {
+                return CheckDistributePath(path, noWarningWhenNotFound, false);
+            }
+            public static string CheckDistributePath(string path, bool noWarningWhenNotFound, bool ignoreExFinder)
+            {
                 string found = null;
                 if (_RuntimeCache.Mapping.TryGetValue(path, out found))
                 {
@@ -386,7 +394,7 @@ namespace Capstones.UnityEngineEx
                     {
                         var dflag = dflags[i];
                         var realpath = distFolderName + "dist/" + dflag + path.Substring(distFolderName.Length - 1);
-                        var dfound = CheckModPath(realpath);
+                        var dfound = CheckModPath(realpath, ignoreExFinder);
                         if (dfound != null)
                         {
 #if EDITOR_LOADER_NO_CHECK
@@ -405,7 +413,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
                 {
-                    var dfound = CheckModPath(path);
+                    var dfound = CheckModPath(path, ignoreExFinder);
                     if (dfound != null)
                     {
 #if EDITOR_LOADER_NO_CHECK
