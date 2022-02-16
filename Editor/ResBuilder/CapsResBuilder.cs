@@ -182,6 +182,7 @@ namespace Capstones.UnityEditorEx
                     allExBuilders.AddRange(runOnceExBuilder);
                 }
 
+                var allDistDescs = CapsDistributeEditor.GetAllDistributeDescs();
                 Dictionary<string, Dictionary<string, List<string>>> mod2build = new Dictionary<string, Dictionary<string, List<string>>>();
                 Dictionary<string, Dictionary<string, CapsResManifest>> mod2mani = new Dictionary<string, Dictionary<string, CapsResManifest>>();
                 for (int i = 0; i < assets.Count; ++i)
@@ -226,6 +227,7 @@ namespace Capstones.UnityEditorEx
                     string dist = null;
                     string norm = asset;
                     bool inPackage = false;
+                    CapsDistributeEditor.DistDesc distdesc;
                     if (asset.StartsWith("Assets/Mods/") || (inPackage = asset.StartsWith("Packages/")))
                     {
                         string sub;
@@ -251,6 +253,11 @@ namespace Capstones.UnityEditorEx
                         if (string.IsNullOrEmpty(mod))
                         {
                             logger.Log("Empty Module.");
+                            continue;
+                        }
+                        if (allDistDescs.TryGetValue(mod, out distdesc) && distdesc.NoSelectNoBuild && !ResManager.GetDistributeFlagsSet().Contains(mod))
+                        {
+                            logger.Log("Mod NoSelectNoBuild.");
                             continue;
                         }
                         sub = sub.Substring(index + 1);
@@ -311,6 +318,11 @@ namespace Capstones.UnityEditorEx
                     if (string.IsNullOrEmpty(norm))
                     {
                         logger.Log("Normallized Path Empty.");
+                        continue;
+                    }
+                    if (allDistDescs.TryGetValue(dist, out distdesc) && distdesc.NoSelectNoBuild && !ResManager.GetDistributeFlagsSet().Contains(dist))
+                    {
+                        logger.Log("Dist NoSelectNoBuild.");
                         continue;
                     }
 

@@ -232,10 +232,45 @@ namespace Capstones.UnityEditorEx
                 if (System.IO.File.Exists(descfile))
                 {
                     var content = System.IO.File.ReadAllText(descfile);
-                    distdesc = JsonUtility.FromJson<DistDesc>(content);
+                    try
+                    {
+                        distdesc = JsonUtility.FromJson<DistDesc>(content);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             return distdesc;
+        }
+
+        public static Dictionary<string, DistDesc> GetAllDistributeDescs()
+        {
+            var results = new Dictionary<string, DistDesc>();
+            var dflags = GetAllDistributesCached();
+            for (int i = 0; i < dflags.Length; ++i)
+            {
+                var dflag = dflags[i];
+                var descfile = FindDistributeDescFile(dflag);
+                if (descfile != null)
+                {
+                    if (System.IO.File.Exists(descfile))
+                    {
+                        var content = System.IO.File.ReadAllText(descfile);
+                        try
+                        {
+                            var distdesc = JsonUtility.FromJson<DistDesc>(content);
+                            results[dflag] = distdesc;
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                }
+            }
+            return results;
         }
 
         private class RefreshCachePostProcessor : AssetPostprocessor
