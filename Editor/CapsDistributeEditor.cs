@@ -165,6 +165,78 @@ namespace Capstones.UnityEditorEx
             return _CachedAllDFlags;
         }
 
+        public static string FindDistributeDescFile(string dflag)
+        {
+            if (!string.IsNullOrEmpty(dflag))
+            {
+                string descfile = null;
+                var distpart = "/dist/" + dflag + "/.desc.txt";
+                var descpart = "CapsRes" + distpart;
+                descfile = CapsModEditor.FindAssetInMods(descpart);
+                if (descfile != null)
+                {
+                    return descfile;
+                }
+                descpart = "CapsSpt" + distpart;
+                descfile = CapsModEditor.FindAssetInMods(descpart);
+                if (descfile != null)
+                {
+                    return descfile;
+                }
+
+                descfile = "Assets/CapsRes" + distpart;
+                if (System.IO.File.Exists(descfile))
+                {
+                    return descfile;
+                }
+                descfile = "Assets/CapsSpt" + distpart;
+                if (System.IO.File.Exists(descfile))
+                {
+                    return descfile;
+                }
+
+                descfile = "Assets/Mods/" + dflag + "/.desc.txt";
+                if (System.IO.File.Exists(descfile))
+                {
+                    return descfile;
+                }
+
+                var pname = CapsModEditor.GetPackageName(dflag);
+                if (pname != null)
+                {
+                    descfile = "Packages/" + pname + "/.desc.txt";
+                    if (System.IO.File.Exists(descfile))
+                    {
+                        return descfile;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public struct DistDesc
+        {
+            public bool NoSelectNoBuild;
+            public bool IsCritical;
+            public string Title;
+            public string Desc;
+            public string Color;
+        }
+        public static DistDesc GetDistributeDesc(string dflag)
+        {
+            DistDesc distdesc = new DistDesc();
+            var descfile = FindDistributeDescFile(dflag);
+            if (descfile != null)
+            {
+                if (System.IO.File.Exists(descfile))
+                {
+                    var content = System.IO.File.ReadAllText(descfile);
+                    distdesc = JsonUtility.FromJson<DistDesc>(content);
+                }
+            }
+            return distdesc;
+        }
+
         private class RefreshCachePostProcessor : AssetPostprocessor
         {
             private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
@@ -172,7 +244,6 @@ namespace Capstones.UnityEditorEx
                 _CachedAllDFlags = null;
             }
         }
-
     }
 
     public class DistributeSelectWindow : EditorWindow, ISerializationCallbackReceiver
@@ -195,9 +266,25 @@ namespace Capstones.UnityEditorEx
                 win.SelectDistributeFlag(selflags[i], true);
             }
             win.SaveDistributeFlags();
+            win.DistributeDescs = null;
+            win.TryLoadDistributeDescs();
+        }
+
+        private void TryLoadDistributeDescs()
+        {
+            if (DistributeDescs == null)
+            {
+                DistributeDescs = new Dictionary<string, CapsDistributeEditor.DistDesc>();
+                foreach (var kvp in DistributeFlags)
+                {
+                    var dflag = kvp.Key;
+                    DistributeDescs[dflag] = CapsDistributeEditor.GetDistributeDesc(dflag);
+                }
+            }
         }
 
         public Dictionary<string, bool> DistributeFlags = new Dictionary<string, bool>();
+        public Dictionary<string, CapsDistributeEditor.DistDesc> DistributeDescs = null;
         public LinkedList<string> DistributeFlagOrder = new LinkedList<string>();
 
         string[] OptionConfigs = new string[] { "0", "1", "2", "3" };
@@ -228,6 +315,7 @@ namespace Capstones.UnityEditorEx
 
         void OnGUI()
         {
+            TryLoadDistributeDescs();
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             if (GUILayout.Button("Reset"))
@@ -238,7 +326,38 @@ namespace Capstones.UnityEditorEx
             Dictionary<string, bool> copy = new Dictionary<string, bool>(DistributeFlags);
             foreach (var kvp in copy)
             {
-                SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(kvp.Key, kvp.Value, GUILayout.Width(GUI.skin.label.CalcSize(new GUIContent(kvp.Key)).x + GUI.skin.toggle.CalcSize(GUIContent.none).x)));
+                CapsDistributeEditor.DistDesc desc;
+                var togglesize = GUI.skin.toggle.CalcSize(GUIContent.none);
+                var dflagcontent = new GUIContent(kvp.Key);
+                GUIStyle style = EditorStyles.label;
+                if (DistributeDescs.TryGetValue(kvp.Key, out desc))
+                {
+                    if (!string.IsNullOrEmpty(desc.Desc))
+                    {
+                        dflagcontent.tooltip = desc.Desc;
+                    }
+                    if (!string.IsNullOrEmpty(desc.Title))
+                    {
+                        dflagcontent.text += " \t(" + desc.Title + ")";
+                    }
+                    if (desc.IsCritical)
+                    {
+                        style = EditorStyles.boldLabel;
+                    }
+                    if (!string.IsNullOrEmpty(desc.Color))
+                    {
+                        Color color;
+                        if (ColorUtility.TryParseHtmlString(desc.Color, out color))
+                        {
+                            var rect = GUILayoutUtility.GetRect(0, 0);
+                            rect.width = togglesize.x + GUI.skin.toggle.margin.left;
+                            rect.height = GUI.skin.toggle.border.top + GUI.skin.toggle.margin.top + GUI.skin.toggle.margin.top - GUI.skin.toggle.overflow.top;
+                            EditorGUI.DrawRect(rect, color);
+                        }
+                    }
+                }
+                var option = GUILayout.Width(style.CalcSize(dflagcontent).x + togglesize.x);
+                SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(dflagcontent, kvp.Value, style, option));
             }
 
             GUILayout.EndScrollView();
@@ -373,6 +492,7 @@ namespace Capstones.UnityEditorEx
         {
             DistributeFlags.Clear();
             DistributeFlagOrder.Clear();
+            DistributeDescs = null;
             if (SerializeDistributeFlags != null && SerializeDistributeFlagStates != null)
             {
                 for (int i = 0; i < SerializeDistributeFlags.Length && i < SerializeDistributeFlagStates.Length; ++i)
