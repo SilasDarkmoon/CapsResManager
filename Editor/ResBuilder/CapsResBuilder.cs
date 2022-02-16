@@ -320,7 +320,7 @@ namespace Capstones.UnityEditorEx
                         logger.Log("Normallized Path Empty.");
                         continue;
                     }
-                    if (allDistDescs.TryGetValue(dist, out distdesc) && distdesc.NoSelectNoBuild && !ResManager.GetDistributeFlagsSet().Contains(dist))
+                    if (!string.IsNullOrEmpty(dist) && allDistDescs.TryGetValue(dist, out distdesc) && distdesc.NoSelectNoBuild && !ResManager.GetDistributeFlagsSet().Contains(dist))
                     {
                         logger.Log("Dist NoSelectNoBuild.");
                         continue;
