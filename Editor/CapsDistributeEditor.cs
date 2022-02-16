@@ -218,6 +218,7 @@ namespace Capstones.UnityEditorEx
         {
             public bool NoSelectNoBuild;
             public bool IsCritical;
+            public bool ShouldIgnore;
             public string Title;
             public string Desc;
             public string Color;
@@ -358,6 +359,13 @@ namespace Capstones.UnityEditorEx
                 }
                 var option = GUILayout.Width(style.CalcSize(dflagcontent).x + togglesize.x);
                 SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(dflagcontent, kvp.Value, style, option));
+                if (desc.ShouldIgnore)
+                {
+                    var rect = GUILayoutUtility.GetLastRect();
+                    rect.yMin += Mathf.Ceil(rect.height / 2f);
+                    rect.height = 1f;
+                    EditorGUI.DrawRect(rect, GUI.color);
+                }
             }
 
             GUILayout.EndScrollView();
