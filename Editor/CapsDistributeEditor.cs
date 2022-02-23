@@ -222,6 +222,7 @@ namespace Capstones.UnityEditorEx
             public string Title;
             public string Desc;
             public string Color;
+            public int Order;
         }
         public static DistDesc GetDistributeDesc(string dflag)
         {
@@ -310,17 +311,49 @@ namespace Capstones.UnityEditorEx
         {
             if (DistributeDescs == null)
             {
+                SortedAllDistributeFlags.Clear();
                 DistributeDescs = new Dictionary<string, CapsDistributeEditor.DistDesc>();
                 foreach (var kvp in DistributeFlags)
                 {
                     var dflag = kvp.Key;
                     DistributeDescs[dflag] = CapsDistributeEditor.GetDistributeDesc(dflag);
+                    SortedAllDistributeFlags.Add(dflag);
                 }
+                SortedAllDistributeFlags.Sort((flaga, flagb) =>
+                {
+                    CapsDistributeEditor.DistDesc desca = DistributeDescs[flaga];
+                    CapsDistributeEditor.DistDesc descb = DistributeDescs[flagb];
+                    if (desca.ShouldIgnore != descb.ShouldIgnore)
+                    {
+                        return descb.ShouldIgnore ? -1 : 1;
+                    }
+
+                    var ordera = desca.Order;
+                    var orderb = descb.Order;
+                    if (ordera != orderb)
+                    {
+                        return ordera - orderb;
+                    }
+                    var ca = desca.Color;
+                    var cb = descb.Color;
+                    var cc = string.Compare(ca, cb);
+                    if (cc != 0)
+                    {
+                        return -cc;
+                    }
+                    if (desca.IsCritical != descb.IsCritical)
+                    {
+                        return desca.IsCritical ? -1 : 1;
+                    }
+
+                    return string.Compare(flaga, flagb);
+                });
             }
         }
 
         public Dictionary<string, bool> DistributeFlags = new Dictionary<string, bool>();
         public Dictionary<string, CapsDistributeEditor.DistDesc> DistributeDescs = null;
+        private List<string> SortedAllDistributeFlags = new List<string>();
         public LinkedList<string> DistributeFlagOrder = new LinkedList<string>();
 
         string[] OptionConfigs = new string[] { "0", "1", "2", "3" };
@@ -359,14 +392,15 @@ namespace Capstones.UnityEditorEx
                 Init();
             }
             offset1 = GUILayout.BeginScrollView(offset1);
-            Dictionary<string, bool> copy = new Dictionary<string, bool>(DistributeFlags);
-            foreach (var kvp in copy)
+            for (int i = 0; i < SortedAllDistributeFlags.Count; ++i)
             {
+                var dflag = SortedAllDistributeFlags[i];
+                var selected = DistributeFlags[dflag];
                 CapsDistributeEditor.DistDesc desc;
                 var togglesize = GUI.skin.toggle.CalcSize(GUIContent.none);
-                var dflagcontent = new GUIContent(kvp.Key);
+                var dflagcontent = new GUIContent(dflag);
                 GUIStyle style = EditorStyles.label;
-                if (DistributeDescs.TryGetValue(kvp.Key, out desc))
+                if (DistributeDescs.TryGetValue(dflag, out desc))
                 {
                     if (!string.IsNullOrEmpty(desc.Desc))
                     {
@@ -393,7 +427,7 @@ namespace Capstones.UnityEditorEx
                     }
                 }
                 var option = GUILayout.Width(style.CalcSize(dflagcontent).x + togglesize.x);
-                SelectDistributeFlag(kvp.Key, EditorGUILayout.ToggleLeft(dflagcontent, kvp.Value, style, option));
+                SelectDistributeFlag(dflag, EditorGUILayout.ToggleLeft(dflagcontent, selected, style, option));
                 if (desc.ShouldIgnore)
                 {
                     var rect = GUILayoutUtility.GetLastRect();
