@@ -18,11 +18,16 @@ namespace Capstones.UnityEditorEx
         }
 
         protected string _Symbol = "DEBUG_";
+        protected string _Desc = "";
+        protected bool _ExportToLua = false;
         void OnGUI()
         {
             GUILayout.BeginVertical();
             GUILayout.Label("Which precompiler symbol would you like to define?");
             _Symbol = GUILayout.TextField(_Symbol);
+            GUILayout.Label("You can write some description below:");
+            _Desc = GUILayout.TextField(_Desc);
+            _ExportToLua = EditorGUILayout.ToggleLeft("Export to Lua", _ExportToLua);
             if (GUILayout.Button("OK"))
             {
                 if (string.IsNullOrEmpty(_Symbol))
@@ -53,6 +58,25 @@ namespace Capstones.UnityEditorEx
                             sw.Write("-define:");
                             sw.WriteLine(_Symbol);
                         }
+                        if (_ExportToLua)
+                        {
+                            var luapath = "Assets/Mods/" + _Symbol + "/CapsSpt/init.lua";
+                            using (var sw = PlatDependant.OpenWriteText(luapath))
+                            {
+                                sw.Write(_Symbol);
+                                sw.Write(" = true");
+                            }
+                        }
+                        var descpath = "Assets/Mods/" + _Symbol + "/.desc.txt";
+                        using (var sw = PlatDependant.OpenWriteText(descpath))
+                        {
+                            sw.WriteLine("{");
+                            sw.WriteLine("    \"Title\" : \"C# define" + (string.IsNullOrEmpty(_Desc) ? "" : ", " + _Desc) + "\",");
+                            sw.WriteLine("    \"Order\" : 1000000,");
+                            sw.WriteLine("    \"Color\" : \"black\"");
+                            sw.WriteLine("}");
+                        }
+
                         CapsModEditor.CheckModsVisibility();
                         DistributeSelectWindow.Init();
                     }
