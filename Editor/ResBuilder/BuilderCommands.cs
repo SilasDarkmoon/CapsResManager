@@ -1,7 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 using UnityEditor;
+using Capstones.UnityEngineEx;
 
 namespace Capstones.UnityEditorEx
 {
@@ -122,7 +126,7 @@ namespace Capstones.UnityEditorEx
         [MenuItem("Test/Res/Create Icon", priority = 500010)]
         public static void TestCreateIcon()
         {
-            IconMaker.WriteTextToImage(Random.Range(0, 1000).ToString(), "EditorOutput/temp.png");
+            IconMaker.WriteTextToImage(UnityEngine.Random.Range(0, 1000).ToString(), "EditorOutput/temp.png");
             System.IO.Directory.CreateDirectory("EditorOutput/testfolder");
             if (IconMaker.ChangeImageToIco("EditorOutput/temp.png", null))
             {
