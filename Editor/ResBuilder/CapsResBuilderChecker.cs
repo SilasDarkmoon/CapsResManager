@@ -300,5 +300,56 @@ namespace Capstones.UnityEditorEx
                 }
             }
         }
+
+        public static void GetSptModAndDist(string relativePath, out string mod, out string dist)
+        {
+            if (relativePath == null)
+            {
+                mod = null;
+                dist = null;
+                return;
+            }
+            relativePath = relativePath.Replace('\\', '/');
+            relativePath = relativePath.Trim('/');
+            if (relativePath.StartsWith("mod/", StringComparison.InvariantCultureIgnoreCase))
+            {
+                relativePath = relativePath.Substring("mod/".Length);
+                relativePath = relativePath.TrimStart('/');
+                int modendindex = relativePath.IndexOf('/');
+                if (modendindex >= 0)
+                {
+                    mod = relativePath.Substring(0, modendindex);
+                    relativePath = relativePath.Substring(modendindex + 1);
+                    relativePath = relativePath.TrimStart('/');
+                }
+                else
+                {
+                    mod = relativePath;
+                    relativePath = "";
+                }
+            }
+            else
+            {
+                mod = null;
+            }
+            if (relativePath.StartsWith("dist/", StringComparison.InvariantCultureIgnoreCase))
+            {
+                relativePath = relativePath.Substring("dist/".Length);
+                relativePath = relativePath.TrimStart('/');
+                int distendindex = relativePath.IndexOf('/');
+                if (distendindex >= 0)
+                {
+                    dist = relativePath.Substring(0, distendindex);
+                }
+                else
+                {
+                    dist = relativePath;
+                }
+            }
+            else
+            {
+                dist = null;
+            }
+        }
     }
 }
