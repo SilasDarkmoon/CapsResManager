@@ -135,6 +135,7 @@ namespace Capstones.UnityEngineEx
                 }
             }
         }
+#if UNITY_2020_2_OR_NEWER || NETCOREAPP3_0 || NETCOREAPP3_1 || NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1 || NETSTANDARD2_1_OR_GREATER
         public override async ValueTask DisposeAsync()
         {
             if (LeaveOpen)
@@ -152,5 +153,6 @@ namespace Capstones.UnityEngineEx
                 }
             }
         }
+#endif
     }
 }
