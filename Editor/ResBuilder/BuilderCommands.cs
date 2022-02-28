@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -42,13 +43,14 @@ namespace Capstones.UnityEditorEx
             return true;
         }
 
-        private static bool CheckSptInDistributeFlags(string relativePath, HashSet<string> flagsSet, HashSet<string> fixedmod)
+        private static bool CheckSptInDistributeFlags(string relativePath, HashSet<string> flagsSet)
         {
+            var alldflags = CapsDistributeEditor.GetAllDistributesCached();
             string mod, dist;
             CapsResBuilderChecker.GetSptModAndDist(relativePath, out mod, out dist);
             mod = mod?.ToLower();
             dist = dist?.ToLower();
-            if (!string.IsNullOrEmpty(mod) && !flagsSet.Contains(mod) && !fixedmod.Contains(mod))
+            if (!string.IsNullOrEmpty(mod) && !flagsSet.Contains(mod) && alldflags.Contains(mod))
             {
                 return false;
             }
@@ -71,9 +73,6 @@ namespace Capstones.UnityEditorEx
                     flagsSet.Add(flags[i].ToLower());
                 }
             }
-
-            // 一定会添加的mod
-            HashSet<string> fixedMod = new HashSet<string>() { "capslua", "capsmvc", "capsnetwork", "capsupdate" };
 
             StringBuilder sblog = new StringBuilder();
             Debug.LogFormat("Start to check res!");
@@ -109,7 +108,7 @@ namespace Capstones.UnityEditorEx
                 foreach (var item in allexistFolders)
                 {
                     var relativePath = item.Substring(sptroot.Length);
-                    bool isselected = CheckSptInDistributeFlags(relativePath, flagsSet, fixedMod);
+                    bool isselected = CheckSptInDistributeFlags(relativePath, flagsSet);
                     if (!isselected)
                     {
                         if (Directory.Exists(item))
