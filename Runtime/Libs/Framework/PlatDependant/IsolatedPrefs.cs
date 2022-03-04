@@ -512,6 +512,7 @@ namespace Capstones.UnityEngineEx
 #endif
         }
 
+        public static bool CONFIG__UPDATE_TO_DOC_FOLDER = true;
         public static string GetUpdatePath()
         {
 #if UNITY_EDITOR
@@ -520,6 +521,15 @@ namespace Capstones.UnityEngineEx
             return UnityEngine.Application.temporaryCachePath;
 #elif UNITY_ANDROID
             return UnityEngine.Application.persistentDataPath;
+#elif UNITY_IOS
+            if (PlayerPrefs.GetInt("___CONFIG__UPDATE_TO_DOC_FOLDER", 0) != 0 || CONFIG__UPDATE_TO_DOC_FOLDER)
+            {
+                return UnityEngine.Application.persistentDataPath;
+            }
+            else
+            {
+                return UnityEngine.Application.temporaryCachePath;
+            }
 #elif UNITY_ENGINE || UNITY_5_3_OR_NEWER
             return UnityEngine.Application.temporaryCachePath;
 #else
