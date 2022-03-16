@@ -1591,6 +1591,53 @@ namespace Capstones.UnityEditorEx
             IconMaker.FixIcon("EditorOutput/Build/Latest/");
         }
 
+        public static void RestoreStreamingAssetsFromLatestBuild()
+        {
+            var srcroot = "EditorOutput/Build/Latest/res/";
+            var dstroot = "Assets/StreamingAssets/res/";
+
+            if (System.IO.Directory.Exists(srcroot))
+            {
+                if (System.IO.Directory.Exists(dstroot))
+                {
+                    System.IO.Directory.Delete(dstroot, true);
+                }
+                System.IO.Directory.CreateDirectory(dstroot);
+
+                HashSet<string> nocopyfiles = new HashSet<string>()
+                {
+                    "mani/mani",
+                    "icon.png",
+                    "icon.ico",
+                    "desktop.ini",
+                    "Icon\r",
+                };
+                var allbuildfiles = PlatDependant.GetAllFiles(srcroot);
+                for (int i = 0; i < allbuildfiles.Length; ++i)
+                {
+                    var srcfile = allbuildfiles[i];
+                    if (srcfile.EndsWith(".manifest"))
+                    {
+                        continue;
+                    }
+                    var part = srcfile.Substring(srcroot.Length);
+                    if (nocopyfiles.Contains(part))
+                    {
+                        continue;
+                    }
+                    var destfile = dstroot + part;
+                    PlatDependant.CreateFolder(System.IO.Path.GetDirectoryName(destfile));
+                    System.IO.File.Copy(srcfile, destfile);
+                }
+
+                List<IResBuilderEx> allExBuilders = ResBuilderEx;
+                for (int i = 0; i < allExBuilders.Count; ++i)
+                {
+                    allExBuilders[i].Cleanup();
+                }
+            }
+        }
+
         public static string[] GetAssetPathsInAssetBundleManifest(string manifestFile)
         {
             List<string> assets = new List<string>();
