@@ -3417,6 +3417,12 @@ namespace Capstones.UnityEngineEx
         }
     }
 
+    public class BiDict<TK, TV> // TODO: Add/Remove Methods
+    {
+        public readonly Dictionary<TK, TV> ForwardMap = new Dictionary<TK, TV>();
+        public readonly Dictionary<TV, TK> BackwardMap = new Dictionary<TV, TK>();
+    }
+
     [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate, Inherited = true)]
     public class InheritablePreserveAttribute
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER

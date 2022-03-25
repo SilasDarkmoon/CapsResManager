@@ -18,6 +18,16 @@ namespace Capstones.UnityEngineEx
         public static readonly HashSet<CoroutineInfo> RunningCoroutines = new HashSet<CoroutineInfo>();
         public static readonly Dictionary<Coroutine, CoroutineInfo> RunningCoroutinesMap = new Dictionary<Coroutine, CoroutineInfo>();
 
+        public static CoroutineInfo GetCoroutineInfo(Coroutine co)
+        {
+            CoroutineInfo info = null;
+            if (co != null)
+            {
+                RunningCoroutinesMap.TryGetValue(co, out info);
+            }
+            return info;
+        }
+
         private static GameObject CoroutineRunnerObj;
         private static CoroutineRunnerBehav CoroutineRunnerBehav;
 
