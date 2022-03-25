@@ -11,6 +11,6 @@ public class CoroutineRunnerBehav : MonoBehaviour
 
     private void OnDestroy()
     {
-        Capstones.UnityEngineEx.CoroutineRunner.DisposeAllCoroutines(this);
+        Capstones.UnityEngineEx.CoroutineRunner.DisposeAllCoroutinesOnDestroyRunner(this);
     }
 }

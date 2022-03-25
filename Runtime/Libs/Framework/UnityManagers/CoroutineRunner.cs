@@ -16,11 +16,13 @@ namespace Capstones.UnityEngineEx
             public Coroutine coroutine;
         }
         public static readonly HashSet<CoroutineInfo> RunningCoroutines = new HashSet<CoroutineInfo>();
+        public static readonly Dictionary<Coroutine, CoroutineInfo> RunningCoroutinesMap = new Dictionary<Coroutine, CoroutineInfo>();
 
         private static GameObject CoroutineRunnerObj;
         private static CoroutineRunnerBehav CoroutineRunnerBehav;
 
         public static Coroutine CurrentCoroutine { get; private set; }
+        public static CoroutineInfo CurrentCoroutineInfo { get; private set; }
 
         public static Coroutine StartCoroutine(this IEnumerator work)
         {
@@ -39,15 +41,14 @@ namespace Capstones.UnityEngineEx
             {
                 CoroutineRunnerBehav = CoroutineRunnerObj.AddComponent<CoroutineRunnerBehav>();
             }
-            //if (work is IDisposable)
+            var info = new CoroutineInfo() { behav = CoroutineRunnerBehav, work = work };
+            CurrentCoroutineInfo = info;
+            info.coroutine = CoroutineRunnerBehav.StartCoroutine(SafeEnumerator(work, info));
+            if (info.coroutine != null)
             {
-                var info = new CoroutineInfo() { behav = CoroutineRunnerBehav, work = work };
-                return info.coroutine = CoroutineRunnerBehav.StartCoroutine(SafeEnumerator(work, info));
+                RunningCoroutinesMap[info.coroutine] = info;
             }
-            //else
-            //{
-            //    return CoroutineRunnerBehav.StartCoroutine(work);
-            //}
+            return info.coroutine;
         }
         public static Coroutine StartCoroutine(this IEnumerable work)
         {
@@ -71,15 +72,24 @@ namespace Capstones.UnityEngineEx
             if (work != null)
             {
                 CurrentCoroutine = info.coroutine;
+                CurrentCoroutineInfo = info;
                 while (work.MoveNext())
                 {
                     var result = work.Current;
                     CurrentCoroutine = null;
+                    CurrentCoroutineInfo = null;
                     yield return result;
                     CurrentCoroutine = info.coroutine;
+                    CurrentCoroutineInfo = info;
                 }
+                CurrentCoroutine = null;
+                CurrentCoroutineInfo = null;
             }
             RunningCoroutines.Remove(info);
+            if (info.coroutine != null)
+            {
+                RunningCoroutinesMap.Remove(info.coroutine);
+            }
         }
 
         public static Coroutine StartSafeCoroutine(this MonoBehaviour behav, IEnumerator work)
@@ -102,7 +112,13 @@ namespace Capstones.UnityEngineEx
                     CoroutineRunnerBehav = CoroutineRunnerObj.AddComponent<CoroutineRunnerBehav>();
                 }
                 var info = new CoroutineInfo() { behav = behav, work = work };
-                return info.coroutine = behav.StartCoroutine(SafeEnumerator(work, info));
+                CurrentCoroutineInfo = info;
+                info.coroutine = behav.StartCoroutine(SafeEnumerator(work, info));
+                if (info.coroutine != null)
+                {
+                    RunningCoroutinesMap[info.coroutine] = info;
+                }
+                return info.coroutine;
             }
             return null;
         }
@@ -120,6 +136,22 @@ namespace Capstones.UnityEngineEx
             if (RunningCoroutines.Count > 0)
             {
                 RunningCoroutines.RemoveWhere(CheckDeadCoroutine);
+            }
+            RemoveDeadCoroutineFromMap();
+        }
+        internal static void RemoveDeadCoroutineFromMap()
+        {
+            LinkedList<Coroutine> toBeRemoved = new LinkedList<Coroutine>();
+            foreach (var kvp in RunningCoroutinesMap)
+            {
+                if (!RunningCoroutines.Contains(kvp.Value))
+                {
+                    toBeRemoved.AddLast(kvp.Key);
+                }
+            }
+            for (var node = toBeRemoved.First; node != null; node = node.Next)
+            {
+                RunningCoroutinesMap.Remove(node.Value);
             }
         }
         public static bool CheckDeadCoroutine(CoroutineInfo info)
@@ -150,8 +182,9 @@ namespace Capstones.UnityEngineEx
             {
                 work.Dispose();
             }
+            RemoveDeadCoroutineFromMap();
         }
-        public static void DisposeAllCoroutines(CoroutineRunnerBehav onbehav)
+        internal static void DisposeAllCoroutinesOnDestroyRunner(CoroutineRunnerBehav onbehav)
         {
             if (onbehav == CoroutineRunnerBehav)
             {
