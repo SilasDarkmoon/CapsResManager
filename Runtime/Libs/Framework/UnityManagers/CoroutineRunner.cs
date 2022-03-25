@@ -306,7 +306,7 @@ namespace Capstones.UnityEngineEx
             public object Current { get { throw new CoroutineAbortedException(); } }
             public bool MoveNext()
             {
-                return true;
+                throw new CoroutineAbortedException();
             }
             public void Reset()
             {
