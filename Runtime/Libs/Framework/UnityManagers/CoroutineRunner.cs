@@ -60,11 +60,77 @@ namespace Capstones.UnityEngineEx
         }
         public static void StopCoroutine(this Coroutine c)
         {
-            if (CoroutineRunnerBehav)
+            try
             {
-                CoroutineRunnerBehav.StopCoroutine(c);
+                CoroutineInfo info;
+                if (RunningCoroutinesMap.TryGetValue(c, out info))
+                {
+                    info.behav.StopCoroutine(c);
+                }
+                else
+                {
+                    if (CoroutineRunnerBehav)
+                    {
+                        CoroutineRunnerBehav.StopCoroutine(c);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                PlatDependant.LogError(e);
             }
             DisposeDeadCoroutines();
+        }
+        public static void StopCoroutine(this CoroutineInfo info)
+        {
+            try
+            {
+                info.behav.StopCoroutine(info.coroutine);
+            }
+            catch (Exception e)
+            {
+                PlatDependant.LogError(e);
+            }
+            DisposeDeadCoroutines();
+        }
+        internal static bool SafeMoveNext(IEnumerator work, CoroutineInfo info, out object result)
+        {
+            bool success = false;
+            result = null;
+            try
+            {
+                success = work.MoveNext();
+                if (success)
+                {
+                    result = work.Current;
+                }
+            }
+            catch
+            {
+                RunningCoroutines.Remove(info);
+                if (info.coroutine != null)
+                {
+                    RunningCoroutinesMap.Remove(info.coroutine);
+                }
+                if (info.work is IDisposable)
+                {
+                    try
+                    {
+                        ((IDisposable)info.work).Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        PlatDependant.LogError(e);
+                    }
+                }
+                throw;
+            }
+            finally
+            {
+                CurrentCoroutine = null;
+                CurrentCoroutineInfo = null;
+            }
+            return success;
         }
         public static IEnumerator SafeEnumerator(this IEnumerator work, CoroutineInfo info)
         {
@@ -73,17 +139,13 @@ namespace Capstones.UnityEngineEx
             {
                 CurrentCoroutine = info.coroutine;
                 CurrentCoroutineInfo = info;
-                while (work.MoveNext())
+                object result;
+                while (SafeMoveNext(work, info, out result))
                 {
-                    var result = work.Current;
-                    CurrentCoroutine = null;
-                    CurrentCoroutineInfo = null;
                     yield return result;
                     CurrentCoroutine = info.coroutine;
                     CurrentCoroutineInfo = info;
                 }
-                CurrentCoroutine = null;
-                CurrentCoroutineInfo = null;
             }
             RunningCoroutines.Remove(info);
             if (info.coroutine != null)
@@ -160,7 +222,14 @@ namespace Capstones.UnityEngineEx
             {
                 if (info.work is IDisposable)
                 {
-                    ((IDisposable)info.work).Dispose();
+                    try
+                    {
+                        ((IDisposable)info.work).Dispose();
+                    }
+                    catch (Exception e)
+                    {
+                        PlatDependant.LogError(e);
+                    }
                     info.work = null;
                 }
                 return true;
@@ -180,7 +249,14 @@ namespace Capstones.UnityEngineEx
             RunningCoroutines.RemoveWhere(info => info.behav == onbehav);
             foreach (var work in toBeDisposed)
             {
-                work.Dispose();
+                try
+                {
+                    work.Dispose();
+                }
+                catch (Exception e)
+                {
+                    PlatDependant.LogError(e);
+                }
             }
             RemoveDeadCoroutineFromMap();
         }
@@ -217,6 +293,61 @@ namespace Capstones.UnityEngineEx
         public static IEnumerator GetEmptyEnumerator()
         {
             yield break;
+        }
+
+        // Coroutine Abort
+        public class CoroutineAbortedException : Exception
+        {
+            public CoroutineAbortedException() : base("Coroutine aborted!") { }
+        }
+        public class CoroutineAbortedYieldable : IEnumerator
+        {
+            public static CoroutineAbortedYieldable Instance = new CoroutineAbortedYieldable();
+            public object Current { get { throw new CoroutineAbortedException(); } }
+            public bool MoveNext()
+            {
+                return true;
+            }
+            public void Reset()
+            {
+                throw new CoroutineAbortedException();
+            }
+        }
+
+        public static Action AbortCoroutineDelegate;
+        public static void AbortCoroutine()
+        {
+            if (AbortCoroutineDelegate != null)
+            {
+                AbortCoroutineDelegate();
+            }
+            else
+            {
+                throw new CoroutineAbortedException();
+            }
+        }
+
+        public static void AbortCoroutine(Coroutine c)
+        {
+            if (c == null || c == CurrentCoroutine)
+            {
+                AbortCoroutine();
+            }
+            else
+            {
+                StopCoroutine(c);
+            }
+        }
+        public static void AbortCoroutine(CoroutineInfo info)
+        {
+            if (info == null || info == CurrentCoroutineInfo)
+            {
+                AbortCoroutine();
+            }
+            else
+            {
+                StopCoroutine(info);
+            }
         }
     }
 
