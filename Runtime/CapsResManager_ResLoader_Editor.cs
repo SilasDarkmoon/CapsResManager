@@ -696,6 +696,20 @@ namespace Capstones.UnityEngineEx
                         UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
                     }
                 }
+                else
+                {
+                    if (System.IO.File.Exists(name))
+                    {
+                        if (additive)
+                        {
+                            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(name, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Additive));
+                        }
+                        else
+                        {
+                            UnityEditor.SceneManagement.EditorSceneManager.LoadSceneInPlayMode(name, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+                        }
+                    }
+                }
             }
 
             public static AsyncOperation LoadSceneAsyncInPlayMode(string name, bool additive)
@@ -714,6 +728,20 @@ namespace Capstones.UnityEngineEx
                     else
                     {
                         op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(found, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+                    }
+                }
+                else
+                {
+                    if (System.IO.File.Exists(name))
+                    {
+                        if (additive)
+                        {
+                            op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(name, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Additive));
+                        }
+                        else
+                        {
+                            op = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(name, new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+                        }
                     }
                 }
 

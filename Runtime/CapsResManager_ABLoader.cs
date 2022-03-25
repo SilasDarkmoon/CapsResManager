@@ -16,16 +16,16 @@ namespace Capstones.UnityEngineEx
     {
         public interface IObbEx
         {
-            public string HostedObbName { get; }
-            public bool IsRaw { get; } // raw: this is an obb zip file. not-raw: this is contained in some other file.
-            public bool IsReady { get; }
-            public string Error { get; }
-            public void GetProgress(out long progress, out long total);
-            public string GetContainingFile(); // raw: get the obb zip file. not-raw: get the containing file. check this file exists to determine whether we can load assets from the obb.
-            public System.IO.Stream OpenWholeObb(System.IO.Stream containingStream); // open the obb zip stream for both raw or not-raw. for raw, return null, means we should open file at GetContainingFile(). for not-raw, the stream is a span of GetContainingFile()。
-            public string GetEntryPrefix(); // get the entry prefix, null for no prefix
-            public string FindEntryUrl(string entryname); // for not-raw obb, maybe an asset can be loaded but can not find url of it.
-            public void Reset();
+            string HostedObbName { get; }
+            bool IsRaw { get; } // raw: this is an obb zip file. not-raw: this is contained in some other file.
+            bool IsReady { get; }
+            string Error { get; }
+            void GetProgress(out long progress, out long total);
+            string GetContainingFile(); // raw: get the obb zip file. not-raw: get the containing file. check this file exists to determine whether we can load assets from the obb.
+            System.IO.Stream OpenWholeObb(System.IO.Stream containingStream); // open the obb zip stream for both raw or not-raw. for raw, return null, means we should open file at GetContainingFile(). for not-raw, the stream is a span of GetContainingFile()。
+            string GetEntryPrefix(); // get the entry prefix, null for no prefix
+            string FindEntryUrl(string entryname); // for not-raw obb, maybe an asset can be loaded but can not find url of it.
+            void Reset();
         }
 
         private class ResManager_ABLoader : ILifetime
