@@ -312,7 +312,7 @@ namespace Capstones.UnityEngineEx
         }
         public class CoroutineAbortedYieldable : IEnumerator
         {
-            public static CoroutineAbortedYieldable Instance = new CoroutineAbortedYieldable();
+            public static readonly CoroutineAbortedYieldable Instance = new CoroutineAbortedYieldable();
             public object Current { get { throw new CoroutineAbortedException(); } }
             public bool MoveNext()
             {
