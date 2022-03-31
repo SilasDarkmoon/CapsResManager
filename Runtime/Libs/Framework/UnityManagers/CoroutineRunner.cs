@@ -339,7 +339,11 @@ namespace Capstones.UnityEngineEx
 
         public static void AbortCoroutine(Coroutine c)
         {
-            if (c == null || c == CurrentCoroutine)
+            if (c == null)
+            {
+                return; // if we need abort current coroutine, we'd batter use AbortCoroutine() without parameters
+            }
+            else if (c == CurrentCoroutine)
             {
                 AbortCoroutine();
             }
@@ -350,7 +354,11 @@ namespace Capstones.UnityEngineEx
         }
         public static void AbortCoroutine(CoroutineInfo info)
         {
-            if (info == null || info == CurrentCoroutineInfo)
+            if (info == null)
+            {
+                return; // if we need abort current coroutine, we'd batter use AbortCoroutine() without parameters
+            }
+            else if (info == CurrentCoroutineInfo)
             {
                 AbortCoroutine();
             }
