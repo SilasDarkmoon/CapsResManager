@@ -177,12 +177,57 @@ namespace Capstones.UnityEngineEx
                                     sbmess.AppendLine((args[i] ?? "null").ToString());
                                 }
                                 PlatDependant.LogError(sbmess);
+                                result = format;
                             }
+                        }
+                        else
+                        {
+                            result = format;
                         }
                     }
                 }
             }
-            return result ?? format ?? key;
+            if (result != null)
+            {
+                return result;
+            }
+            if (format == null)
+            {
+                if (key == null)
+                {
+                    return null;
+                }
+                format = key;
+            }
+            if (args != null && args.Length > 0)
+            {
+                try
+                {
+                    return string.Format(CapsLangFormatter.Instance, format, args);
+                }
+                catch (Exception e)
+                {
+                    PlatDependant.LogError(e);
+                    System.Text.StringBuilder sbmess = new System.Text.StringBuilder();
+                    sbmess.AppendLine("Language Converter - format failed.");
+                    sbmess.Append("key: ");
+                    sbmess.AppendLine(key);
+                    sbmess.Append("format: ");
+                    sbmess.AppendLine(format);
+                    sbmess.Append("args: cnt ");
+                    sbmess.AppendLine(args.Length.ToString());
+                    for (int i = 0; i < args.Length; ++i)
+                    {
+                        sbmess.AppendLine((args[i] ?? "null").ToString());
+                    }
+                    PlatDependant.LogError(sbmess);
+                    return format;
+                }
+            }
+            else
+            {
+                return format;
+            }
         }
         public static string Translate(string key, params object[] args)
         {
