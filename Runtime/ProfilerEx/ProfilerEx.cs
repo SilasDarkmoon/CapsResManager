@@ -17,6 +17,9 @@ namespace Capstones.UnityEngineEx
 #if PROFILER_EX_FRAME_TIMER_AUTO_LOG_ONLY_LAG
             FrameTimerAutoLogOnlyLag = true;
 #endif
+#if ENABLE_PROFILER
+            UnityEngine.Profiling.Profiler.maxUsedMemory = 512 * 1024 * 1024;
+#endif
         }
 
         public static bool IsProfilerEnabled()
