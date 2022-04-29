@@ -113,7 +113,8 @@ namespace Capstones.UnityEngineEx
         public static Object LoadRes(string asset, Type type)
         {
 #if ENABLE_PROFILER
-            using (var pcon = ProfilerContext.Create("LoadRes: {0}", asset))
+            using (var pcon = ProfilerContext.Create("LoadRes"))
+            using (var pcon2 = ProfilerContext.Create(asset))
 #endif
             return ResLoader.LoadRes(asset, type);
         }
@@ -178,7 +179,8 @@ namespace Capstones.UnityEngineEx
                 LoadingSceneQueueIndex = 0;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
 #if ENABLE_PROFILER
-                using (var pcon = ProfilerContext.Create("LoadScene: {0}", name))
+                using (var pcon = ProfilerContext.Create("LoadScene"))
+                using (var pcon2 = ProfilerContext.Create(name))
 #endif
                 ResLoader.LoadScene(name, additive);
             }
@@ -196,7 +198,8 @@ namespace Capstones.UnityEngineEx
                         CreateLoadingSceneWork();
                     }
 #if ENABLE_PROFILER
-                    using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync: {0}", info.t1))
+                    using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync"))
+                    using (var pcon2 = ProfilerContext.Create(info.t1))
 #endif
                     {
                         var work = ResLoader.LoadSceneAsync(info.t1, info.t3);
@@ -206,7 +209,8 @@ namespace Capstones.UnityEngineEx
                 else
                 {
 #if ENABLE_PROFILER
-                    using (var pcon = ProfilerContext.Create("LoadScene: {0}", info.t1))
+                    using (var pcon = ProfilerContext.Create("LoadScene"))
+                    using (var pcon2 = ProfilerContext.Create(info.t1))
 #endif
                     ResLoader.LoadScene(info.t1, info.t3);
                 }
@@ -373,7 +377,8 @@ namespace Capstones.UnityEngineEx
         public static CoroutineWork LoadResAsync(string name, Type type)
         {
 #if ENABLE_PROFILER
-            using (var pcon = ProfilerContext.Create("Begin LoadResAsync: {0}", name))
+            using (var pcon = ProfilerContext.Create("Begin LoadResAsync"))
+            using (var pcon2 = ProfilerContext.Create(name))
 #endif
             return ResLoader.LoadResAsync(name, type);
         }
@@ -432,7 +437,8 @@ namespace Capstones.UnityEngineEx
                 CreateLoadingSceneWork();
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
 #if ENABLE_PROFILER
-                using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync: {0}", name))
+                using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync"))
+                using (var pcon2 = ProfilerContext.Create(name))
 #endif
                 {
                     var work = ResLoader.LoadSceneAsync(name, additive);
