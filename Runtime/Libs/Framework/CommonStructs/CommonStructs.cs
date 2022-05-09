@@ -3390,6 +3390,17 @@ namespace Capstones.UnityEngineEx
         }
     }
 
+    public class CommonContainer<T>
+    {
+        public T Value;
+        // TODO: implict and explicit operators.
+    }
+    public class CommonContainer
+    {
+        public object Value;
+        // TODO: Generic get / set.
+    }
+
     public struct InitializedInitializer
     {
         public InitializedInitializer(Action init)

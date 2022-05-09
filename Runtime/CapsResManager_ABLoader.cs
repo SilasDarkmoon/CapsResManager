@@ -233,11 +233,37 @@ namespace Capstones.UnityEngineEx
             public int RefCnt = 0;
             public bool Permanent = false;
             public bool LeaveAssetOpen = false;
+            public AssetBundleCreateRequest AsyncLoading = null;
 
             public AssetBundleInfo(AssetBundle ab)
             {
                 Bundle = ab;
-                RefCnt = 0;
+                //RefCnt = 0;
+            }
+            public AssetBundleInfo(AssetBundleCreateRequest asyncloading)
+            {
+                AsyncLoading = asyncloading;
+                //RefCnt = 0;
+            }
+            public bool IsAsyncLoading
+            {
+                get
+                {
+                    return AsyncLoading != null && !AsyncLoading.isDone;
+                }
+            }
+            public bool FinishAsyncLoading()
+            {
+                if (AsyncLoading != null)
+                {
+                    Bundle = AsyncLoading.assetBundle; // getting assetBundle from AssetBundleCreateRequest will force an immediate load
+                    AsyncLoading = null;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             public int AddRef()
@@ -256,6 +282,7 @@ namespace Capstones.UnityEngineEx
             }
             public bool UnloadBundle()
             {
+                FinishAsyncLoading();
                 if (Bundle != null)
                 {
                     Bundle.Unload(!LeaveAssetOpen);
@@ -285,11 +312,11 @@ namespace Capstones.UnityEngineEx
         public static bool SkipUpdate = false;
         public static bool SkipObb = false;
         public static bool SkipPackage = false;
-        public static AssetBundleInfo LoadAssetBundle(string name, bool ignoreError)
+        public static AssetBundleInfo LoadAssetBundle(string name, bool asyncLoad, bool ignoreError)
         {
-            return LoadAssetBundle(name, null, ignoreError);
+            return LoadAssetBundle(name, null, asyncLoad, ignoreError);
         }
-        public static AssetBundleInfo LoadAssetBundle(string name, string norm, bool ignoreError)
+        public static AssetBundleInfo LoadAssetBundle(string name, string norm, bool asyncLoad, bool ignoreError)
         {
             norm = norm ?? name;
             if (string.IsNullOrEmpty(name))
@@ -300,8 +327,12 @@ namespace Capstones.UnityEngineEx
             AssetBundleInfo abi = null;
             if (LoadedAssetBundles.TryGetValue(norm, out abi))
             {
-                if (abi == null || abi.Bundle != null)
+                if (abi == null || abi.Bundle != null || abi.AsyncLoading != null)
                 {
+                    if (!asyncLoad && abi != null)
+                    {
+                        abi.FinishAsyncLoading();
+                    }
                     if (abi != null && abi.RealName != null && abi.RealName != name)
                     {
                         //abi.Bundle.Unload(true);
@@ -321,6 +352,7 @@ namespace Capstones.UnityEngineEx
             abi = null;
 
             AssetBundle bundle = null;
+            AssetBundleCreateRequest abrequest = null;
             if (!SkipPending)
             {
                 if (PlatDependant.IsFileExist(ThreadSafeValues.UpdatePath + "/pending/res/ver.txt"))
@@ -330,7 +362,14 @@ namespace Capstones.UnityEngineEx
                     {
                         try
                         {
-                            bundle = AssetBundle.LoadFromFile(path);
+                            if (asyncLoad)
+                            {
+                                abrequest = AssetBundle.LoadFromFileAsync(path);
+                            }
+                            else
+                            {
+                                bundle = AssetBundle.LoadFromFile(path);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -339,7 +378,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            if (bundle == null)
+            if (bundle == null && abrequest == null)
             {
                 if (!SkipUpdate)
                 {
@@ -348,7 +387,14 @@ namespace Capstones.UnityEngineEx
                     {
                         try
                         {
-                            bundle = AssetBundle.LoadFromFile(path);
+                            if (asyncLoad)
+                            {
+                                abrequest = AssetBundle.LoadFromFileAsync(path);
+                            }
+                            else
+                            {
+                                bundle = AssetBundle.LoadFromFile(path);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -357,7 +403,7 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            if (bundle == null)
+            if (bundle == null && abrequest == null)
             {
                 if (Application.streamingAssetsPath.Contains("://"))
                 {
@@ -435,7 +481,14 @@ namespace Capstones.UnityEngineEx
                                 }
                                 if (offset >= 0)
                                 {
-                                    bundle = AssetBundle.LoadFromFile(ResManager.AllObbPaths[z], 0, (ulong)offset);
+                                    if (asyncLoad)
+                                    {
+                                        abrequest = AssetBundle.LoadFromFileAsync(ResManager.AllObbPaths[z], 0, (ulong)offset);
+                                    }
+                                    else
+                                    {
+                                        bundle = AssetBundle.LoadFromFile(ResManager.AllObbPaths[z], 0, (ulong)offset);
+                                    }
                                     break;
                                 }
                             }
@@ -447,7 +500,14 @@ namespace Capstones.UnityEngineEx
                                 string path = Application.dataPath + "!assets/res/" + name;
                                 try
                                 {
-                                    bundle = AssetBundle.LoadFromFile(path);
+                                    if (asyncLoad)
+                                    {
+                                        abrequest = AssetBundle.LoadFromFileAsync(path);
+                                    }
+                                    else
+                                    {
+                                        bundle = AssetBundle.LoadFromFile(path);
+                                    }
                                 }
                                 catch (Exception e)
                                 {
@@ -466,7 +526,14 @@ namespace Capstones.UnityEngineEx
                         {
                             try
                             {
-                                bundle = AssetBundle.LoadFromFile(path);
+                                if (asyncLoad)
+                                {
+                                    abrequest = AssetBundle.LoadFromFileAsync(path);
+                                }
+                                else
+                                {
+                                    bundle = AssetBundle.LoadFromFile(path);
+                                }
                             }
                             catch (Exception e)
                             {
@@ -481,26 +548,46 @@ namespace Capstones.UnityEngineEx
             {
                 abi = new AssetBundleInfo(bundle) { RealName = name };
             }
+            else if (abrequest != null)
+            {
+                abi = new AssetBundleInfo(abrequest) { RealName = name };
+            }
             LoadedAssetBundles[norm] = abi;
             return abi;
+        }
+        public static AssetBundleInfo LoadAssetBundle(string name, bool asyncLoad)
+        {
+            return LoadAssetBundle(name, asyncLoad, false);
         }
         public static AssetBundleInfo LoadAssetBundle(string name)
         {
             return LoadAssetBundle(name, false);
         }
-        public static AssetBundleInfo LoadAssetBundle(string mod, string name)
+        public static AssetBundleInfo LoadAssetBundleIgnoreError(string name)
         {
-            return LoadAssetBundle(mod, name, null);
+            return LoadAssetBundle(name, false, true);
         }
-        public static AssetBundleInfo LoadAssetBundle(string mod, string name, string norm)
+        public static AssetBundleInfo LoadAssetBundleAsync(string name)
+        {
+            return LoadAssetBundle(name, true);
+        }
+        public static AssetBundleInfo LoadAssetBundleIgnoreErrorAsync(string name)
+        {
+            return LoadAssetBundle(name, true, true);
+        }
+        public static AssetBundleInfo LoadAssetBundle(string mod, string name, bool asyncLoad)
+        {
+            return LoadAssetBundle(mod, name, null, asyncLoad);
+        }
+        public static AssetBundleInfo LoadAssetBundle(string mod, string name, string norm, bool asyncLoad)
         {
             if (string.IsNullOrEmpty(mod))
             {
-                return LoadAssetBundle(name, norm, false);
+                return LoadAssetBundle(name, norm, asyncLoad, false);
             }
             else
             {
-                return LoadAssetBundle("mod/" + mod + "/" + name, norm, false);
+                return LoadAssetBundle("mod/" + mod + "/" + name, norm, asyncLoad, false);
             }
         }
         public static bool FindLoadedAssetBundle(string name, string norm, out AssetBundleInfo abi)
@@ -514,7 +601,7 @@ namespace Capstones.UnityEngineEx
             abi = null;
             if (LoadedAssetBundles.TryGetValue(norm, out abi))
             {
-                if (abi == null || abi.Bundle != null)
+                if (abi == null || abi.Bundle != null || abi.AsyncLoading != null)
                 {
                     return true;
                 }
@@ -1033,24 +1120,36 @@ namespace Capstones.UnityEngineEx
 
         public interface IAssetBundleLoaderEx
         {
-            bool LoadAssetBundle(string mod, string name, bool isContainingBundle, out AssetBundleInfo bi);
+            bool LoadAssetBundle(string mod, string name, bool asyncLoad, bool isContainingBundle, out AssetBundleInfo bi);
         }
         public static readonly List<IAssetBundleLoaderEx> AssetBundleLoaderEx = new List<IAssetBundleLoaderEx>();
         public static AssetBundleInfo LoadAssetBundleEx(string mod, string name, bool isContainingBundle)
         {
+            return LoadAssetBundleEx(mod, name, false, isContainingBundle);
+        }
+        public static AssetBundleInfo LoadAssetBundleExAsync(string mod, string name, bool isContainingBundle)
+        {
+            return LoadAssetBundleEx(mod, name, true, isContainingBundle);
+        }
+        public static AssetBundleInfo LoadAssetBundleEx(string mod, string name, bool asyncLoad, bool isContainingBundle)
+        {
             AssetBundleInfo bi;
             if (FindLoadedAssetBundle(mod, name, null, out bi))
             {
+                if (!asyncLoad && bi != null)
+                {
+                    bi.FinishAsyncLoading();
+                }
                 return bi;
             }
             for (int i = 0; i < AssetBundleLoaderEx.Count; ++i)
             {
-                if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, isContainingBundle, out bi))
+                if (AssetBundleLoaderEx[i].LoadAssetBundle(mod, name, asyncLoad, isContainingBundle, out bi))
                 {
                     return bi;
                 }
             }
-            return LoadAssetBundle(mod, name);
+            return LoadAssetBundle(mod, name, asyncLoad);
         }
         public static string[] GetAllBundleNames(string pre)
         {
@@ -1566,6 +1665,7 @@ namespace Capstones.UnityEngineEx
             {
                 if (abi.Value != null && !abi.Value.Permanent)
                 {
+                    abi.Value.FinishAsyncLoading();
                     if (abi.Value.Bundle != null)
                     {
                         abi.Value.Bundle.Unload(false);

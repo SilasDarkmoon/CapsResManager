@@ -52,7 +52,7 @@ namespace Capstones.UnityEngineEx
                 {
                     umanipath = "mod/" + mod + "/" + mod;
                 }
-                var mbinfo = LoadAssetBundle(umanipath, true);
+                var mbinfo = LoadAssetBundle(umanipath, false, true);
                 if (mbinfo != null)
                 {
                     if (mbinfo.Bundle != null)
@@ -73,7 +73,7 @@ namespace Capstones.UnityEngineEx
                     var bundle = manibundlenames[j];
                     if (bundle.StartsWith(pre) && bundle.EndsWith(".m.ab"))
                     {
-                        var binfo = LoadAssetBundle(bundle);
+                        var binfo = LoadAssetBundle(bundle, false, true);
                         if (binfo != null)
                         {
                             if (binfo.Bundle != null)
@@ -423,12 +423,11 @@ namespace Capstones.UnityEngineEx
                             bundle = FormatBundleName();
                         }
 
-                        var cabi = LoadAssetBundleEx(mod, bundle, true);
+                        var cabi = LoadAssetBundleExAsync(mod, bundle, true);
                         if (cabi != null)
                         {
                             cabi.AddRef();
                             bundles.Add(cabi);
-                            while (AsyncWorkTimer.Check()) yield return null;
                             if (_PreloadReady) { yield break; }
 
                             AssetBundleManifest umani;
@@ -440,15 +439,42 @@ namespace Capstones.UnityEngineEx
                                     for (int i = 0; i < deps.Length; ++i)
                                     {
                                         var dep = deps[i];
-                                        var bi = LoadAssetBundleEx(mod, dep, false);
+                                        var bi = LoadAssetBundleExAsync(mod, dep, false);
                                         if (bi != null)
                                         {
                                             bi.AddRef();
                                             bundles.Insert(bundles.Count - 1, bi);
-                                            while (AsyncWorkTimer.Check()) yield return null;
                                             if (_PreloadReady) { yield break; }
                                         }
                                     }
+                                }
+                            }
+
+                            while (true)
+                            {
+                                bool allloaded = true;
+                                for (int i = 0; i < bundles.Count; ++i)
+                                {
+                                    var bi = bundles[i];
+                                    if (bi.AsyncLoading != null)
+                                    {
+                                        if (bi.AsyncLoading.isDone)
+                                        {
+                                            bi.FinishAsyncLoading();
+                                        }
+                                        else
+                                        {
+                                            allloaded = false;
+                                            yield return null;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (_PreloadReady) { yield break; }
+                                if (allloaded)
+                                {
+                                    break;
                                 }
                             }
 
