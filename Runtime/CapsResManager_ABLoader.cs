@@ -497,7 +497,7 @@ namespace Capstones.UnityEngineEx
                         {
                             if (!ignoreError || AndroidApkZipArchive != null && AndroidApkZipArchive.GetEntry("assets/res/" + name) != null)
                             {
-                                string path = Application.dataPath + "!assets/res/" + name;
+                                string path = Application.streamingAssetsPath + "/res/" + name;
                                 try
                                 {
                                     if (asyncLoad)
