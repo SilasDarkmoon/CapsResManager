@@ -495,23 +495,61 @@ namespace Capstones.UnityEngineEx
                         }
                         else if (!SkipPackage)
                         {
-                            if (!ignoreError || AndroidApkZipArchive != null && AndroidApkZipArchive.GetEntry("assets/res/" + name) != null)
+                            ZipArchiveEntry entry = null;
+                            if (AndroidApkZipArchive != null && (entry = AndroidApkZipArchive.GetEntry("assets/res/" + name)) != null)
                             {
-                                string path = Application.streamingAssetsPath + "/res/" + name;
-                                try
+                                long offset = -1;
+                                if (entry.CompressedLength == entry.Length)
                                 {
-                                    if (asyncLoad)
+                                    try
                                     {
-                                        abrequest = AssetBundle.LoadFromFileAsync(path);
+                                        using (var srcstream = entry.Open())
+                                        {
+                                            offset = AndroidApkFileStream.Position;
+                                        }
                                     }
-                                    else
+                                    catch (Exception e)
                                     {
-                                        bundle = AssetBundle.LoadFromFile(path);
+                                        if (!ignoreError) PlatDependant.LogError(e);
                                     }
                                 }
-                                catch (Exception e)
+                                if (offset >= 0)
                                 {
-                                    if (!ignoreError) PlatDependant.LogError(e);
+                                    string path = Application.dataPath;
+                                    try
+                                    {
+                                        if (asyncLoad)
+                                        {
+                                            abrequest = AssetBundle.LoadFromFileAsync(path, 0, (ulong)offset);
+                                        }
+                                        else
+                                        {
+                                            bundle = AssetBundle.LoadFromFile(path, 0, (ulong)offset);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        if (!ignoreError) PlatDependant.LogError(e);
+                                    }
+                                }
+                                else
+                                {
+                                    string path = Application.streamingAssetsPath + "/res/" + name;
+                                    try
+                                    {
+                                        if (asyncLoad)
+                                        {
+                                            abrequest = AssetBundle.LoadFromFileAsync(path);
+                                        }
+                                        else
+                                        {
+                                            bundle = AssetBundle.LoadFromFile(path);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        if (!ignoreError) PlatDependant.LogError(e);
+                                    }
                                 }
                             }
                         }
@@ -551,6 +589,10 @@ namespace Capstones.UnityEngineEx
             else if (abrequest != null)
             {
                 abi = new AssetBundleInfo(abrequest) { RealName = name };
+            }
+            else
+            {
+                if (!ignoreError) PlatDependant.LogError("Cannot load ab: " + norm);
             }
             LoadedAssetBundles[norm] = abi;
             return abi;

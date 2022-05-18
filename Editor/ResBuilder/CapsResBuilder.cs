@@ -40,6 +40,7 @@ namespace Capstones.UnityEditorEx
             bool CreateItem(CapsResManifestNode node);
             void ModifyItem(CapsResManifestItem item);
             void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuildWork modwork, int abindex);
+            void PostBuildWork(string mod, CapsResBuildWork work, string dest);
             void Cleanup();
             void OnSuccess();
         }
@@ -58,6 +59,9 @@ namespace Capstones.UnityEditorEx
                 return null;
             }
             public virtual void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
+            {
+            }
+            public virtual void PostBuildWork(string mod, CapsResBuildWork work, string dest)
             {
             }
             public virtual void ModifyItem(CapsResManifestItem item)
@@ -148,6 +152,7 @@ namespace Capstones.UnityEditorEx
             public AssetBundleBuild[] ABs;
             public CapsResManifest[] Manifests;
             public HashSet<int> ForceRefreshABs = new HashSet<int>(); // Stores the index in ABs array, which should be deleted before this build (in order to force it to update).
+            public Dictionary<string, object> Attached = new Dictionary<string, object>(); // Build time attached extra info.
         }
 
         public static IEnumerator GenerateBuildWorkAsync(Dictionary<string, CapsResBuildWork> result, IList<string> assets, IEditorWorkProgressShower winprog)
@@ -916,7 +921,7 @@ namespace Capstones.UnityEditorEx
                     }
 
                     System.IO.Directory.CreateDirectory(dest);
-                    // delete the unused ab
+                    // delete old force-refresh ab
                     HashSet<string> buildFiles = new HashSet<string>();
                     for (int i = 0; i < abs.Length; ++i)
                     {
@@ -965,6 +970,10 @@ namespace Capstones.UnityEditorEx
                     }
 
                     BuildPipeline.BuildAssetBundles(dest, abs, buildopt, buildtar);
+                    for (int i = 0; i < allExBuilders.Count; ++i)
+                    {
+                        allExBuilders[i].PostBuildWork(mod, kvp.Value, dest);
+                    }
                 }
 
                 logger.Log("(Phase) Delete Mod Folder Not Built.");
