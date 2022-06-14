@@ -17,6 +17,9 @@ namespace Capstones.UnityEngineEx
 #if PROFILER_EX_FRAME_TIMER_AUTO_LOG_ONLY_LAG
             FrameTimerAutoLogOnlyLag = true;
 #endif
+#if PROFILER_EX_FRAME_TIMER_AUTO_LOG_TO_ERROR
+            FrameTimerAutoLogToError = true;
+#endif
 #if ENABLE_PROFILER
             UnityEngine.Profiling.Profiler.maxUsedMemory = 512 * 1024 * 1024;
 #endif
@@ -49,9 +52,37 @@ namespace Capstones.UnityEngineEx
             return false;
         }
 
+        public static void AppendFrameTimerMessage(string message)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            _FrameTimerExtra.Append(message);
+#endif
+        }
+        public static void AppendFrameTimerMessage<T>(T message)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            _FrameTimerExtra.Append(message);
+#endif
+        }
+        public static void AppendFrameTimerMessageLine(string message)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            _FrameTimerExtra.AppendLine(message);
+#endif
+        }
+        public static void AppendFrameTimerMessageLine<T>(T message)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            _FrameTimerExtra.Append(message);
+            _FrameTimerExtra.AppendLine();
+#endif
+        }
+
         public static bool FrameTimerAutoLog = false;
         public static bool FrameTimerAutoLogOnlyLag = false;
+        public static bool FrameTimerAutoLogToError = false;
 
+        private static System.Text.StringBuilder _FrameTimerExtra = new System.Text.StringBuilder();
         private static int _FrameTimerFrameIndex = 0;
         private static double _FrameTimerLastInterval = 0;
         private static System.Diagnostics.Stopwatch _FrameTimerWatch;
@@ -71,12 +102,20 @@ namespace Capstones.UnityEngineEx
                 {
                     if (!FrameTimerAutoLogOnlyLag || Application.targetFrameRate <= 0 || _FrameTimerLastInterval > 1050.0 / Application.targetFrameRate)
                     {
-                        Debug.LogFormat("Frame time {0}: {1} ms.", _FrameTimerFrameIndex, _FrameTimerLastInterval);
+                        if (FrameTimerAutoLogToError)
+                        {
+                            Debug.LogErrorFormat("Frame time {0}: {1} ms.\n{2}", _FrameTimerFrameIndex, _FrameTimerLastInterval, _FrameTimerExtra);
+                        }
+                        else
+                        {
+                            Debug.LogFormat("Frame time {0}: {1} ms.\n{2}", _FrameTimerFrameIndex, _FrameTimerLastInterval, _FrameTimerExtra);
+                        }
                     }
                 }
                 _FrameTimerFrameIndex = UnityEngine.Time.frameCount;
                 _FrameTimerWatch.Restart();
             }
+            _FrameTimerExtra.Clear();
         }
 
         public static void InitFrameTimer()
