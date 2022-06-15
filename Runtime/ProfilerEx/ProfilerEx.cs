@@ -92,6 +92,7 @@ namespace Capstones.UnityEngineEx
             {
                 _FrameTimerWatch = new System.Diagnostics.Stopwatch();
                 _FrameTimerFrameIndex = UnityEngine.Time.frameCount;
+                _FrameTimerExtra.Clear();
                 _FrameTimerWatch.Start();
             }
             else
@@ -113,9 +114,9 @@ namespace Capstones.UnityEngineEx
                     }
                 }
                 _FrameTimerFrameIndex = UnityEngine.Time.frameCount;
+                _FrameTimerExtra.Clear();
                 _FrameTimerWatch.Restart();
             }
-            _FrameTimerExtra.Clear();
         }
 
         public static void InitFrameTimer()
