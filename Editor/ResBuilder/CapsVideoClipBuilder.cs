@@ -15,11 +15,11 @@ namespace Capstones.UnityEditorEx
             {
                 System.Text.StringBuilder sbbundle = new System.Text.StringBuilder();
                 sbbundle.Append("m-");
-                sbbundle.Append(mod ?? "");
+                sbbundle.Append((mod ?? "").ToLower());
                 sbbundle.Append("-d-");
-                sbbundle.Append(dist ?? "");
+                sbbundle.Append((dist ?? "").ToLower());
                 sbbundle.Append("-");
-                sbbundle.Append(System.IO.Path.GetDirectoryName(norm));
+                sbbundle.Append(System.IO.Path.GetDirectoryName(norm).ToLower());
                 sbbundle.Replace('\\', '-');
                 sbbundle.Replace('/', '-');
                 sbbundle.Append(".vc");
