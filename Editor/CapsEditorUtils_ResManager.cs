@@ -396,11 +396,19 @@ namespace Capstones.UnityEditorEx
             input.Write(si.FileName);
             input.Write("\" ");
             input.Write(si.Arguments);
-            input.Write(" 1> \"");
-            input.Write(stdoutfile);
-            input.Write("\" 2> \"");
-            input.Write(stderrfile);
-            input.Write("\"\n");
+            if (!si.RedirectStandardOutput)
+            {
+                input.Write(" 1> \"");
+                input.Write(stdoutfile);
+                input.Write("\"");
+            }
+            if (!si.RedirectStandardError)
+            {
+                input.Write(" 2> \"");
+                input.Write(stderrfile);
+                input.Write("\"");
+            }
+            input.Write("\n");
 #if UNITY_EDITOR_WIN
             input.Write("echo %errorlevel%\n");
 #else

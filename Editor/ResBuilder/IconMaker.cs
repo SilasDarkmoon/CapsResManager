@@ -162,17 +162,60 @@ namespace Capstones.UnityEditorEx
             }
             return true;
 #elif UNITY_EDITOR_OSX
+            var shell = CapsEditorUtils.StartShell();
             try
             {
+                var realfolder = System.IO.Path.GetFullPath(folder);
+                var realicon = System.IO.Path.GetFullPath(icopath);
+                // rm -rf "$droplet"$'/Icon\r'
                 var si = new System.Diagnostics.ProcessStartInfo();
-                si.FileName = System.IO.Path.GetFullPath(CapsModEditor.GetPackageOrModRoot(CapsEditorUtils.__MOD__)) + "/~Tools~/fileicon";
-                si.Arguments = "set \"" + folder + "\" \"" + icopath + "\"";
-                return CapsEditorUtils.ExecuteProcess(si);
+                si.FileName = "rm";
+                si.Arguments = "-rf $'" + realfolder + @"/Icon\r'";
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // sips -i "$icon" >/dev/null
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "sips";
+                si.Arguments = "-i '" + realicon + "' >/dev/null";
+                si.RedirectStandardOutput = true;
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // DeRez -only icns "$icon" > /tmp/icns.rsrc
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "DeRez";
+                si.Arguments = "-only icns '" + realicon + "' > '" + realfolder + "/tmpicon.rsrc'";
+                si.RedirectStandardOutput = true;
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // Rez -append /tmp/icns.rsrc -o "$droplet"$'/Icon\r'
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "Rez";
+                si.Arguments = "-append '" + realfolder + "/tmpicon.rsrc' -o $'" + realfolder + @"/Icon\r'";
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // SetFile -a C "$droplet"
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "SetFile";
+                si.Arguments = "-a C '" + realfolder + "'";
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // SetFile -a V "$droplet"$'/Icon\r'
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "SetFile";
+                si.Arguments = "-a V $'" + realfolder + @"/Icon\r'";
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+                // rm -rf /tmp/icns.rsrc
+                si = new System.Diagnostics.ProcessStartInfo();
+                si.FileName = "rm";
+                si.Arguments = "-rf '" + realfolder + "/tmpicon.rsrc'";
+                CapsEditorUtils.ExecuteProcessInShell(shell, si);
+
+                return true;
             }
             catch (Exception e)
             {
                 UnityEngine.Debug.LogException(e);
                 return false;
+            }
+            finally
+            {
+                shell.Kill();
+                shell = null;
             }
 #else
             return false;
