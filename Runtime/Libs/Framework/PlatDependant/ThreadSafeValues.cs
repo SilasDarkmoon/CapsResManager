@@ -73,7 +73,7 @@ namespace Capstones.UnityEngineEx
             _UnityThreadID = (ulong)System.Threading.Thread.CurrentThread.ManagedThreadId;
 #endif
             _IsMainThread = true;
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR && (DEVELOPMENT_BUILD || DEBUG)
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR && (DEVELOPMENT_BUILD || DEBUG || DEBUG_SHOW_PROCESS_ID_IN_WIN_TITLE)
             SetWindowTitle(System.Diagnostics.Process.GetCurrentProcess().Id.ToString() + "-" + _cached_Capid);
 #endif
         }
