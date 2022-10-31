@@ -371,7 +371,8 @@ namespace Capstones.UnityEditorEx
             {
                 DistributeFlags[allflags[i]] = false;
             }
-            var selflags = configIndex == 0 ? ResManager.PreRuntimeDFlags.ToArray() : config.Split('<');
+
+            var selflags = string.IsNullOrEmpty(config) ? ResManager.PreRuntimeDFlags.ToArray() : config.Split('<');
             for (int i = 0; i < selflags.Length; ++i)
             {
                 if (string.IsNullOrEmpty(selflags[i]))
@@ -497,6 +498,33 @@ namespace Capstones.UnityEditorEx
                 SelectDistributeFlag(noderemove.Value, false);
             }
             GUILayout.EndScrollView();
+
+            #region copy past
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Copy"))
+            {
+                System.Text.StringBuilder sbflags = new System.Text.StringBuilder();
+                foreach (var oflag in DistributeFlagOrder)
+                {
+                    sbflags.Append("<");
+                    sbflags.Append(oflag);
+                }
+                GUIUtility.systemCopyBuffer = sbflags.ToString();
+            }
+            GUILayout.Space(20);
+            if (GUILayout.Button("Paste"))
+            {
+                var pasteConfig = GUIUtility.systemCopyBuffer;
+                if (!string.IsNullOrEmpty(pasteConfig))
+                {
+                    Debug.LogError(pasteConfig);
+                    Debug.LogError(OptionConfigIndex);
+                    RefreshConfig(pasteConfig, OptionConfigIndex);
+                }
+            }
+            GUILayout.EndHorizontal();
+            #endregion copy past
+
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
         }
@@ -549,6 +577,13 @@ namespace Capstones.UnityEditorEx
                 AssetDatabase.ImportAsset(CapsModEditor.GetAssetNameFromPath(path));
 
                 PlayerPrefs.SetString("DistributeFlags_" + configIndex, sbflags.ToString());
+                for (int i = 1; i <= 4; i++)
+                {
+                    if (!PlayerPrefs.HasKey("DistributeFlags_" + i))
+                    {
+                        PlayerPrefs.SetString("DistributeFlags_" + i, sbflags.ToString());
+                    }
+                }
 
                 ResManager.PreRuntimeDFlags = new List<string>(DistributeFlagOrder);
                 CapsDistributeEditor.FireOnDistributeFlagsChanged();
