@@ -182,7 +182,7 @@ namespace Capstones.UnityEditorEx
 #if UNITY_EDITOR_WIN
             return NativeWindowsMethods.GetFinalPathName(path);
 #else
-            string link = ReadLink(string path);
+            string link = ReadLink(path);
             if (System.IO.Path.IsPathRooted(link))
             {
                 return link;
