@@ -176,6 +176,122 @@ namespace Capstones.UnityEditorEx
             return false;
 #endif
         }
+        // TODO: Test these on Mac
+        public static string ResolveLink(string path)
+        {
+#if UNITY_EDITOR_WIN
+            return NativeWindowsMethods.GetFinalPathName(path);
+#else
+            string link = ReadLink(string path);
+            if (System.IO.Path.IsPathRooted(link))
+            {
+                return link;
+            }
+            else
+            {
+                var fullpath = System.IO.Path.GetFullPath(path);
+                var dir = System.IO.Path.GetDirectoryName(fullpath);
+                var abslink = System.IO.Path.Combine(dir, link);
+                var fulllink = System.IO.Path.GetFullPath(abslink);
+                return fulllink;
+            }
+#endif
+        }
+
+        public static bool IsDirLinkTo(string link, string target)
+        {
+            if (string.IsNullOrEmpty(link))
+            {
+                return string.IsNullOrEmpty(target);
+            }
+            var rawtarget = ResolveLink(link);
+            if (string.IsNullOrEmpty(rawtarget))
+            {
+                return string.IsNullOrEmpty(target);
+            }
+            if (string.IsNullOrEmpty(target))
+            {
+                return false;
+            }
+            return string.Equals(System.IO.Path.GetFullPath(rawtarget), System.IO.Path.GetFullPath(target), System.StringComparison.InvariantCultureIgnoreCase);
+        }
+
+#if UNITY_EDITOR_WIN
+        static class NativeWindowsMethods
+        {
+            private static readonly System.IntPtr INVALID_HANDLE_VALUE = new System.IntPtr(-1);
+
+            private const uint FILE_READ_EA = 0x0008;
+            private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x2000000;
+
+            [System.Runtime.InteropServices.DllImport("Kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+            static extern uint GetFinalPathNameByHandle(System.IntPtr hFile, [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPTStr)] System.Text.StringBuilder lpszFilePath, uint cchFilePath, uint dwFlags);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+            [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+            static extern bool CloseHandle(System.IntPtr hObject);
+
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
+            public static extern System.IntPtr CreateFile(
+                    [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPTStr)] string filename,
+                    [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.U4)] uint access,
+                    [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.U4)] System.IO.FileShare share,
+                    System.IntPtr securityAttributes, // optional SECURITY_ATTRIBUTES struct or IntPtr.Zero
+                    [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.U4)] System.IO.FileMode creationDisposition,
+                    [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.U4)] uint flagsAndAttributes,
+                    System.IntPtr templateFile);
+
+            public static string GetFinalPathName(string path)
+            {
+                var h = CreateFile(path,
+                    FILE_READ_EA,
+                    System.IO.FileShare.ReadWrite | System.IO.FileShare.Delete,
+                    System.IntPtr.Zero,
+                    System.IO.FileMode.Open,
+                    FILE_FLAG_BACKUP_SEMANTICS,
+                    System.IntPtr.Zero);
+                if (h == INVALID_HANDLE_VALUE)
+                    return null;
+
+                try
+                {
+                    var sb = new System.Text.StringBuilder(1024);
+                    var res = GetFinalPathNameByHandle(h, sb, 1024, 0);
+                    if (res == 0)
+                        return null;
+
+                    return sb.ToString();
+                }
+                catch (System.Exception e)
+                {
+                    UnityEngine.Debug.LogException(e);
+                    return null;
+                }
+                finally
+                {
+                    CloseHandle(h);
+                }
+            }
+        }
+#else
+        static string ReadLink(string path)
+        {
+            var si = new System.Diagnostics.ProcessStartInfo("readlink", "\"" + path + "\"");
+            si.UseShellExecute = false;
+            si.RedirectStandardOutput = true;
+            var p = System.Diagnostics.Process.Start(si);
+            p.WaitForExit();
+            var output = p.StandardOutput.ReadToEnd();
+            if (string.IsNullOrEmpty(output))
+            {
+                return null;
+            }
+            else
+            {
+                return output;
+            }
+        }
+#endif
 
         public static bool ZipFolderNoCompress(string folder, string dest)
         {
@@ -365,6 +481,26 @@ namespace Capstones.UnityEditorEx
                 {
                     si = new System.Diagnostics.ProcessStartInfo(exe, arg);
                 }
+                return StartProcess(si);
+            }
+            return null;
+        }
+        // TODO: on Mac
+        public static System.Diagnostics.Process StartProcessAdmin(string command)
+        {
+            string exe, arg;
+            if (ParseCommand(command, out exe, out arg))
+            {
+                System.Diagnostics.ProcessStartInfo si;
+                if (string.IsNullOrEmpty(arg))
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe);
+                }
+                else
+                {
+                    si = new System.Diagnostics.ProcessStartInfo(exe, arg);
+                }
+                si.Verb = "runas";
                 return StartProcess(si);
             }
             return null;
