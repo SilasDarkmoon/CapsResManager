@@ -448,6 +448,10 @@ namespace Capstones.UnityEngineEx
             }
             else
             {
+                if (LoadingSceneWork == null)
+                { // The previous loading scene is sync-loading
+                    CreateLoadingSceneWork();
+                }
                 return LoadingSceneWork;
             }
         }
