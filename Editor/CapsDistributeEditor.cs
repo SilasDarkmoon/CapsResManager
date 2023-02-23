@@ -588,6 +588,16 @@ namespace Capstones.UnityEditorEx
                 ResManager.PreRuntimeDFlags = new List<string>(DistributeFlagOrder);
                 CapsDistributeEditor.FireOnDistributeFlagsChanged();
             }
+            else if (configIndex > 0)
+            {
+                System.Text.StringBuilder sbflags = new System.Text.StringBuilder();
+                foreach (var oflag in DistributeFlagOrder)
+                {
+                    sbflags.Append("<");
+                    sbflags.Append(oflag);
+                }
+                PlayerPrefs.SetString("DistributeFlags_" + configIndex, sbflags.ToString());
+            }
         }
 
         [SerializeField] protected string[] SerializeDistributeFlags;
