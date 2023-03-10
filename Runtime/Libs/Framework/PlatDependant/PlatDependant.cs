@@ -1175,7 +1175,6 @@ namespace Capstones.UnityEngineEx
             }
             return null;
         }
-
         public static System.IO.StreamWriter OpenWriteText(this string path)
         {
             try
@@ -1561,7 +1560,69 @@ namespace Capstones.UnityEngineEx
             }
             return false;
         }
-
+        static readonly char[] WHITESPACE = new[] { '\r', '\n', '\t' };
+        public static void OpenReadTextLine(string path, Func<string, bool> fun)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            try
+            {
+                using (var sr = OpenReadText(path))
+                {
+                    var isLoop = true;
+                    while (!sr.EndOfStream && isLoop)
+                    {
+                        var line = sr.ReadLine();
+                        line = line.Trim(WHITESPACE).TrimEnd().TrimStart();
+                        if (fun != null) isLoop = fun(line);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+        }
+        /// <summary>
+        /// 创建 Text
+        /// </summary>
+        public static void CreateWriteTxt(string txtpath, string separator, string[] content)
+        {
+            if (string.IsNullOrEmpty(txtpath)) return;
+            var msg = "";
+            if (content != null && content.Length > 0)
+            {
+                if (string.IsNullOrEmpty(separator)) separator = "";
+                msg = string.Join(separator, content);
+            }
+            CreateWriteTxt(txtpath, msg);
+        }
+        /// <summary>
+        /// 创建 Text
+        /// </summary>
+        public static void CreateWriteTxt(string txtpath, string content)
+        {
+            if (string.IsNullOrEmpty(txtpath)) return;
+            try
+            {
+                bool isExists = File.Exists(txtpath);
+                string currPath = txtpath;
+                if (isExists) txtpath = txtpath + ".temp";
+                using (var sw = PlatDependant.OpenWriteText(txtpath))
+                {
+                    if (!string.IsNullOrEmpty(content)) sw.Write(content);
+                    sw.Flush();
+                }
+                if (isExists)
+                {
+                    DeleteFile(currPath);
+                    File.Move(txtpath, currPath);
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+        }
         public static void CopyFile(this string src, string dst)
         {
             if (IsFileSameName(src, dst))
@@ -1594,7 +1655,7 @@ namespace Capstones.UnityEngineEx
             {
                 CreateFolder(System.IO.Path.GetDirectoryName(dst));
                 // try to lock src and delete dst.
-                { 
+                {
                     System.IO.Stream srcfile = null;
                     try
                     {
