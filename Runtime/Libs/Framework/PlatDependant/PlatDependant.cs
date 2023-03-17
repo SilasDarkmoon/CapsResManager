@@ -6,6 +6,8 @@ namespace Capstones.UnityEngineEx
     using System.Collections.Generic;
     using System.Text;
     using System.IO;
+    using UnityEngine;
+    using System.Text.RegularExpressions;
 
 #if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
     using Unity.IO.Compression;
@@ -1175,7 +1177,6 @@ namespace Capstones.UnityEngineEx
             }
             return null;
         }
-
         public static System.IO.StreamWriter OpenWriteText(this string path)
         {
             try
@@ -1561,7 +1562,178 @@ namespace Capstones.UnityEngineEx
             }
             return false;
         }
+        static readonly char[] WHITESPACE = new[] { '\r', '\n', '\t' };
+        public static void OpenReadTextLine(string path, Func<string, bool> fun)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            try
+            {
+                using (var sr = OpenReadText(path))
+                {
+                    var isLoop = true;
+                    while (!sr.EndOfStream && isLoop)
+                    {
+                        var line = sr.ReadLine();
+                        line = line.Trim(WHITESPACE).TrimEnd().TrimStart();
+                        if (fun != null) isLoop = fun(line);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+        }
 
+        #region 原生平台与平台处理相关接口 海鸣添加 2023.3.10
+        public static int GetTotalMemory()
+        {
+#if UNITY_ANDROID
+            try
+            {
+                AndroidJavaObject fileReader = new AndroidJavaObject("java.io.FileReader", "/proc/meminfo");
+                AndroidJavaObject br = new AndroidJavaObject("java.io.BufferedReader", fileReader, 2048);
+                string mline = br.Call<String>("readLine");
+                br.Call("close");
+                mline = mline.Substring(mline.IndexOf("MemTotal:"));
+                mline = Regex.Match(mline, "(\\d+)").Groups[1].Value;
+                return (int.Parse(mline) / 1024);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError("[QualityManager] GetTotalMemory 获取内存失败:" + e);
+                return SystemInfo.systemMemorySize;
+            }
+#else
+            return SystemInfo.systemMemorySize;
+#endif
+        }
+        /// 在编辑器下运行模拟运行时候需要通过确定是否是 editor, 为了解决在simulator模式下 无法识别 editor问题
+        public static bool IsOnRunUnityEditor()
+        {
+#if UNITY_EDITOR
+            return true;
+#else
+            return false;
+#endif
+        }
+        /// <summary>
+        /// 0 运行在非 AndroidSimulator
+        /// 1 运行在 AndroidSimulator 
+        /// -1 表示未进行初始化
+        /// </summary>
+        private static int _isRunAndroidSimulator = -1;
+        /// <summary>
+        /// 判断是否运行在安卓模拟器上面
+        /// 判断依据是 通过模拟器无法模拟 Mac地址的属性 通过mac地址是否存在来判断
+        /// 注意的是可以以这样来判断 但是此处mac地址不能使用 
+        /// 这个方法Android 7.0是获取不到的，都会返回“02:00:00:00:00:00”
+        /// </summary>
+        /// <returns></returns>
+        public static bool IsRunAndroidSimulator()
+        {
+            if (_isRunAndroidSimulator == -1)
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                _isRunAndroidSimulator = 0;
+                try
+                {
+                    AndroidJavaObject fileReader = new AndroidJavaObject("java.io.FileReader", "/proc/diskstats");
+                    AndroidJavaObject br = new AndroidJavaObject("java.io.BufferedReader", fileReader, 2048);
+                    bool isMmcblk0 = false;
+                    string mline = "";
+                    while ((mline = br.Call<String>("readLine")) != null)
+                    {
+                        if (mline.IndexOf("mmcblk0") == -1) continue;
+                        isMmcblk0 = true;
+                        break;
+                    }
+                    br.Call("close");
+
+                    if (!isMmcblk0)
+                    {
+                        //如果芯片是 x86  则认为是模拟器
+                        if (SystemInfo.processorType.ToLower().IndexOf("intel x86") != -1)
+                        {
+                            _isRunAndroidSimulator = 1;
+                            return true;
+                        }
+                        AndroidJavaClass roSecureObj = new AndroidJavaClass("android.os.SystemProperties");
+                        AndroidJavaClass unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                        AndroidJavaObject unityActivity = unityClass.GetStatic<AndroidJavaObject>("currentActivity");
+                        AndroidJavaObject unityContext = unityActivity.Call<AndroidJavaObject>("getPackageManager");
+                        //闪光灯检测
+                        var isflash = unityContext.Call<Boolean>("hasSystemFeature", "android.hardware.camera.flash");
+                        if (!isflash)
+                        {
+                            _isRunAndroidSimulator = 1;
+                            return true;
+                        }
+                        //ro.hardware
+                        var hardware = roSecureObj.CallStatic<String>("get", "ro.hardware");
+                        if (!string.IsNullOrEmpty(hardware))
+                        {
+                            hardware = hardware.ToLower();
+                            if (hardware.Contains("ttvm") || hardware.Contains("nox") || hardware.Contains("_x86") || hardware.EndsWith("x86"))
+                            {
+                                _isRunAndroidSimulator = 1;
+                                return true;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    if (!SystemInfo.supportsGyroscope || !SystemInfo.supportsVibration) return true;
+                }
+#else
+                _isRunAndroidSimulator = 0;
+#endif
+            }
+            return _isRunAndroidSimulator == 1;
+        }
+        #endregion
+        /// <summary>
+        /// 创建 Text
+        /// </summary>
+        public static void CreateWriteTxt(string txtpath, string separator, string[] content)
+        {
+            if (string.IsNullOrEmpty(txtpath)) return;
+            var msg = "";
+            if (content != null && content.Length > 0)
+            {
+                if (string.IsNullOrEmpty(separator)) separator = "";
+                msg = string.Join(separator, content);
+            }
+            CreateWriteTxt(txtpath, msg);
+        }
+        /// <summary>
+        /// 创建 Text
+        /// </summary>
+        public static void CreateWriteTxt(string txtpath, string content)
+        {
+            if (string.IsNullOrEmpty(txtpath)) return;
+            try
+            {
+                bool isExists = File.Exists(txtpath);
+                string currPath = txtpath;
+                if (isExists) txtpath = txtpath + ".temp";
+                using (var sw = PlatDependant.OpenWriteText(txtpath))
+                {
+                    if (!string.IsNullOrEmpty(content)) sw.Write(content);
+                    sw.Flush();
+                }
+                if (isExists)
+                {
+                    DeleteFile(currPath);
+                    File.Move(txtpath, currPath);
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+        }
         public static void CopyFile(this string src, string dst)
         {
             if (IsFileSameName(src, dst))
@@ -1594,7 +1766,7 @@ namespace Capstones.UnityEngineEx
             {
                 CreateFolder(System.IO.Path.GetDirectoryName(dst));
                 // try to lock src and delete dst.
-                { 
+                {
                     System.IO.Stream srcfile = null;
                     try
                     {
