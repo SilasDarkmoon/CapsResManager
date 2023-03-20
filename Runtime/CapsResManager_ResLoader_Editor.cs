@@ -182,6 +182,7 @@ namespace Capstones.UnityEngineEx
                     {
 #if EDITOR_LOADER_NO_CHECK
                         found = file;
+                        return true;
 #endif
                         if (found == null)
                         {
@@ -203,6 +204,7 @@ namespace Capstones.UnityEngineEx
                         {
 #if EDITOR_LOADER_NO_CHECK
                             found = exfound;
+                            return true;
 #endif
                             if (found == null)
                             {

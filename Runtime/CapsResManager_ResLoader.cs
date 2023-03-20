@@ -133,7 +133,12 @@ namespace Capstones.UnityEngineEx
             {
                 return obj;
             }
-            return LoadFromResource(asset, type);
+            var res = LoadFromResource(asset, type);
+            if (!res)
+            {
+                Debug.LogError("Cannot LoadResDeep: " + asset);
+            }
+            return res;
         }
         public static Object LoadResDeep(string asset)
         {
