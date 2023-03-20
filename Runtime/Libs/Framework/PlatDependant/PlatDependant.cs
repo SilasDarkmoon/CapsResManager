@@ -1588,7 +1588,7 @@ namespace Capstones.UnityEngineEx
         #region 原生平台与平台处理相关接口 海鸣添加 2023.3.10
         public static int GetTotalMemory()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
                 AndroidJavaObject fileReader = new AndroidJavaObject("java.io.FileReader", "/proc/meminfo");
