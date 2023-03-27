@@ -20,6 +20,14 @@ namespace Capstones.UnityEngineEx
 #endif
     public static class PlatDependant
     {
+        public static bool IsDevelopmentOrEditor()
+        {
+            var isDevelopment = true;
+#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
+            isDevelopment = false;
+#endif
+            return isDevelopment;
+        }
         #region Logger
         private static object __lockObj = new object();
         [ThreadStatic]
@@ -123,6 +131,7 @@ namespace Capstones.UnityEngineEx
 #endif
                 return logConfigFilePath;
             }
+
             // 设置开启日志的设置文件
             public static void SetLogConfigFile(bool logEnabled, bool logToFileEnabled, bool logErrorEnabled, bool logToConsoleEnabled, bool logInfoEnabled, bool logWarningEnabled, bool logCSharpStackTraceEnabled)
             {
@@ -148,16 +157,17 @@ namespace Capstones.UnityEngineEx
 #if UNITY_EDITOR
                 isEditor = true;
 #endif
-                //if (isEditor == true) return;
-                var configFilePath = GetLogConfigFilePath() +".lua";
-                if (File.Exists(configFilePath)) DeleteFile(configFilePath);
-                using (var sw = PlatDependant.OpenWriteText(configFilePath))
+                if (isEditor == true) return;
+                try
                 {
-                    sw.Write(msg.ToString());
+                    var configFilePath = GetLogConfigFilePath();
+                    if (File.Exists(configFilePath)) DeleteFile(configFilePath);
+                    using (var sw = PlatDependant.OpenWriteText(configFilePath)) sw.Write(msg.ToString());
                 }
-
-
-
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
             }
             //重置日志属性设置
             public static void ResetLogConfigFile()
@@ -175,10 +185,7 @@ namespace Capstones.UnityEngineEx
             //重置log开关设置
             public static void ResetLogEnabled()
             {
-                var isDevelopment = true;
-#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
-                isDevelopment = false;
-#endif
+                var isDevelopment = IsDevelopmentOrEditor();
                 lock (__lockObj)
                 {
                     LogEnabled = true;
