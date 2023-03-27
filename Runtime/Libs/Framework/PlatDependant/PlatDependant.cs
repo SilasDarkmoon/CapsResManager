@@ -21,20 +21,29 @@ namespace Capstones.UnityEngineEx
     public static class PlatDependant
     {
         #region Logger
+        private static object __lockObj = new object();
+        [ThreadStatic]
         public static bool LogEnabled = true;
+        [ThreadStatic]
         public static bool LogInfoEnabled = true;
+        [ThreadStatic]
         public static bool LogWarningEnabled = true;
+        [ThreadStatic]
         public static bool LogErrorEnabled = true;
+        [ThreadStatic]
         public static bool _LogToConsoleEnabled = true;
+        [ThreadStatic]
+        public static volatile bool LogToFileEnabled = true;
         public static bool LogToConsoleEnabled
         {
             get { return _LogToConsoleEnabled; }
             set { _LogToConsoleEnabled = value; }
         }
-        public static volatile bool LogToFileEnabled = true;
-        [ThreadStatic] public static bool LogCSharpStackTraceEnabled = true;
+        [ThreadStatic]
+        public static bool LogCSharpStackTraceEnabled = true;
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-        [ThreadStatic] public static bool DisableLogTemp;
+        [ThreadStatic]
+        public static bool DisableLogTemp;
 #endif
         public static string LogFilePath;
         public static event Action<string> OnExLogger;
@@ -105,33 +114,101 @@ namespace Capstones.UnityEngineEx
                 return rv;
             }
 #endif
+            public const string LogConfigFileName = "LogConfig.txt";
+            public static string GetLogConfigFilePath()
+            {
+                var logConfigFilePath = Path.Combine(Application.persistentDataPath, LogConfigFileName);
+#if UNITY_EDITOR // 编辑器下获取Editor配置
+                logConfigFilePath = Path.GetFullPath(@"Packages\CapsResManager\Runtime\Libs\Framework\PlatDependant\Editor\" + LogConfigFileName);
+#endif
+                return logConfigFilePath;
+            }
+            // 设置开启日志的设置文件
+            public static void SetLogConfigFile(bool logEnabled, bool logToFileEnabled, bool logErrorEnabled, bool logToConsoleEnabled, bool logInfoEnabled, bool logWarningEnabled, bool logCSharpStackTraceEnabled)
+            {
+                lock (__lockObj)
+                {
+                    LogEnabled = logEnabled;
+                    LogToFileEnabled = logToFileEnabled;
+                    LogErrorEnabled = logErrorEnabled;
+                    LogToConsoleEnabled = logToConsoleEnabled;
+                    LogInfoEnabled = logInfoEnabled;
+                    LogWarningEnabled = logWarningEnabled;
+                    LogCSharpStackTraceEnabled = logCSharpStackTraceEnabled;
+                }
 
+
+            }
+            //重置日志属性设置
+            public static void ResetLogConfigFile()
+            {
+                ResetLogEnabled();
+                var isEditor = false;
+#if UNITY_EDITOR
+                isEditor = true;
+#endif
+                if (isEditor == true) return;
+                var configFilePath = GetLogConfigFilePath();
+                if (!File.Exists(configFilePath)) return;
+                DeleteFile(configFilePath);
+            }
+            //重置log开关设置
+            public static void ResetLogEnabled()
+            {
+                var isDevelopment = true;
+#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
+                isDevelopment = false;
+#endif
+                lock (__lockObj)
+                {
+                    LogEnabled = true;
+                    LogToFileEnabled = true;
+                    LogErrorEnabled = true;
+                    LogToConsoleEnabled = true;
+                    LogInfoEnabled = isDevelopment == true;
+                    LogWarningEnabled = isDevelopment == true;
+                    LogCSharpStackTraceEnabled = isDevelopment == true;
+                }
+            }
+            //创建配置日志控制文件文件 OpenLoggerConfig
+            public static void OnInitLoggerConfig()
+            {
+                ResetLogEnabled();
+                lock (__lockObj)
+                {
+                    var logConfigPath = GetLogConfigFilePath();
+                    if (!File.Exists(logConfigPath)) return;
+                    try
+                    {
+                        using (var sr = OpenReadText(logConfigPath))
+                        {
+                            string item;
+                            string[] attr = null;
+                            while (!sr.EndOfStream)
+                            {
+                                item = sr.ReadLine();
+                                if (string.IsNullOrEmpty(item) || item.IndexOf("|") == -1) continue;
+                                attr = item.Trim().Split('|');
+                                if (attr.Length < 2) continue;
+                                if ("LogEnabled" == attr[0]) LogEnabled = attr[1] == "true";
+                                if ("LogToFileEnabled" == attr[0]) LogToFileEnabled = attr[1] == "true";
+                                if ("LogErrorEnabled" == attr[0]) LogErrorEnabled = attr[1] == "true";
+                                if ("LogToConsoleEnabled" == attr[0]) LogToConsoleEnabled = attr[1] == "true";
+                                if ("LogInfoEnabled" == attr[0]) LogInfoEnabled = attr[1] == "true";
+                                if ("LogWarningEnabled" == attr[0]) LogWarningEnabled = attr[1] == "true";
+                                if ("LogCSharpStackTraceEnabled" == attr[0]) LogCSharpStackTraceEnabled = attr[1] == "true";
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
             static Logger()
             {
-#if DISABLE_LOG_ALL
-                LogEnabled = false;
-#endif
-#if DISABLE_LOG_INFO
-                LogInfoEnabled = false;
-#endif
-#if DISABLE_LOG_WARN
-                LogWarningEnabled = false;
-#endif
-#if DISABLE_LOG_ERROR
-                LogErrorEnabled = false;
-#endif
-#if DISABLE_LOG_CONSOLE
-                LogToConsoleEnabled = false;
-#endif
-#if DISABLE_LOG_STACKTRACE
-                LogCSharpStackTraceEnabled = false;
-#endif
-#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
-#if UNITY_ENGINE || UNITY_5_3_OR_NEWER
-                LogToConsoleEnabled = false;
-#endif
-#endif
-
+                OnInitLoggerConfig();
                 string logdir = Capstones.UnityEngineEx.ThreadSafeValues.LogPath;
                 var file = logdir + "/log/cs/log" + DateTime.Now.ToString("MMdd") + ".txt";
 #if UNITY_ENGINE || UNITY_5_3_OR_NEWER
