@@ -49,7 +49,7 @@ namespace Capstones.UnityEngineEx
         public static event Action<string> OnExLogger;
         public static Func<string, string> OnExStackTrace;
 
-        private static class Logger
+        public static class Logger
         {
 #if (UNITY_ENGINE || UNITY_5_3_OR_NEWER) && !NET_4_6 && !NET_STANDARD_2_0
             private static Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder> LogQueue = new Unity.Collections.Concurrent.ConcurrentQueue<StringBuilder>();
@@ -126,16 +126,36 @@ namespace Capstones.UnityEngineEx
             // 设置开启日志的设置文件
             public static void SetLogConfigFile(bool logEnabled, bool logToFileEnabled, bool logErrorEnabled, bool logToConsoleEnabled, bool logInfoEnabled, bool logWarningEnabled, bool logCSharpStackTraceEnabled)
             {
+                var msg = new StringBuilder();
                 lock (__lockObj)
                 {
                     LogEnabled = logEnabled;
+                    msg.AppendLine("LogEnabled|" + (LogEnabled ? "true" : "false"));
                     LogToFileEnabled = logToFileEnabled;
+                    msg.AppendLine("LogToFileEnabled|" + (LogToFileEnabled ? "true" : "false"));
                     LogErrorEnabled = logErrorEnabled;
+                    msg.AppendLine("LogErrorEnabled|" + (LogErrorEnabled ? "true" : "false"));
                     LogToConsoleEnabled = logToConsoleEnabled;
+                    msg.AppendLine("LogToConsoleEnabled|" + (LogToConsoleEnabled ? "true" : "false"));
                     LogInfoEnabled = logInfoEnabled;
+                    msg.AppendLine("LogInfoEnabled|" + (LogInfoEnabled ? "true" : "false"));
                     LogWarningEnabled = logWarningEnabled;
+                    msg.AppendLine("LogWarningEnabled|" + (LogWarningEnabled ? "true" : "false"));
                     LogCSharpStackTraceEnabled = logCSharpStackTraceEnabled;
+                    msg.AppendLine("LogCSharpStackTraceEnabled|" + (LogCSharpStackTraceEnabled ? "true" : "false"));
                 }
+                var isEditor = false;
+#if UNITY_EDITOR
+                isEditor = true;
+#endif
+                //if (isEditor == true) return;
+                var configFilePath = GetLogConfigFilePath() +".lua";
+                if (File.Exists(configFilePath)) DeleteFile(configFilePath);
+                using (var sw = PlatDependant.OpenWriteText(configFilePath))
+                {
+                    sw.Write(msg.ToString());
+                }
+
 
 
             }
