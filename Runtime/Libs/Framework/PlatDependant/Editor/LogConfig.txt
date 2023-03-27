@@ -1,0 +1,7 @@
+LogEnabled|false
+LogInfoEnabled|false
+LogWarningEnabled|false
+LogErrorEnabled|false
+LogToConsoleEnabled|false
+LogCSharpStackTraceEnabled|false
+LogToFileEnabled|false
