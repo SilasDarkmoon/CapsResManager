@@ -43,17 +43,17 @@ namespace Capstones.UnityEngineEx
             var msg = new StringBuilder();
             LogEnabled = logEnabled;
             msg.AppendLine("LogEnabled|" + (LogEnabled ? "true" : "false"));
-            LogToFileEnabled = logToFileEnabled;
+            LogToFileEnabled = LogEnabled && logToFileEnabled;
             msg.AppendLine("LogToFileEnabled|" + (LogToFileEnabled ? "true" : "false"));
-            LogErrorEnabled = logErrorEnabled;
+            LogErrorEnabled = LogEnabled && logErrorEnabled;
             msg.AppendLine("LogErrorEnabled|" + (LogErrorEnabled ? "true" : "false"));
-            LogToConsoleEnabled = logToConsoleEnabled;
+            LogToConsoleEnabled = LogEnabled && logToConsoleEnabled;
             msg.AppendLine("LogToConsoleEnabled|" + (LogToConsoleEnabled ? "true" : "false"));
-            LogInfoEnabled = logInfoEnabled;
+            LogInfoEnabled = LogEnabled && logInfoEnabled;
             msg.AppendLine("LogInfoEnabled|" + (LogInfoEnabled ? "true" : "false"));
-            LogWarningEnabled = logWarningEnabled;
+            LogWarningEnabled = LogEnabled && logWarningEnabled;
             msg.AppendLine("LogWarningEnabled|" + (LogWarningEnabled ? "true" : "false"));
-            LogCSharpStackTraceEnabled = logCSharpStackTraceEnabled;
+            LogCSharpStackTraceEnabled = LogEnabled && logCSharpStackTraceEnabled;
             msg.AppendLine("LogCSharpStackTraceEnabled|" + (LogCSharpStackTraceEnabled ? "true" : "false"));
             var isEditor = false;
 #if UNITY_EDITOR
@@ -210,6 +210,12 @@ namespace Capstones.UnityEngineEx
                             if ("LogCSharpStackTraceEnabled" == attr[0]) LogCSharpStackTraceEnabled = attr[1] == "true";
                         }
                     }
+                    LogToFileEnabled = LogToFileEnabled && LogEnabled;
+                    LogErrorEnabled = LogErrorEnabled && LogEnabled;
+                    LogToConsoleEnabled = LogToConsoleEnabled && LogEnabled;
+                    LogInfoEnabled = LogInfoEnabled && LogEnabled;
+                    LogWarningEnabled = LogWarningEnabled && LogEnabled;
+                    LogCSharpStackTraceEnabled = LogCSharpStackTraceEnabled && LogEnabled;
                 }
                 catch (Exception e)
                 {
