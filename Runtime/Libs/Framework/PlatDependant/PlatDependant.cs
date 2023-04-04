@@ -23,7 +23,7 @@ namespace Capstones.UnityEngineEx
         public static bool IsDevelopmentOrEditor()
         {
             var isDevelopment = true;
-#if !(DEVELOPMENT_BUILD || UNITY_EDITOR || ALWAYS_SHOW_LOG || DEBUG)
+#if !(DEVELOPMENT_BUILD || UNITY_EDITOR)
             isDevelopment = false;
 #endif
             return isDevelopment;
