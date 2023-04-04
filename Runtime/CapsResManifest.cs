@@ -134,7 +134,6 @@ namespace Capstones.UnityEngineEx
         private static readonly char[] _DefaultSeperateChars = new[] { '\\', '/' };
         public bool TryGetItem(string path, out CapsResManifestNode item, params char[] seperateChars)
         {
-            Profiler.BeginSample("TryGetItem ===");
             if (seperateChars == null || seperateChars.Length <= 0)
             {
                 seperateChars = _DefaultSeperateChars;
@@ -155,14 +154,12 @@ namespace Capstones.UnityEngineEx
                             if (!curNode.Children.TryGetValue(part, out curNode))
                             {
                                 item = null;
-                                Profiler.EndSample();
                                 return false;
                             }
                         }
                         else
                         {
                             item = null;
-                            Profiler.EndSample();
                             return false;
                         }
                         sindex = eindex + 1;
@@ -170,7 +167,6 @@ namespace Capstones.UnityEngineEx
                     else
                     {
                         var part = path.Substring(sindex);
-                        Profiler.EndSample();
                         if (curNode.Children != null)
                         {
                             return curNode.Children.TryGetValue(part, out item);
@@ -183,7 +179,6 @@ namespace Capstones.UnityEngineEx
                     }
                 }
             }
-            Profiler.EndSample();
             return false;
         }
         public bool TryGetItemIgnoreExt(string path, out CapsResManifestNode item, params char[] seperateChars)
