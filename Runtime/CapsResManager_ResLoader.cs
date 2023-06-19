@@ -611,7 +611,10 @@ namespace Capstones.UnityEngineEx
         private static void OnLowMemory()
         {
 #if PROFILER_EX_FRAME_TIMER
-            ProfilerEx.AppendFrameTimerMessageLine("Low Memory...");
+            ProfilerEx.AppendFrameTimerMessageLine("LowMemory");
+#endif
+#if ENABLE_PROFILER
+            using (var pcon = ProfilerContext.Create("LowMemory"))
 #endif
             StartGarbageCollectNorm();
         }
