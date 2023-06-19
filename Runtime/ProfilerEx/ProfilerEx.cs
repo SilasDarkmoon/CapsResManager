@@ -392,14 +392,105 @@ namespace Capstones.UnityEngineEx
             _Message = null;
 #endif
         }
-        public FrameTimerContext Restart()
+        public FrameTimerContext Restart(string overrideMessage)
         {
 #if PROFILER_EX_FRAME_TIMER
             var newinst = new FrameTimerContext();
             newinst._Timer = _Timer;
-            newinst._Message = _Message;
+            if (string.IsNullOrEmpty(overrideMessage))
+            {
+                newinst._Message = _Message;
+            }
+            else
+            {
+                newinst._Message = overrideMessage;
+            }
             _Timer.Restart();
             return newinst;
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart()
+        {
+            return Restart(null);
+        }
+        public FrameTimerContext Restart<T>(T name)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(name.ToString());
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P>(string nameformat, P p)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2>(string nameformat, P1 p1, P2 p2)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3>(string nameformat, P1 p1, P2 p2, P3 p3)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3, P4>(string nameformat, P1 p1, P2 p2, P3 p3, P4 p4)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3, p4));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3, P4, P5>(string nameformat, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3, p4, p5));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3, P4, P5, P6>(string nameformat, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3, p4, p5, p6));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3, P4, P5, P6, P7>(string nameformat, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3, p4, p5, p6, p7));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart<P1, P2, P3, P4, P5, P6, P7, P8>(string nameformat, P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, p1, p2, p3, p4, p5, p6, p7, p8));
+#else
+            return default(FrameTimerContext);
+#endif
+        }
+        public FrameTimerContext Restart(string nameformat, params object[] args)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            return Restart(string.Format(nameformat, args));
 #else
             return default(FrameTimerContext);
 #endif

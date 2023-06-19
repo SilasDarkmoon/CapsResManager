@@ -112,6 +112,9 @@ namespace Capstones.UnityEngineEx
         }
         public static Object LoadRes(string asset, Type type)
         {
+#if PROFILER_EX_FRAME_TIMER
+            using (var timercon = _FrameTimerContext.Restart("LoadRes: {0}", asset))
+#endif
 #if ENABLE_PROFILER
             using (var pcon = ProfilerContext.Create("LoadRes"))
             using (var pcon2 = ProfilerContext.Create(asset))
@@ -183,6 +186,9 @@ namespace Capstones.UnityEngineEx
             {
                 LoadingSceneQueueIndex = 0;
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
+#if PROFILER_EX_FRAME_TIMER
+                using (var timercon = _FrameTimerContext.Restart("LoadScene: {0}", name))
+#endif
 #if ENABLE_PROFILER
                 using (var pcon = ProfilerContext.Create("LoadScene"))
                 using (var pcon2 = ProfilerContext.Create(name))
@@ -202,6 +208,9 @@ namespace Capstones.UnityEngineEx
                     {
                         CreateLoadingSceneWork();
                     }
+#if PROFILER_EX_FRAME_TIMER
+                    using (var timercon = _FrameTimerContext.Restart("Begin LoadSceneAsync: {0}", info.t1))
+#endif
 #if ENABLE_PROFILER
                     using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync"))
                     using (var pcon2 = ProfilerContext.Create(info.t1))
@@ -213,6 +222,9 @@ namespace Capstones.UnityEngineEx
                 }
                 else
                 {
+#if PROFILER_EX_FRAME_TIMER
+                    using (var timercon = _FrameTimerContext.Restart("LoadScene: {0}", info.t1))
+#endif
 #if ENABLE_PROFILER
                     using (var pcon = ProfilerContext.Create("LoadScene"))
                     using (var pcon2 = ProfilerContext.Create(info.t1))
@@ -381,6 +393,9 @@ namespace Capstones.UnityEngineEx
         }
         public static CoroutineWork LoadResAsync(string name, Type type)
         {
+#if PROFILER_EX_FRAME_TIMER
+            using (var timercon = _FrameTimerContext.Restart("Begin LoadResAsync: {0}", name))
+#endif
 #if ENABLE_PROFILER
             using (var pcon = ProfilerContext.Create("Begin LoadResAsync"))
             using (var pcon2 = ProfilerContext.Create(name))
@@ -441,6 +456,9 @@ namespace Capstones.UnityEngineEx
                 LoadingSceneQueueIndex = 0;
                 CreateLoadingSceneWork();
                 UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoadedClearLoadingQueue;
+#if PROFILER_EX_FRAME_TIMER
+                using (var timercon = _FrameTimerContext.Restart("Begin LoadSceneAsync: {0}", name))
+#endif
 #if ENABLE_PROFILER
                 using (var pcon = ProfilerContext.Create("Begin LoadSceneAsync"))
                 using (var pcon2 = ProfilerContext.Create(name))
@@ -590,6 +608,17 @@ namespace Capstones.UnityEngineEx
 
             UnloadAllRes();
         }
+        private static void OnLowMemory()
+        {
+#if PROFILER_EX_FRAME_TIMER
+            ProfilerEx.AppendFrameTimerMessageLine("Low Memory...");
+#endif
+            StartGarbageCollectNorm();
+        }
+
+#if PROFILER_EX_FRAME_TIMER
+        private static FrameTimerContext _FrameTimerContext = new FrameTimerContext("ResLoaderTimer");
+#endif
 
 #if COMPATIBLE_RESMANAGER_V1
         public static string CompatibleAssetName(string asset)
@@ -610,7 +639,7 @@ namespace Capstones.UnityEngineEx
             GarbageCollector.GarbageCollectorEvents[1] += UnloadUnusedResAsync;
             GarbageCollector.GarbageCollectorEvents[2] += UnloadUnusedResLite;
 #if !UNITY_EDITOR
-            Application.lowMemory += StartGarbageCollectNorm;
+            Application.lowMemory += OnLowMemory;
 #endif
         }
         private static void DoResManagerInitPost()
