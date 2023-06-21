@@ -193,6 +193,36 @@ namespace Capstones.UnityEngineEx
                 public override bool keepWaiting { get { return _NextGarbageCollectLevel < 0 || _NextGarbageCollectLevel <= _LastGarbageCollectLevel && System.Environment.TickCount < _NextGarbageCollectTick; } }
             }
             private static GarbageCollectorYieldable _GarbageCollectorIndicator = new GarbageCollectorYieldable();
+            public class GarbageCollectorWorkingYieldable : CustomYieldInstruction
+            {
+                public override bool keepWaiting { get { return _IsGarbageCollectorWorking; } }
+            }
+            public static readonly GarbageCollectorWorkingYieldable WaitWhileGarbageCollectorWorking = new GarbageCollectorWorkingYieldable();
+            public class GarbageCollectorUrgeWorkingYieldable : CustomYieldInstruction
+            {
+                public override bool keepWaiting
+                {
+                    get
+                    {
+                        if (_NextGarbageCollectLevel < 0 && !_IsGarbageCollectorWorking)
+                        {
+                            return false;
+                        }
+                        if (_NextGarbageCollectLevel >= 0)
+                        {
+                            _LastGarbageCollectLevel = -1;
+                            _NextGarbageCollectTick = System.Environment.TickCount;
+                            if (!_IsGarbageCollectorRunning)
+                            {
+                                _IsGarbageCollectorRunning = true;
+                                CoroutineRunner.StartCoroutine(CollectGarbageWork());
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+            public static readonly GarbageCollectorUrgeWorkingYieldable WaitAndUrgeGarbageCollector = new GarbageCollectorUrgeWorkingYieldable();
 
             static GarbageCollector()
             {
@@ -245,7 +275,7 @@ namespace Capstones.UnityEngineEx
                             continue;
                         }
                         int finishTick = System.Environment.TickCount;
-                        _NextGarbageCollectTick = finishTick + 2 * (finishTick - startTick);
+                        _NextGarbageCollectTick = System.Math.Max(finishTick + 2 * (finishTick - startTick), _NextGarbageCollectTick);
                         _IsGarbageCollectorWorking = false;
                         yield return _GarbageCollectorIndicator;
                     }
@@ -258,6 +288,14 @@ namespace Capstones.UnityEngineEx
             }
             public static void StartGarbageCollect(int lvl)
             {
+#if ENABLE_PROFILER
+                using (var pcon = ProfilerContext.Create("StartGarbageCollect({0})", lvl)) { }
+#endif
+#if PROFILER_EX_FRAME_TIMER
+                ProfilerEx.AppendFrameTimerMessage("StartGarbageCollect(");
+                ProfilerEx.AppendFrameTimerMessage(lvl);
+                ProfilerEx.AppendFrameTimerMessageLine(")");
+#endif
                 lvl = Math.Min(Math.Max(lvl, 0), GarbageCollectorLevelCount - 1);
                 if (lvl > _NextGarbageCollectLevel)
                 {
@@ -273,6 +311,16 @@ namespace Capstones.UnityEngineEx
             {
                 _LastGarbageCollectLevel = lvl;
                 _NextGarbageCollectTick = tick;
+            }
+            public static void PauseGarbageCollector()
+            {
+                DelayGarbageCollectTo(int.MaxValue, int.MaxValue);
+                UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+            }
+            public static void ResumeGarbageCollector()
+            {
+                DelayGarbageCollectTo(-1, System.Environment.TickCount);
+                UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Enabled;
             }
         }
 
