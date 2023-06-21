@@ -315,12 +315,16 @@ namespace Capstones.UnityEngineEx
             public static void PauseGarbageCollector()
             {
                 DelayGarbageCollectTo(int.MaxValue, int.MaxValue);
+#if !UNITY_EDITOR
                 UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+#endif
             }
             public static void ResumeGarbageCollector()
             {
                 DelayGarbageCollectTo(-1, System.Environment.TickCount);
+#if !UNITY_EDITOR
                 UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Enabled;
+#endif
             }
         }
 
