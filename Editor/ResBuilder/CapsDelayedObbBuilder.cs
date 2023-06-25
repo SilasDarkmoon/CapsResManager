@@ -124,6 +124,14 @@ namespace Capstones.UnityEditorEx
                     else
                     {
                         curobb = obbs[obbs.Count - 1];
+                        for (int i = obbs.Count - 1; i >= 0; --i)
+                        {
+                            if (!obbs[i].Key.Equals("main", StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                curobb = obbs[i];
+                                break;
+                            }
+                        }
                         for (int i = obbindex - 1; i < obbs.Count; ++i)
                         {
                             if (!obbs[i].Key.Equals("main", StringComparison.InvariantCultureIgnoreCase))
