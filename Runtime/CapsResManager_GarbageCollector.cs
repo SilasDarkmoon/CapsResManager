@@ -204,6 +204,18 @@ namespace Capstones.UnityEngineEx
                 {
                     get
                     {
+#if !UNITY_EDITOR
+                        if (UnityEngine.Scripting.GarbageCollector.GCMode != UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
+                        {
+                            if (UnityEngine.Scripting.GarbageCollector.isIncremental)
+                            {
+                                if (UnityEngine.Scripting.GarbageCollector.CollectIncremental(10000UL))
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+#endif
                         if (_NextGarbageCollectLevel < 0 && !_IsGarbageCollectorWorking)
                         {
                             return false;
