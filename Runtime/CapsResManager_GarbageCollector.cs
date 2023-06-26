@@ -186,11 +186,12 @@ namespace Capstones.UnityEngineEx
             private static int _NextGarbageCollectTick = int.MinValue;
             private static int _LastGarbageCollectLevel = -1;
             private static int _NextGarbageCollectLevel = -1;
+            private static bool _IsGarbageCollectorPaused = false;
             public static bool IsCollectingGarbage { get { return _IsGarbageCollectorWorking; } }
 
             private class GarbageCollectorYieldable : CustomYieldInstruction
             {
-                public override bool keepWaiting { get { return _NextGarbageCollectLevel < 0 || _NextGarbageCollectLevel <= _LastGarbageCollectLevel && System.Environment.TickCount < _NextGarbageCollectTick; } }
+                public override bool keepWaiting { get { return _NextGarbageCollectLevel < 0 || _IsGarbageCollectorPaused || _NextGarbageCollectLevel <= _LastGarbageCollectLevel && System.Environment.TickCount < _NextGarbageCollectTick; } }
             }
             private static GarbageCollectorYieldable _GarbageCollectorIndicator = new GarbageCollectorYieldable();
             public class GarbageCollectorWorkingYieldable : CustomYieldInstruction
@@ -217,6 +218,10 @@ namespace Capstones.UnityEngineEx
                         }
 #endif
                         if (_NextGarbageCollectLevel < 0 && !_IsGarbageCollectorWorking)
+                        {
+                            return false;
+                        }
+                        if (_IsGarbageCollectorPaused)
                         {
                             return false;
                         }
@@ -257,6 +262,13 @@ namespace Capstones.UnityEngineEx
                         _LastGarbageCollectLevel = curlevel;
                         _IsGarbageCollectorWorking = true;
                         int startTick = System.Environment.TickCount;
+#if ENABLE_PROFILER
+                        using (var pcon = ProfilerContext.Create("CollectGarbageWork Begin -lvl: {0}", curlevel)) { }
+#endif
+#if PROFILER_EX_FRAME_TIMER
+                        ProfilerEx.AppendFrameTimerMessage("CollectGarbageWork Begin -lvl: ");
+                        ProfilerEx.AppendFrameTimerMessageLine(curlevel);
+#endif
                         Debug.LogWarning("CollectGarbageWork Begin -lvl: " + curlevel);
                         for (int j = 0; j <= curlevel; ++j)
                         {
@@ -326,14 +338,16 @@ namespace Capstones.UnityEngineEx
             }
             public static void PauseGarbageCollector()
             {
-                DelayGarbageCollectTo(int.MaxValue, int.MaxValue);
+                _IsGarbageCollectorPaused = true;
+                //DelayGarbageCollectTo(GarbageCollector.GarbageCollectorLevelCount, int.MaxValue);
 #if !UNITY_EDITOR
                 UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
 #endif
             }
             public static void ResumeGarbageCollector()
             {
-                DelayGarbageCollectTo(-1, System.Environment.TickCount);
+                _IsGarbageCollectorPaused = false;
+                //DelayGarbageCollectTo(-1, System.Environment.TickCount);
 #if !UNITY_EDITOR
                 UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Enabled;
 #endif
