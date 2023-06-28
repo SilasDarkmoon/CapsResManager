@@ -210,7 +210,7 @@ namespace Capstones.UnityEngineEx
                         {
                             if (UnityEngine.Scripting.GarbageCollector.isIncremental)
                             {
-                                if (UnityEngine.Scripting.GarbageCollector.CollectIncremental(10000UL))
+                                if (UnityEngine.Scripting.GarbageCollector.CollectIncremental(10000000UL))
                                 {
                                     return true;
                                 }
@@ -336,12 +336,19 @@ namespace Capstones.UnityEngineEx
                 _LastGarbageCollectLevel = lvl;
                 _NextGarbageCollectTick = tick;
             }
+#if !UNITY_EDITOR
+            private static UnityEngine.Scripting.GarbageCollector.Mode _OldGCMode = UnityEngine.Scripting.GarbageCollector.Mode.Enabled;
+#endif
             public static void PauseGarbageCollector()
             {
                 _IsGarbageCollectorPaused = true;
                 //DelayGarbageCollectTo(GarbageCollector.GarbageCollectorLevelCount, int.MaxValue);
 #if !UNITY_EDITOR
-                UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+                if (UnityEngine.Scripting.GarbageCollector.GCMode != UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
+                {
+                    _OldGCMode = UnityEngine.Scripting.GarbageCollector.GCMode;
+                    UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Disabled;
+                }
 #endif
             }
             public static void ResumeGarbageCollector()
@@ -349,7 +356,10 @@ namespace Capstones.UnityEngineEx
                 _IsGarbageCollectorPaused = false;
                 //DelayGarbageCollectTo(-1, System.Environment.TickCount);
 #if !UNITY_EDITOR
-                UnityEngine.Scripting.GarbageCollector.GCMode = UnityEngine.Scripting.GarbageCollector.Mode.Enabled;
+                if (UnityEngine.Scripting.GarbageCollector.GCMode == UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
+                {
+                    UnityEngine.Scripting.GarbageCollector.GCMode = _OldGCMode;
+                }
 #endif
             }
         }
