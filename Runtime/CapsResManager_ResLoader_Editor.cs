@@ -755,6 +755,10 @@ namespace Capstones.UnityEngineEx
                 // Currently, we need to do nothing.
             }
 
+            public object Preload(string asset)
+            {
+                return null;
+            }
             public Object LoadRes(string asset, Type type)
             {
                 return LoadAsset(asset, type);

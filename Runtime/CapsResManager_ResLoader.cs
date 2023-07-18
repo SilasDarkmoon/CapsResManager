@@ -17,6 +17,7 @@ namespace Capstones.UnityEngineEx
             void BeforeLoadFirstScene();
             void AfterLoadFirstScene();
 
+            object Preload(string asset);
             Object LoadRes(string asset, Type type);
             void LoadScene(string name, bool additive);
 
@@ -109,6 +110,17 @@ namespace Capstones.UnityEngineEx
         public static Object LoadFromResource(string name)
         {
             return LoadFromResource(name, null);
+        }
+        public static object Preload(string asset)
+        {
+#if PROFILER_EX_FRAME_TIMER
+            using (var timercon = _FrameTimerContext.Restart("PreloadRes: {0}", asset))
+#endif
+#if ENABLE_PROFILER
+            using (var pcon = ProfilerContext.Create("PreloadRes"))
+            using (var pcon2 = ProfilerContext.Create(asset))
+#endif
+            return ResLoader.Preload(asset);
         }
         public static Object LoadRes(string asset, Type type)
         {

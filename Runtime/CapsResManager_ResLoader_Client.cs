@@ -536,6 +536,28 @@ namespace Capstones.UnityEngineEx
                 }
             }
 
+            public static IAssetInfo PreloadAsset(string asset)
+            {
+#if COMPATIBLE_RESMANAGER_V1
+                asset = CompatibleAssetName(asset);
+#endif
+                CapsResManifestNode node;
+                if (CollapsedManifest.TryGetItem(asset, out node) && node.Item != null)
+                {
+                    var item = node.Item;
+                    var ai = CreateAssetInfo(item);
+                    if (ai != null)
+                    {
+                        ai.Preload();
+                        return ai;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                return null;
+            }
             private static Object LoadAsset(CapsResManifestItem item, Type type)
             {
                 var ai = CreateAssetInfo(item);
@@ -720,6 +742,10 @@ namespace Capstones.UnityEngineEx
                 return work;
             }
 
+            public object Preload(string asset)
+            {
+                return PreloadAsset(asset);
+            }
             public Object LoadRes(string asset, Type type)
             {
                 return LoadAsset(asset, type);
