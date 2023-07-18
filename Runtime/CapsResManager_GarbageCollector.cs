@@ -205,6 +205,10 @@ namespace Capstones.UnityEngineEx
                 {
                     get
                     {
+                        if (_IsGarbageCollectorPaused)
+                        {
+                            return false;
+                        }
 #if !UNITY_EDITOR
                         if (UnityEngine.Scripting.GarbageCollector.GCMode != UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
                         {
@@ -218,10 +222,6 @@ namespace Capstones.UnityEngineEx
                         }
 #endif
                         if (_NextGarbageCollectLevel < 0 && !_IsGarbageCollectorWorking)
-                        {
-                            return false;
-                        }
-                        if (_IsGarbageCollectorPaused)
                         {
                             return false;
                         }
@@ -240,6 +240,22 @@ namespace Capstones.UnityEngineEx
                 }
             }
             public static readonly GarbageCollectorUrgeWorkingYieldable WaitAndUrgeGarbageCollector = new GarbageCollectorUrgeWorkingYieldable();
+            public class GarbageCollectorUrgeWorkingAndPauseYieldable : GarbageCollectorUrgeWorkingYieldable
+            {
+                public override bool keepWaiting
+                {
+                    get
+                    {
+                        var shouldwait = base.keepWaiting;
+                        if (!shouldwait && !_IsGarbageCollectorPaused)
+                        {
+                            PauseGarbageCollector();
+                        }
+                        return shouldwait;
+                    }
+                }
+            }
+            public static readonly GarbageCollectorUrgeWorkingAndPauseYieldable WaitAndUrgeAndPauseGarbageCollector = new GarbageCollectorUrgeWorkingAndPauseYieldable();
 
             static GarbageCollector()
             {
@@ -341,6 +357,22 @@ namespace Capstones.UnityEngineEx
 #endif
             public static void PauseGarbageCollector()
             {
+                if (_IsGarbageCollectorPaused)
+                {
+                    return;
+                }
+//#if !UNITY_EDITOR
+//                if (UnityEngine.Scripting.GarbageCollector.GCMode != UnityEngine.Scripting.GarbageCollector.Mode.Disabled)
+//                {
+//                    if (UnityEngine.Scripting.GarbageCollector.isIncremental)
+//                    {
+//                        while (UnityEngine.Scripting.GarbageCollector.CollectIncremental(10000000UL))
+//                        {
+//                        }
+//                    }
+//                }
+//#endif
+
                 _IsGarbageCollectorPaused = true;
                 //DelayGarbageCollectTo(GarbageCollector.GarbageCollectorLevelCount, int.MaxValue);
 #if !UNITY_EDITOR
@@ -353,6 +385,10 @@ namespace Capstones.UnityEngineEx
             }
             public static void ResumeGarbageCollector()
             {
+                if (!_IsGarbageCollectorPaused)
+                {
+                    return;
+                }
                 _IsGarbageCollectorPaused = false;
                 //DelayGarbageCollectTo(-1, System.Environment.TickCount);
 #if !UNITY_EDITOR
