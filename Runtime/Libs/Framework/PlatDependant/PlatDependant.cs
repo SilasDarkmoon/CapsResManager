@@ -31,7 +31,7 @@ namespace Capstones.UnityEngineEx
         public const string LogConfigFileName = "LogConfig.txt";
         public static string GetLogConfigFilePath()
         {
-            var logConfigFilePath = Path.Combine(Application.persistentDataPath, LogConfigFileName);
+            var logConfigFilePath = Path.Combine(ThreadSafeValues.AppPersistentDataPath, LogConfigFileName);
 #if UNITY_EDITOR // ±‡º≠∆˜œ¬ªÒ»°Editor≈‰÷√
             logConfigFilePath = Path.GetFullPath(@"Packages\CapsResManager\Runtime\Libs\Framework\PlatDependant\Editor\" + LogConfigFileName);
 #endif

@@ -602,6 +602,35 @@ namespace Capstones.UnityEngineEx
 
             UnloadAllRes(true);
         }
+        public static void DestroyAllHardSafe()
+        {
+            var oldObjs = FindAllGameObject();
+            for (int i = 0; i < _DestroyHandlers.Count; ++i)
+            {
+                _DestroyHandlers[i].PreDestroy(oldObjs);
+            }
+            for (int i = 0; i < oldObjs.Count; ++i)
+            {
+                Object.Destroy(oldObjs[i]);
+            }
+
+            var ddols = DontDestroyOnLoadManager.GetAllDontDestroyOnLoadObjs();
+            for (int i = 0; i < _DestroyHandlers.Count; ++i)
+            {
+                _DestroyHandlers[i].PreDestroy(ddols);
+            }
+            for (int i = 0; i < ddols.Length; ++i)
+            {
+                Object.Destroy(ddols[i]);
+            }
+
+            for (int i = 0; i < _DestroyHandlers.Count; ++i)
+            {
+                _DestroyHandlers[i].PostDestroy();
+            }
+
+            UnloadAllRes();
+        }
         public static void DestroyAll()
         {
             var oldObjs = FindAllGameObject();

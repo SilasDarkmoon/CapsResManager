@@ -398,6 +398,30 @@ namespace Capstones.UnityEngineEx
                 }
 #endif
             }
+            public static void FireAndWaitCodeGC()
+            {
+                var isPaused = _IsGarbageCollectorPaused;
+                ResumeGarbageCollector();
+
+                var gcevent = _GarbageCollectorEvents[0];
+                for (int i = 0; i < 3; ++i)
+                {
+                    gcevent.Invoke();
+#if !UNITY_EDITOR
+                    if (UnityEngine.Scripting.GarbageCollector.isIncremental)
+                    {
+                        while (UnityEngine.Scripting.GarbageCollector.CollectIncremental(10000000UL))
+                        {
+                        }
+                    }
+#endif
+                }
+
+                if (isPaused)
+                {
+                    PauseGarbageCollector();
+                }
+            }
         }
 
         public static bool IsCollectingGarbage { get { return GarbageCollector.IsCollectingGarbage; } }
