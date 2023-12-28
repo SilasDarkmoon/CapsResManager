@@ -1,11 +1,14 @@
 {
     "name": "ResManagerEditor",
+    "rootNamespace": "",
     "references": [
+        "System.IO.Compression",
         "ResManager",
         "Unity.IO.Compression",
         "ResManagerEditorEntry",
         "ResManagerEntry",
-		"System.IO.Compression"
+        "CapsModsEditor",
+        "CapsMods"
     ],
     "includePlatforms": [
         "Editor"
@@ -16,5 +19,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": []
+    "versionDefines": [],
+    "noEngineReferences": false
 }

@@ -1,17 +1,20 @@
 {
     "name": "ResManager",
+    "rootNamespace": "",
     "references": [
         "Unity.Collections.Concurrent",
         "Unity.IO.Compression",
         "JsonObject",
-        "ResManagerEntry"
+        "ResManagerEntry",
+        "CapsMods"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

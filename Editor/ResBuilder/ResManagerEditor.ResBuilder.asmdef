@@ -1,8 +1,11 @@
 {
     "name": "ResManagerEditor.ResBuilder",
+    "rootNamespace": "",
     "references": [
         "ResManager",
-        "ResManagerEditor"
+        "ResManagerEditor",
+        "CapsMods",
+        "CapsModsEditor"
     ],
     "includePlatforms": [
         "Editor"
