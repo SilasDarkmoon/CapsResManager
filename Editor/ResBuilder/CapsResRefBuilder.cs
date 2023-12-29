@@ -9,7 +9,7 @@ namespace Capstones.UnityEditorEx
     {
         private static HierarchicalInitializer _Initializer = new HierarchicalInitializer(0);
 
-        public override void GenerateBuildWork(string bundleName, IList<string> assets, ref AssetBundleBuild abwork, CapsResBuilder.CapsResBuildWork modwork, int abindex)
+        public override void GenerateBuildWork(string bundleName, IList<string> assets, CapsResBuilder.IBundleBuildInfo bwork, CapsResBuilder.ICapsResBuildWork modwork, int bindex)
         {
             List<string> RefTargets = new List<string>();
             HashSet<string> RefTargetsMap = new HashSet<string>();
@@ -47,9 +47,9 @@ namespace Capstones.UnityEditorEx
 
             if (RefTargets.Count > 0)
             {
-                var listfull = new List<string>(abwork.assetNames);
+                var listfull = new List<string>(bwork.Assets);
                 listfull.AddRange(RefTargets);
-                abwork.assetNames = listfull.ToArray();
+                bwork.Assets = listfull;
             }
         }
     }

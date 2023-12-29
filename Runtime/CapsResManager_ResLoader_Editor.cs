@@ -718,6 +718,17 @@ namespace Capstones.UnityEngineEx
             public void MarkPermanent(string assetname)
             {
             }
+            public List<string> ParseRunningResKeys()
+            {
+                return null;
+            }
+            public List<string> GetLoadedBundleFileNames()
+            {
+                return null;
+            }
+            public void AfterResFilesDeployed()
+            {
+            }
 
             public static void UnloadAssets(Object[] objs)
             {

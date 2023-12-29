@@ -18,7 +18,7 @@ namespace Capstones.UnityEditorEx
             {
                 allExBuilders[i].Prepare(null);
             }
-            Dictionary<string, CapsResBuilder.CapsResBuildWork> buildwork = new Dictionary<string, CapsResBuilder.CapsResBuildWork>();
+            Dictionary<string, CapsResBuilder.ICapsResBuildWork> buildwork = new Dictionary<string, CapsResBuilder.ICapsResBuildWork>();
             var gwork = CapsResBuilder.GenerateBuildWorkAsync(buildwork, null, null);
             while (gwork.MoveNext()) ;
             for (int i = 0; i < allExBuilders.Count; ++i)
@@ -30,6 +30,7 @@ namespace Capstones.UnityEditorEx
             Dictionary<string, List<string>> reskey2assetlist = new Dictionary<string, List<string>>();
             Dictionary<string, string> asset2reskey = new Dictionary<string, string>();
             HashSet<string> nodepassets = new HashSet<string>();
+            var nodepext = ".=" + CapsResBuilder.BuilderImp.BundleExtName;
             foreach (var buildmodwork in buildwork)
             {
                 var mod = buildmodwork.Key;
@@ -50,29 +51,25 @@ namespace Capstones.UnityEditorEx
                         reskey2assetlist[reskey] = list;
                     }
 
-                    for (int j = 0; j < work.ABs.Length; ++j)
+                    foreach (var binfo in work.BundleBuildInfos)
                     {
-                        var abinfo = work.ABs[j];
-                        var abname = abinfo.assetBundleName;
-                        if (abname.EndsWith(".=.ab"))
+                        var bname = binfo.BundleName;
+                        if (bname.EndsWith(nodepext))
                         {
-                            for (int k = 0; k < abinfo.assetNames.Length; ++k)
+                            for (int k = 0; k < binfo.Assets.Count; ++k)
                             {
-                                var asset = abinfo.assetNames[k];
+                                var asset = binfo.Assets[k];
                                 nodepassets.Add(asset);
                             }
                             continue;
                         }
-                        if (!string.IsNullOrEmpty(abinfo.assetBundleVariant))
+                        var filename = binfo.FileName;
+                        if (CapsResBuilder.IsBundleInModAndDist(filename, opmod, dist))
                         {
-                            abname += "." + abinfo.assetBundleVariant;
-                        }
-                        if (CapsResBuilder.IsBundleInModAndDist(abname, opmod, dist))
-                        {
-                            list.AddRange(abinfo.assetNames);
-                            for (int k = 0; k < abinfo.assetNames.Length; ++k)
+                            list.AddRange(binfo.Assets);
+                            for (int k = 0; k < binfo.Assets.Count; ++k)
                             {
-                                var asset = abinfo.assetNames[k];
+                                var asset = binfo.Assets[k];
                                 asset2reskey[asset] = reskey;
                             }
                         }
@@ -243,32 +240,33 @@ namespace Capstones.UnityEditorEx
             return deps.ToArray();
         }
 
-        public static void GetAssetBundleModAndDist(string abname, out string mod, out string dist)
+        public static void GetBundleModAndDist(string bname, out string mod, out string dist)
         {
             mod = null;
             dist = null;
-            if (abname == null)
+            if (bname == null)
             {
                 return;
             }
-            abname = abname.ToLower();
-            if (abname.EndsWith(".ab"))
+            bname = bname.ToLower();
+            var bext = CapsResBuilder.BuilderImp.BundleExtName;
+            if (bname.EndsWith(bext))
             {
-                var extindex = abname.IndexOf('.');
-                abname = abname.Substring(0, extindex);
+                var extindex = bname.IndexOf('.');
+                bname = bname.Substring(0, extindex);
             }
-            if (!abname.StartsWith("m-") && !abname.StartsWith("d-"))
+            if (!bname.StartsWith("m-") && !bname.StartsWith("d-"))
             {
                 return;
             }
             string dpart = null;
-            if (abname.StartsWith("m-"))
+            if (bname.StartsWith("m-"))
             {
-                var mendIndex = abname.IndexOf("-d-");
+                var mendIndex = bname.IndexOf("-d-");
                 if (mendIndex > 0)
                 {
-                    mod = abname.Substring("m-".Length, mendIndex - "m-".Length);
-                    dpart = abname.Substring(mendIndex + "-d-".Length);
+                    mod = bname.Substring("m-".Length, mendIndex - "m-".Length);
+                    dpart = bname.Substring(mendIndex + "-d-".Length);
                 }
                 else
                 {
@@ -277,7 +275,7 @@ namespace Capstones.UnityEditorEx
             }
             else
             {
-                dpart = abname.Substring("d-".Length);
+                dpart = bname.Substring("d-".Length);
             }
 
             if (dpart != null)

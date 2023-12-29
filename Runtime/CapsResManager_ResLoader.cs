@@ -27,6 +27,10 @@ namespace Capstones.UnityEngineEx
             void UnloadUnusedRes();
             void UnloadAllRes(bool unloadPermanentBundle);
             void MarkPermanent(string assetname);
+
+            List<string> ParseRunningResKeys();
+            List<string> GetLoadedBundleFileNames();
+            void AfterResFilesDeployed();
         }
         private static IResLoader _ResLoader;
         public static IResLoader ResLoader
@@ -559,6 +563,18 @@ namespace Capstones.UnityEngineEx
         public static void MarkPermanent(string assetname)
         {
             ResLoader.MarkPermanent(assetname);
+        }
+        public static List<string> ParseRunningResKeys()
+        {
+            return ResLoader.ParseRunningResKeys();
+        }
+        public static List<string> GetLoadedBundleFileNames()
+        {
+            return ResLoader.GetLoadedBundleFileNames();
+        }
+        public static void AfterResFilesDeployed()
+        {
+            ResLoader.AfterResFilesDeployed();
         }
 
         public static List<GameObject> FindAllGameObject()
