@@ -577,6 +577,18 @@ namespace Capstones.UnityEngineEx
             ResLoader.AfterResFilesDeployed();
         }
 
+        public static bool IsClientResLoader
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return !(_ResLoader is EditorResLoader);
+#else
+                return true;
+#endif
+            }
+        }
+
         public static List<GameObject> FindAllGameObject()
         {
             var count = UnityEngine.SceneManagement.SceneManager.sceneCount;
